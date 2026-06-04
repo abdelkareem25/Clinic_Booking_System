@@ -1,0 +1,73 @@
+# Build Results
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+
+# VS Code
+.vscode/
+
+# NuGet
+*.nupkg
+packages/
+
+# Logs
+*.log
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# Publish Output
+publish/
+wwwroot/uploads/
+
+# Environment Variables
+.env
+.env.*
+
+# Secrets
+secrets.json
+appsettings.Development.json
+
+# Entity Framework
+*.dbmdl
+
+# Test Results
+TestResults/
+
+# Coverage Reports
+coverage/
+*.coverage
+*.coveragexml
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Temporary Files
+tmp/
+temp/
+
+# Generated Files
+Generated/
+
+# Resharper
+_ReSharper*/
+*.DotSettings.user
+
+# Azure
+.publishsettings
+
+# Docker
+docker-compose.override.yml
+
+# Node Modules (لو عندك Frontend)
+node_modules/
