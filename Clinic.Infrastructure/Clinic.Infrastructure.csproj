@@ -8,6 +8,14 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Clinic.Domain\Clinic.Domain.csproj" />
+	  <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.26" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.26" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.26">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	  </PackageReference>
+	  <PackageReference Include="StackExchange.Redis" Version="2.12.14" />
+
   </ItemGroup>
 
 </Project>
