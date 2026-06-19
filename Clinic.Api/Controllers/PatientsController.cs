@@ -2,6 +2,7 @@
 using Clinic.Api.DTOs.PatientDto;
 using Clinic.Domain.Entites;
 using Clinic.Domain.Interfaces.Repository;
+using Clinic.Domain.Interfaces.Specifications.PatientSpec;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Clinic.Api.Controllers
@@ -22,7 +23,8 @@ namespace Clinic.Api.Controllers
         [HttpGet]
         public async Task<ActionResult<IReadOnlyList<GetPatientDto>>> GetAll()
         {
-            var patients = await _patientRepository.GetAllAsync();
+            var spec = new PatientsWithAppointmentsSpecification();
+            var patients = await _patientRepository.GetAllWithSpecAsync(spec);
             if (patients == null || patients.Count == 0)
             {
                 return NotFound();

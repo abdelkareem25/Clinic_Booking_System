@@ -1,4 +1,5 @@
 ﻿using Clinic.Domain.Entites;
+using Clinic.Domain.Interfaces.Specifications;
 
 namespace Clinic.Domain.Interfaces.Repository
 {
@@ -9,6 +10,10 @@ namespace Clinic.Domain.Interfaces.Repository
         Task AddAsync(T item);
         Task DeleteAsync(T item);
         Task UpdateAsync(T item);
+        Task<IReadOnlyList<T>> GetAllWithSpecAsync(ISpecification<T> spec);
+        Task<T> GetByIdWithSpecAsync(ISpecification<T> spec);
+        Task<T?> GetEntityWithSpec(ISpecification<T> spec);
+        Task<IReadOnlyList<T>> ListAsync(ISpecification<T> spec);
 
     }
 }
