@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Clinic.Api.DTOs.AppointmentDto;
+using Clinic.Api.Helper;
 using Clinic.Domain.Entites;
 using Clinic.Domain.Interfaces;
 using Clinic.Domain.Interfaces.Repository;
@@ -87,14 +88,17 @@ namespace Clinic.Api.Controllers
         #region GetTypes
         // Get all appointments
         [HttpGet]
-        public async Task<ActionResult<IReadOnlyList<AppointmentDto>>> GetAllAppointments()
-        {
-            var appointments = await _appointmentRepository.GetAllAsync();
+        public async Task<ActionResult<Pagination<AppointmentDto>>> GetAllAppointments(AppointmentSpecParams param)
+        {   
+            var spec = new AppointmentSpecification(param);
+            var appointments = await _appointmentRepository.GetAllWithSpecAsync(spec);
             if (appointments == null || !appointments.Any())
                 return NotFound("No appointments found.");
+            var TotalCounts = new AppointmentWithCountSpecification(param);
+            var count = await _appointmentRepository.CountAsync(spec);
             var result = _mapper.Map<IReadOnlyList<AppointmentDto>>(appointments);
 
-            return Ok(result);
+            return Ok(new Pagination<AppointmentDto>(param.PageIndex,param.PageSize,count,result));
         }
         // Get an appointment by id
         [HttpGet("{id}")]
