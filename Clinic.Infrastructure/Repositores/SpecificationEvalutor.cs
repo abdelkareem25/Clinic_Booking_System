@@ -13,10 +13,19 @@ namespace Clinic.Infrastructure.Repositores
             {
                 query = query.Where(spec.Criteria);
             }
+            if (spec.OrderBy != null)
+                query = query.OrderBy(spec.OrderBy);
+            if (spec.OrderByDescending != null)
+                query = query.OrderByDescending(spec.OrderByDescending);
+            if(spec.IsPaginationEnable)
+            {
+                query = query.Skip(spec.Skip).Take(spec.Take);
+            }
             if(spec.Includes!= null)
             {
                 query = spec.Includes.Aggregate(query, (current, includeExpression) => current.Include(includeExpression));
             }
+
             return query;
         }
     }

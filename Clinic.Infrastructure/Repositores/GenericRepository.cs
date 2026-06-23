@@ -58,5 +58,9 @@ namespace Clinic.Infrastructure.Repositores
             return SpecificationEvalutor<T>.GetQuery(_context.Set<T>(), spec);
         }
 
+        public async Task<int> CountAsync(ISpecification<T> spec)
+        {
+            return await ApplaySpecification(spec).CountAsync();
+        }
     }
 }

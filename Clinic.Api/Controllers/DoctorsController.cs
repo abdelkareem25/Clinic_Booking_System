@@ -25,6 +25,7 @@ namespace Clinic.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<IReadOnlyList<GetDoctorDto>>> GetAll()
         {
+
             var doctors = await _doctorRepository.GetAllAsync();
             if (doctors == null || doctors.Count == 0)
                 return NotFound("No doctors found.");
