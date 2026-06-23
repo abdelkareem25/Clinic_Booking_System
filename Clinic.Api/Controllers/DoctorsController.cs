@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
 using Clinic.Api.DTOs.DoctorDto;
+using Clinic.Api.Helper;
 using Clinic.Domain.Entites;
 using Clinic.Domain.Interfaces.Repository;
+using Clinic.Domain.Interfaces.Specifications.DoctorSpec;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,14 +25,16 @@ namespace Clinic.Api.Controllers
         [HttpGet]
         [ProducesResponseType(typeof(GetDoctorDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<IReadOnlyList<GetDoctorDto>>> GetAll()
+        public async Task<ActionResult<Pagination<GetDoctorDto>>> GetAll([FromQuery]DoctorSpecParams param)
         {
-
-            var doctors = await _doctorRepository.GetAllAsync();
+            var spec = new DoctorSpecification(param);
+            var doctors = await _doctorRepository.GetAllWithSpecAsync(spec);
             if (doctors == null || doctors.Count == 0)
                 return NotFound("No doctors found.");
+            var count = new DoctorWithCountSpecification(param);
+            var totalCount = await _doctorRepository.CountAsync(spec);
             var doctorDtos = _mapper.Map<IReadOnlyList<GetDoctorDto>>(doctors);
-            return Ok(doctorDtos);
+            return Ok(new Pagination<GetDoctorDto>(param.PageIndex,param.PageSize,totalCount,doctorDtos));
         }
         // GET: api/Doctors{id}
         [HttpGet("{id}")]
