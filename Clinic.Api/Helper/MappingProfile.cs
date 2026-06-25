@@ -2,6 +2,7 @@
 using Clinic.Api.DTOs.AppointmentDto;
 using Clinic.Api.DTOs.DoctorDto;
 using Clinic.Api.DTOs.PatientDto;
+using Clinic.Api.DTOs.ScheduleDto;
 using Clinic.Domain.Entites;
 
 namespace Clinic.Api.Helper
@@ -33,6 +34,14 @@ namespace Clinic.Api.Helper
             CreateMap<AppointmentDto, Appointment>()
                 .ForMember(dest => dest.Doctor, opt => opt.MapFrom(src => src.DoctorName))
                 .ForMember(dest => dest.Patient, opt => opt.MapFrom(src => src.PatientName));
+            #endregion
+            #region Schedule
+            CreateMap<DoctorSchedule, DoctorScheduleDto>()
+                .ForMember(dest => dest.DoctorName,
+               opt => opt.MapFrom(src => src.Doctor.Name));
+            CreateMap<CreateDoctorScheduleDto, DoctorSchedule>();
+
+            CreateMap<UpdateDoctorScheduleDto, DoctorSchedule>();
             #endregion
         }
     }

@@ -12,8 +12,12 @@ namespace Clinic.Infrastructure.Data.Configurations
                 .WithMany(d => d.DoctorSchedules)
                 .HasForeignKey(ds => ds.DoctorId)
                 .OnDelete(DeleteBehavior.Cascade);
-
-
+            builder.Property(x => x.DayOfWeek)
+                .HasConversion<int>();
+            builder.Property(x => x.StartTime)
+                .IsRequired();
+            builder.Property(x => x.EndTime)
+                .IsRequired();
         }
     }
 }
