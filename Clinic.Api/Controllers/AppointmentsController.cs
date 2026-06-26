@@ -3,7 +3,6 @@ using Clinic.Api.DTOs.AppointmentDto;
 using Clinic.Api.Helper;
 using Clinic.Domain.Entites;
 using Clinic.Domain.Interfaces;
-using Clinic.Domain.Interfaces.Repository;
 using Clinic.Domain.Interfaces.Specifications.AppointmentSpec;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,20 +12,17 @@ namespace Clinic.Api.Controllers
 
     public class AppointmentsController : APIBaseController
     {
-        private readonly IGenericRepository<Doctor> _doctorRepository;
-        private readonly IGenericRepository<Patient> _patientRepository;
         private readonly IMapper _mapper;
         private readonly IAppointmentRepository _appointmentRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
         public AppointmentsController(
-             IGenericRepository<Doctor> doctorRepository
-            , IGenericRepository<Patient> patientRepository
-            , IMapper mapper
-            , IAppointmentRepository appointmentRepository)
+             IMapper mapper
+            , IAppointmentRepository appointmentRepository
+            , IUnitOfWork unitOfWork)
         {
             _appointmentRepository = appointmentRepository;
-            _doctorRepository = doctorRepository;
-            _patientRepository = patientRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
             _appointmentRepository = appointmentRepository;
         }
@@ -35,10 +31,10 @@ namespace Clinic.Api.Controllers
         public async Task<ActionResult> Create(CreateAppointmentDto dto)
         {
 
-            var doctor = await _doctorRepository.GetByIdAsync(dto.DoctorId);
+            var doctor = await _unitOfWork.Repository<Doctor>().GetByIdAsync(dto.DoctorId);
             if (doctor == null)
                 return NotFound($"Doctor with id {dto.DoctorId} not found.");
-            var patient = await _patientRepository.GetByIdAsync(dto.PatientId);
+            var patient = await _unitOfWork.Repository<Patient>().GetByIdAsync(dto.PatientId);
             if (patient == null)
                 return NotFound($"Patient with id {dto.PatientId} not found.");
             var isDoctorAvailable = await _appointmentRepository.IsDoctorAvailableAsync(dto.DoctorId, dto.AppointmentDate, null);
@@ -71,10 +67,10 @@ namespace Clinic.Api.Controllers
             var appointment = await _appointmentRepository.GetByIdAsync(id);
             if (appointment == null)
                 return NotFound($"Appointment with id {id} not found.");
-            var doctor = await _doctorRepository.GetByIdAsync(dto.DoctorId);
+            var doctor = await _unitOfWork.Repository<Doctor>().GetByIdAsync(dto.DoctorId);
             if (doctor == null)
                 return NotFound($"Doctor with id {dto.DoctorId} not found.");
-            var patient = await _patientRepository.GetByIdAsync(dto.PatientId);
+            var patient = await _unitOfWork.Repository<Patient>().GetByIdAsync(dto.PatientId);
             if (patient == null)
                 return NotFound($"Patient with id {dto.PatientId} not found.");
             var isDoctorAvailable = await _appointmentRepository.IsDoctorAvailableAsync(dto.DoctorId, dto.AppointmentDate, id);

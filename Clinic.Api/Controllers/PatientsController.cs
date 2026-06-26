@@ -2,8 +2,7 @@
 using Clinic.Api.DTOs.PatientDto;
 using Clinic.Api.Helper;
 using Clinic.Domain.Entites;
-using Clinic.Domain.Interfaces.Repository;
-using Clinic.Domain.Interfaces.Specifications;
+using Clinic.Domain.Interfaces;
 using Clinic.Domain.Interfaces.Specifications.PatientSpec;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,14 +11,16 @@ namespace Clinic.Api.Controllers
 
     public class PatientsController : APIBaseController
     {
-        private readonly IGenericRepository<Patient> _patientRepository;
+       // private readonly IGenericRepository<Patient> _patientRepository;
         private readonly IMapper _mapper;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public PatientsController(IGenericRepository<Patient> patientRepository,
-            IMapper mapper)
+        public PatientsController(//IGenericRepository<Patient> patientRepository,
+            IMapper mapper,IUnitOfWork unitOfWork)
         {
-            _patientRepository = patientRepository;
+            //_patientRepository = patientRepository;
             _mapper = mapper;
+            _unitOfWork = unitOfWork;
         }
         // Get All
         [HttpGet]
@@ -27,10 +28,10 @@ namespace Clinic.Api.Controllers
         {
 
             var spec = new PatientSpecification(param);
-            var patients = await _patientRepository.GetAllWithSpecAsync(spec);
+            var patients = await _unitOfWork.Repository<Patient>().GetAllWithSpecAsync(spec);
             if (patients == null || patients.Count == 0) return NotFound();
             var countSpec = new PatientCountSpecification(param);
-            var totalItems = await _patientRepository.CountAsync(countSpec);
+            var totalItems = await _unitOfWork.Repository<Patient>().CountAsync(countSpec);
 
             var MappedPatients = _mapper.Map<IReadOnlyList<GetPatientDto>>(patients);
             return Ok(new Pagination<GetPatientDto>(param.PageIndex, param.PageSize, totalItems, MappedPatients));
@@ -39,7 +40,7 @@ namespace Clinic.Api.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<GetPatientDto>> GetById(int id)
         {
-            var patient = await _patientRepository.GetByIdAsync(id);
+            var patient = await _unitOfWork.Repository<Patient>().GetByIdAsync(id);
             if (patient == null)
             {
                 return NotFound();
@@ -52,7 +53,7 @@ namespace Clinic.Api.Controllers
         public async Task<ActionResult<PatientDto>> Create(CreatePatientDto dto)
         {
             var patient = _mapper.Map<CreatePatientDto, Patient>(dto);
-            await _patientRepository.AddAsync(patient);
+            await _unitOfWork.Repository<Patient>().AddAsync(patient);
             var mappedPatient = _mapper.Map<GetPatientDto>(patient);
             return Ok(mappedPatient);
         }
@@ -60,19 +61,19 @@ namespace Clinic.Api.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<PatientDto>> Update(int id, UpdatePatientDto dto)
         {
-            var patient = await _patientRepository.GetByIdAsync(id);
+            var patient = await _unitOfWork.Repository<Patient>().GetByIdAsync(id);
             if (patient == null) return NotFound();
             _mapper.Map(dto, patient);
-            await _patientRepository.UpdateAsync(patient);
+            await _unitOfWork.Repository<Patient>().UpdateAsync(patient);
             return NoContent();
         }
         // Delete
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id)
         {
-            var patient = await _patientRepository.GetByIdAsync(id);
+            var patient = await _unitOfWork.Repository<Patient>().GetByIdAsync(id);
             if (patient == null) return NotFound();
-            await _patientRepository.DeleteAsync(patient);
+            await _unitOfWork.Repository<Patient>().DeleteAsync(patient);
             return NoContent();
         }
 

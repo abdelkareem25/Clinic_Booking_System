@@ -9,6 +9,7 @@ namespace Clinic.Api.Extensions
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection Services)
         {
+            Services.AddScoped<IUnitOfWork, UnitOfWork>();
             Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
             Services.AddAutoMapper(config=>config.AddProfile<MappingProfile>());
