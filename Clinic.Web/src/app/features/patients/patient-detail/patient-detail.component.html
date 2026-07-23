@@ -1,0 +1,74 @@
+@if (patient(); as selectedPatient) {
+  <app-page-header [title]="selectedPatient.name" subtitle="Patient profile" icon="badge" />
+
+  <div class="detail-actions">
+    <a mat-stroked-button routerLink="/patients">
+      <mat-icon>arrow_back</mat-icon>
+      Back
+    </a>
+    <span class="spacer"></span>
+    <button mat-stroked-button color="primary" type="button" (click)="edit()">
+      <mat-icon>edit</mat-icon>
+      Edit
+    </button>
+    <button mat-stroked-button color="warn" type="button" (click)="remove()">
+      <mat-icon>delete</mat-icon>
+      Delete
+    </button>
+  </div>
+
+  <div class="detail-grid">
+    <mat-card class="profile-card" appearance="outlined">
+      <mat-card-header>
+        <div mat-card-avatar class="patient-avatar">
+          <mat-icon>person</mat-icon>
+        </div>
+        <mat-card-title>{{ selectedPatient.name }}</mat-card-title>
+        <mat-card-subtitle>#{{ selectedPatient.id }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <dl class="fact-list">
+          <div>
+            <dt>Phone</dt>
+            <dd>{{ selectedPatient.phone }}</dd>
+          </div>
+          <div>
+            <dt>Date of birth</dt>
+            <dd>{{ selectedPatient.dateOfBirth | date: 'mediumDate' }}</dd>
+          </div>
+          <div>
+            <dt>Age</dt>
+            <dd>{{ age() ?? '—' }}</dd>
+          </div>
+          <div>
+            <dt>Gender</dt>
+            <dd>{{ selectedPatient.gender }}</dd>
+          </div>
+        </dl>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="appointments-card" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Appointments</mat-card-title>
+        <mat-card-subtitle>Visit history for this patient</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <app-data-table
+          [columns]="appointmentColumns"
+          [rows]="appointments()"
+          [loading]="loading()"
+          emptyIcon="event_busy"
+          emptyTitle="No appointments"
+          emptyMessage="This patient has no appointments yet."
+        />
+      </mat-card-content>
+    </mat-card>
+  </div>
+} @else if (notFound()) {
+  <app-empty-state
+    icon="person_off"
+    title="Patient not found"
+    message="This patient may have been removed."
+  />
+}

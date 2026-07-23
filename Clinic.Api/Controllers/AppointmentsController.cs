@@ -85,20 +85,20 @@ namespace Clinic.Api.Controllers
         // Get all appointments
         [HttpGet]
         public async Task<ActionResult<Pagination<AppointmentDto>>> GetAllAppointments(AppointmentSpecParams param)
-        {   
+        {
             var spec = new AppointmentSpecification(param);
             var appointments = await _appointmentRepository.GetAllWithSpecAsync(spec);
             if (appointments == null || !appointments.Any())
                 return NotFound("No appointments found.");
             var TotalCounts = new AppointmentWithCountSpecification(param);
-            var count = await _appointmentRepository.CountAsync(spec);
+            var count = await _appointmentRepository.CountAsync(TotalCounts);
             var result = _mapper.Map<IReadOnlyList<AppointmentDto>>(appointments);
 
-            return Ok(new Pagination<AppointmentDto>(param.PageIndex,param.PageSize,count,result));
+            return Ok(new Pagination<AppointmentDto>(param.PageIndex, param.PageSize, count, result));
         }
         // Get an appointment by id
         [HttpGet("{id}")]
-        public async Task<ActionResult<AppointmentDto >> GetById(int id)
+        public async Task<ActionResult<AppointmentDto>> GetById(int id)
         {
             var spec = new AppointmentWithDoctorAndPatientSpec(id);
             var appointment = await _appointmentRepository.GetEntityWithSpec(spec);

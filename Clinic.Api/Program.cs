@@ -33,6 +33,17 @@ namespace Clinic.Api
             });
             builder.Services.AddIdentityServices();
             builder.Services.AddApplicationServices();
+
+            // Allow the Angular dev server (and its https variant) to call the API.
+            const string SpaCorsPolicy = "SpaCorsPolicy";
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy(SpaCorsPolicy, policy =>
+                    policy.WithOrigins("http://localhost:4200", "https://localhost:4200")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod());
+            });
+
             var app = builder.Build();
 
             using (var scope = app.Services.CreateScope())
@@ -49,6 +60,7 @@ namespace Clinic.Api
             }
 
             app.UseHttpsRedirection();
+            app.UseCors(SpaCorsPolicy);
             app.UseAuthentication();
             app.UseAuthorization();
 

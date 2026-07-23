@@ -1,0 +1,20 @@
+.booking-form {
+  display: grid;
+  gap: 12px;
+  min-width: min(420px, 74vw);
+}
+
+.schedule-hint {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  span {
+    padding: 6px 10px;
+    border-radius: 999px;
+    color: #075e5b;
+    background: #e5f3f2;
+    font-size: 0.86rem;
+  }
+}
+

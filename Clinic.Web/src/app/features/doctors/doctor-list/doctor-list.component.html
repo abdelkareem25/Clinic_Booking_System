@@ -1,0 +1,38 @@
+<app-page-header
+  title="Doctors"
+  subtitle="Manage the clinic's medical staff and specializations."
+  icon="medical_services"
+  actionLabel="Add doctor"
+  actionIcon="add"
+  (action)="openCreate()"
+/>
+
+<app-search-filter-bar
+  searchPlaceholder="Search by name"
+  filterLabel="Specialization"
+  [filterOptions]="specializationOptions"
+  (filtersChanged)="onFiltersChanged($event)"
+/>
+
+<app-data-table
+  [columns]="columns"
+  [actions]="actions"
+  [rows]="doctors()"
+  [loading]="loading()"
+  emptyIcon="person_search"
+  emptyTitle="No doctors found"
+  emptyMessage="Add a doctor or adjust your search filters."
+  (rowAction)="onRowAction($event)"
+  (sortChange)="onSortChanged($event)"
+/>
+
+@if (total() > 0) {
+  <mat-paginator
+    [length]="total()"
+    [pageIndex]="pageIndex"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="[5, 10, 20]"
+    showFirstLastButtons
+    (page)="onPage($event)"
+  />
+}

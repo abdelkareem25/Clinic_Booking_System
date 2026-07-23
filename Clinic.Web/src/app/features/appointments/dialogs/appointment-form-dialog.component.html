@@ -1,0 +1,66 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Edit appointment' : 'Book appointment' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <mat-dialog-content class="form-grid two-col">
+    <mat-form-field>
+      <mat-label>Patient</mat-label>
+      <mat-icon matPrefix>person</mat-icon>
+      <mat-select formControlName="patientId">
+        @for (patient of patients(); track patient.id) {
+          <mat-option [value]="patient.id">{{ patient.name }}</mat-option>
+        }
+      </mat-select>
+      @if (form.controls.patientId.hasError('required')) {
+        <mat-error>Select a patient.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Doctor</mat-label>
+      <mat-icon matPrefix>medical_services</mat-icon>
+      <mat-select formControlName="doctorId">
+        @for (doctor of doctors(); track doctor.id) {
+          <mat-option [value]="doctor.id">{{ doctor.name }} — {{ doctor.specialization }}</mat-option>
+        }
+      </mat-select>
+      @if (form.controls.doctorId.hasError('required')) {
+        <mat-error>Select a doctor.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Date</mat-label>
+      <input matInput [matDatepicker]="picker" formControlName="date" />
+      <mat-datepicker-toggle matIconSuffix [for]="picker" />
+      <mat-datepicker #picker />
+      @if (form.controls.date.hasError('required')) {
+        <mat-error>Pick a date.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Time</mat-label>
+      <mat-icon matPrefix>schedule</mat-icon>
+      <input matInput type="time" formControlName="time" />
+      @if (form.controls.time.hasError('required')) {
+        <mat-error>Pick a time.</mat-error>
+      }
+    </mat-form-field>
+
+    @if (loadingOptions()) {
+      <p class="hint">Loading doctors and patients…</p>
+    } @else if (!doctors().length || !patients().length) {
+      <p class="hint warn">
+        Add at least one doctor and one patient before booking an appointment.
+      </p>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>Cancel</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="submitting() || loadingOptions()">
+      <mat-icon>event_available</mat-icon>
+      {{ isEdit ? 'Save changes' : 'Book appointment' }}
+    </button>
+  </mat-dialog-actions>
+</form>

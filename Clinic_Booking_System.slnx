@@ -4,4 +4,5 @@
   <Project Path="Clinic.Domain/Clinic.Domain.csproj" />
   <Project Path="Clinic.Infrastructure/Clinic.Infrastructure.csproj" />
   <Project Path="Clinic.Shared/Clinic.Shared.csproj" />
+  <Project Path="Clinic.Tests/Clinic.Tests.csproj" Id="dfc123e3-0f25-4eef-af1f-b6a7695e5530" />
 </Solution>

@@ -1,0 +1,11 @@
+/*
+ * Tailwind CSS v4 entry point.
+ *
+ * Preflight (Tailwind's global reset) is intentionally NOT imported so it does
+ * not fight with Angular Material's component styles. We only pull in the
+ * theme tokens and utility classes, which is all we use in templates.
+ */
+@layer theme, base, components, utilities;
+
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);

@@ -11,12 +11,12 @@ namespace Clinic.Api.Controllers
 
     public class PatientsController : APIBaseController
     {
-       // private readonly IGenericRepository<Patient> _patientRepository;
+        // private readonly IGenericRepository<Patient> _patientRepository;
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
 
         public PatientsController(//IGenericRepository<Patient> patientRepository,
-            IMapper mapper,IUnitOfWork unitOfWork)
+            IMapper mapper, IUnitOfWork unitOfWork)
         {
             //_patientRepository = patientRepository;
             _mapper = mapper;

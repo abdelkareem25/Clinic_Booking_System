@@ -1,0 +1,10 @@
+:host {
+  display: block;
+}
+
+mat-paginator {
+  margin-top: 14px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 14px;
+  background: var(--mat-sys-surface);
+}

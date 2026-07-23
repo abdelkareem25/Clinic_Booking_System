@@ -1,0 +1,22 @@
+.filter-bar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) repeat(2, minmax(180px, 240px)) auto;
+  gap: 12px;
+  align-items: start;
+  margin-bottom: 18px;
+}
+
+button {
+  height: 56px;
+}
+
+@media (max-width: 900px) {
+  .filter-bar {
+    grid-template-columns: 1fr;
+  }
+
+  button {
+    width: 100%;
+  }
+}
+

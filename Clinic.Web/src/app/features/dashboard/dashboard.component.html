@@ -1,0 +1,30 @@
+<app-page-header
+  title="Dashboard"
+  subtitle="Clinic activity at a glance."
+  icon="dashboard"
+/>
+
+<section class="metrics-grid">
+  @for (metric of metrics(); track metric.label) {
+    <app-metric-card [metric]="metric" />
+  }
+</section>
+
+<section class="recent-panel">
+  <header class="recent-header">
+    <div>
+      <h2>Recent Appointments</h2>
+      <p>The latest scheduled visits across the clinic.</p>
+    </div>
+    <a class="view-all" routerLink="/appointments">View all</a>
+  </header>
+
+  <app-data-table
+    [columns]="columns"
+    [rows]="recent()"
+    [loading]="loading()"
+    emptyIcon="event_busy"
+    emptyTitle="No recent appointments"
+    emptyMessage="New appointments will appear here once they are booked."
+  />
+</section>

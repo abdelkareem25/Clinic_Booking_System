@@ -1,0 +1,68 @@
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(360px, 1.1fr);
+  background:
+    linear-gradient(135deg, rgba(13, 112, 109, 0.92), rgba(37, 99, 235, 0.82)),
+    url('/assets/clinic-pattern.svg');
+  color: #fff;
+}
+
+.auth-brand {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  padding: clamp(32px, 7vw, 96px);
+}
+
+.brand-mark {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 4.2rem);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+p {
+  margin: 0;
+  max-width: 560px;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 1.08rem;
+  line-height: 1.6;
+}
+
+.auth-panel {
+  display: grid;
+  align-items: center;
+  padding: clamp(24px, 5vw, 72px);
+  background: #f6fafc;
+  color: #172033;
+}
+
+@media (max-width: 840px) {
+  .auth-page {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-brand {
+    padding-bottom: 16px;
+  }
+
+  .auth-panel {
+    align-items: start;
+    min-height: 56vh;
+  }
+}
+

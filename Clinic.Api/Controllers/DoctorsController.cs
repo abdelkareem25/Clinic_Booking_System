@@ -10,7 +10,7 @@ namespace Clinic.Api.Controllers
 {
     public class DoctorsController : APIBaseController
     {
-       // private readonly IGenericRepository<Doctor> _doctorRepository;
+        // private readonly IGenericRepository<Doctor> _doctorRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
@@ -27,7 +27,7 @@ namespace Clinic.Api.Controllers
         [HttpGet]
         [ProducesResponseType(typeof(GetDoctorDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<Pagination<GetDoctorDto>>> GetAll([FromQuery]DoctorSpecParams param)
+        public async Task<ActionResult<Pagination<GetDoctorDto>>> GetAll([FromQuery] DoctorSpecParams param)
         {
             var spec = new DoctorSpecification(param);
             var doctors = await _unitOfWork.Repository<Doctor>().GetAllWithSpecAsync(spec);
@@ -36,7 +36,7 @@ namespace Clinic.Api.Controllers
             var count = new DoctorWithCountSpecification(param);
             var totalCount = await _unitOfWork.Repository<Doctor>().CountAsync(spec);
             var doctorDtos = _mapper.Map<IReadOnlyList<GetDoctorDto>>(doctors);
-            return Ok(new Pagination<GetDoctorDto>(param.PageIndex,param.PageSize,totalCount,doctorDtos));
+            return Ok(new Pagination<GetDoctorDto>(param.PageIndex, param.PageSize, totalCount, doctorDtos));
         }
         // GET: api/Doctors{id}
         [HttpGet("{id}")]
@@ -45,7 +45,7 @@ namespace Clinic.Api.Controllers
         public async Task<ActionResult<DoctorDto>> GetById(int id)
         {
             var doctor = await _unitOfWork.Repository<Doctor>().GetByIdAsync(id);
-            if(doctor == null || doctor.Id == 0) return NotFound("Doctor not found.");
+            if (doctor == null || doctor.Id == 0) return NotFound("Doctor not found.");
             var doctorDto = _mapper.Map<Doctor, DoctorDto>(doctor);
             return Ok(doctorDto);
         }
@@ -67,9 +67,9 @@ namespace Clinic.Api.Controllers
         public async Task<ActionResult> Update(int id, UpdateDoctorDto updateDoctorDto)
         {
             var existingDoctor = await _unitOfWork.Repository<Doctor>().GetByIdAsync(id);
-            if (existingDoctor == null )
+            if (existingDoctor == null)
                 return NotFound("Doctor not found.");
-            _mapper.Map<UpdateDoctorDto, Doctor>(updateDoctorDto ,existingDoctor);
+            _mapper.Map<UpdateDoctorDto, Doctor>(updateDoctorDto, existingDoctor);
             await _unitOfWork.Repository<Doctor>().UpdateAsync(existingDoctor);
             var updatedDto = _mapper.Map<GetDoctorDto>(existingDoctor);
             return Ok(updatedDto);

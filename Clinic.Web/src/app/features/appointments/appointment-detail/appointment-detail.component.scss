@@ -1,0 +1,61 @@
+:host {
+  display: block;
+}
+
+.detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.detail-card {
+  max-width: 640px;
+}
+
+.status-row {
+  margin-bottom: 8px;
+}
+
+.fact-list {
+  margin: 0;
+  display: grid;
+  gap: 14px;
+
+  div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  div:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  dt {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--mat-sys-on-surface-variant);
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 600;
+    text-align: end;
+  }
+}

@@ -1,0 +1,20 @@
+.dialog-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 24px 0;
+
+  mat-icon {
+    color: #b42318;
+  }
+}
+
+h2,
+p {
+  margin: 0;
+}
+
+mat-dialog-content {
+  color: #607086;
+}
+

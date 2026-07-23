@@ -1,0 +1,37 @@
+<form class="filter-bar" [formGroup]="form">
+  <mat-form-field>
+    <mat-label>{{ searchPlaceholder }}</mat-label>
+    <mat-icon matPrefix>search</mat-icon>
+    <input matInput formControlName="search" />
+  </mat-form-field>
+
+  @if (filterOptions.length) {
+    <mat-form-field>
+      <mat-label>{{ filterLabel }}</mat-label>
+      <mat-select formControlName="filter">
+        <mat-option value="">All</mat-option>
+        @for (option of filterOptions; track option.value) {
+          <mat-option [value]="option.value">{{ option.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  }
+
+  @if (sortOptions.length) {
+    <mat-form-field>
+      <mat-label>Sort</mat-label>
+      <mat-select formControlName="sort">
+        <mat-option value="">Default</mat-option>
+        @for (option of sortOptions; track option.value) {
+          <mat-option [value]="option.value">{{ option.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  }
+
+  <button mat-stroked-button type="button" (click)="reset()">
+    <mat-icon>restart_alt</mat-icon>
+    Reset
+  </button>
+</form>
+

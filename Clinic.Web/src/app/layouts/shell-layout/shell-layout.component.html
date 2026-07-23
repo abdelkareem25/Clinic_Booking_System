@@ -1,0 +1,86 @@
+<mat-sidenav-container class="shell">
+  <mat-sidenav
+    #drawer
+    class="sidebar"
+    [mode]="(isHandset$ | async) ? 'over' : 'side'"
+    [opened]="(isHandset$ | async) === false"
+  >
+    <div class="sidebar-brand">
+      <span class="brand-mark">CB</span>
+      <span>
+        <strong>Clinic Booking</strong>
+        <small>Care operations</small>
+      </span>
+    </div>
+
+    <mat-divider />
+
+    <mat-nav-list>
+      @for (item of navItems; track item.route) {
+        <a
+          mat-list-item
+          [routerLink]="item.route"
+          routerLinkActive="active-link"
+          (click)="closeOnHandset(drawer)"
+        >
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+          <span matListItemTitle>{{ item.label }}</span>
+        </a>
+      }
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <mat-toolbar class="topbar">
+      @if (isHandset$ | async) {
+        <button mat-icon-button type="button" aria-label="Open navigation" (click)="drawer.toggle()">
+          <mat-icon>menu</mat-icon>
+        </button>
+      }
+
+      <app-breadcrumb class="topbar-breadcrumb" />
+      <span class="spacer"></span>
+
+      <button
+        mat-icon-button
+        type="button"
+        [matTooltip]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+        aria-label="Toggle theme"
+        (click)="toggleTheme()"
+      >
+        <mat-icon>{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      </button>
+
+      @if (user$ | async; as user) {
+        <button mat-button [matMenuTriggerFor]="userMenu" class="user-button">
+          <span class="avatar">{{ initials(user) }}</span>
+          <span class="user-name">{{ user.displayName }}</span>
+          <mat-icon>expand_more</mat-icon>
+        </button>
+        <mat-menu #userMenu="matMenu">
+          <div class="menu-identity">
+            <strong>{{ user.displayName }}</strong>
+            <small>{{ user.email }}</small>
+          </div>
+          <mat-divider />
+          <button mat-menu-item type="button" disabled>
+            <mat-icon>verified_user</mat-icon>
+            <span>{{ roleLabel(user) }}</span>
+          </button>
+          <button mat-menu-item type="button" routerLink="/users">
+            <mat-icon>account_circle</mat-icon>
+            <span>My profile</span>
+          </button>
+          <button mat-menu-item type="button" (click)="logout()">
+            <mat-icon>logout</mat-icon>
+            <span>Logout</span>
+          </button>
+        </mat-menu>
+      }
+    </mat-toolbar>
+
+    <main class="content">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

@@ -1,0 +1,33 @@
+:host {
+  display: block;
+}
+
+.notice {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-container-high);
+
+  mat-icon {
+    color: var(--mat-sys-primary);
+    flex: 0 0 auto;
+  }
+
+  p {
+    margin: 0;
+    color: var(--mat-sys-on-surface-variant);
+    line-height: 1.55;
+    font-size: 0.9rem;
+  }
+
+  code {
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: var(--mat-sys-surface-container-highest);
+    font-size: 0.85em;
+  }
+}

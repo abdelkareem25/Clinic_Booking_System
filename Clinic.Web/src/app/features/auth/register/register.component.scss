@@ -1,0 +1,44 @@
+.auth-card {
+  width: min(100%, 520px);
+  margin: 0 auto;
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(21, 37, 64, 0.16);
+}
+
+mat-card-header {
+  padding: 28px 28px 0;
+}
+
+mat-card-title {
+  font-size: 1.65rem;
+  letter-spacing: 0;
+}
+
+mat-card-content {
+  padding: 24px 28px 12px;
+}
+
+.auth-form {
+  display: grid;
+  gap: 14px;
+}
+
+button[type='submit'] {
+  height: 48px;
+}
+
+mat-card-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 20px 24px;
+  color: #607086;
+}
+
+@media (max-width: 520px) {
+  mat-card-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+

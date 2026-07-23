@@ -1,0 +1,44 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Edit doctor' : 'Add doctor' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <mat-dialog-content class="form-grid">
+    <mat-form-field>
+      <mat-label>Full name</mat-label>
+      <mat-icon matPrefix>person</mat-icon>
+      <input matInput formControlName="name" autocomplete="off" />
+      @if (form.controls.name.hasError('required')) {
+        <mat-error>Name is required.</mat-error>
+      }
+      @if (form.controls.name.hasError('minlength')) {
+        <mat-error>Name is too short.</mat-error>
+      }
+      @if (form.controls.name.hasError('server')) {
+        <mat-error>{{ form.controls.name.getError('server') }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Specialization</mat-label>
+      <mat-icon matPrefix>medical_information</mat-icon>
+      <mat-select formControlName="specialization">
+        @for (option of specializations; track option) {
+          <mat-option [value]="option">{{ option }}</mat-option>
+        }
+      </mat-select>
+      @if (form.controls.specialization.hasError('required')) {
+        <mat-error>Specialization is required.</mat-error>
+      }
+      @if (form.controls.specialization.hasError('server')) {
+        <mat-error>{{ form.controls.specialization.getError('server') }}</mat-error>
+      }
+    </mat-form-field>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>Cancel</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+      <mat-icon>save</mat-icon>
+      {{ isEdit ? 'Save changes' : 'Create doctor' }}
+    </button>
+  </mat-dialog-actions>
+</form>

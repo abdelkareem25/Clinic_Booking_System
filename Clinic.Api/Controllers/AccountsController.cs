@@ -51,7 +51,6 @@ namespace Clinic.Api.Controllers
         }
 
         //login
-        [Authorize]
         [HttpPost("Login")]
         public async Task<ActionResult<UserDto>> Login(LoginDto model)
         {

@@ -1,0 +1,52 @@
+@if (appointment(); as selected) {
+  <app-page-header title="Appointment" [subtitle]="'#' + selected.id" icon="event_available" />
+
+  <div class="detail-actions">
+    <a mat-stroked-button routerLink="/appointments">
+      <mat-icon>arrow_back</mat-icon>
+      Back
+    </a>
+    <span class="spacer"></span>
+    <button mat-stroked-button color="primary" type="button" (click)="edit()">
+      <mat-icon>edit</mat-icon>
+      Edit
+    </button>
+    <button mat-stroked-button color="warn" type="button" (click)="remove()">
+      <mat-icon>event_busy</mat-icon>
+      Cancel
+    </button>
+  </div>
+
+  <mat-card class="detail-card" appearance="outlined">
+    <mat-card-content>
+      <div class="status-row">
+        <span class="chip" [class]="'chip-' + statusTone()">{{ status() }}</span>
+      </div>
+
+      <dl class="fact-list">
+        <div>
+          <dt><mat-icon>person</mat-icon> Patient</dt>
+          <dd>{{ selected.patientName }}</dd>
+        </div>
+        <div>
+          <dt><mat-icon>medical_services</mat-icon> Doctor</dt>
+          <dd>{{ selected.doctorName }}</dd>
+        </div>
+        <div>
+          <dt><mat-icon>event</mat-icon> Date</dt>
+          <dd>{{ selected.appointmentDate | date: 'fullDate' }}</dd>
+        </div>
+        <div>
+          <dt><mat-icon>schedule</mat-icon> Time</dt>
+          <dd>{{ selected.appointmentDate | date: 'shortTime' }}</dd>
+        </div>
+      </dl>
+    </mat-card-content>
+  </mat-card>
+} @else if (notFound()) {
+  <app-empty-state
+    icon="event_busy"
+    title="Appointment not found"
+    message="This appointment may have been cancelled."
+  />
+}

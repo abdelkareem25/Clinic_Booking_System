@@ -1,0 +1,58 @@
+<app-page-header
+  title="Doctor Schedules"
+  subtitle="Publish and manage weekly availability for each doctor."
+  icon="calendar_month"
+  actionLabel="Add schedule"
+  actionIcon="add"
+  (action)="openCreate()"
+/>
+
+<form class="filter-bar" [formGroup]="filterForm">
+  <mat-form-field>
+    <mat-label>Doctor</mat-label>
+    <mat-select formControlName="doctorId">
+      <mat-option [value]="null">All doctors</mat-option>
+      @for (option of doctorOptions(); track option.value) {
+        <mat-option [value]="option.value">{{ option.label }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>Week day</mat-label>
+    <mat-select formControlName="weekDay">
+      <mat-option [value]="null">All days</mat-option>
+      @for (day of weekDays; track day.value) {
+        <mat-option [value]="day.value">{{ day.label }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <button mat-stroked-button type="button" (click)="resetFilters()">
+    <mat-icon>restart_alt</mat-icon>
+    Reset
+  </button>
+</form>
+
+<app-data-table
+  [columns]="columns"
+  [actions]="actions"
+  [rows]="schedules()"
+  [loading]="loading()"
+  emptyIcon="event_busy"
+  emptyTitle="No schedules found"
+  emptyMessage="Add a schedule or adjust the filters."
+  (rowAction)="onRowAction($event)"
+  (sortChange)="onSortChanged($event)"
+/>
+
+@if (total() > 0) {
+  <mat-paginator
+    [length]="total()"
+    [pageIndex]="pageIndex"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="[5, 10, 20]"
+    showFirstLastButtons
+    (page)="onPage($event)"
+  />
+}

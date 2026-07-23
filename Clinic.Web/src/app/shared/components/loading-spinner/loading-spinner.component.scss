@@ -1,0 +1,11 @@
+.loading-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  background: rgba(245, 248, 251, 0.46);
+  backdrop-filter: blur(2px);
+  pointer-events: none;
+}
+

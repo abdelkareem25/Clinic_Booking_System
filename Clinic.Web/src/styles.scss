@@ -1,0 +1,180 @@
+// =============================================================================
+// Global styles + Angular Material (M3) theme
+// =============================================================================
+@use '@angular/material' as mat;
+
+html {
+  color-scheme: light;
+
+  // Material 3 theme. `theme-type: color-scheme` emits tokens with the CSS
+  // `light-dark()` function so the palette follows the `color-scheme` property.
+  // The ThemeService toggles `.dark` on <html> to flip it.
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$azure-palette,
+        tertiary: mat.$cyan-palette,
+        theme-type: color-scheme,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+// -----------------------------------------------------------------------------
+// Base document
+// -----------------------------------------------------------------------------
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--mat-sys-surface-container-low, #f5f8fb);
+  color: var(--mat-sys-on-surface, #1a1c1e);
+}
+
+a {
+  color: inherit;
+}
+
+// -----------------------------------------------------------------------------
+// Snackbar notification variants (referenced by NotificationService)
+// -----------------------------------------------------------------------------
+.snackbar-success {
+  --mdc-snackbar-container-color: #0f766e;
+  --mdc-snackbar-supporting-text-color: #ffffff;
+  --mat-snack-bar-button-color: #d1fae5;
+}
+
+.snackbar-error {
+  --mdc-snackbar-container-color: #b3261e;
+  --mdc-snackbar-supporting-text-color: #ffffff;
+  --mat-snack-bar-button-color: #ffdad6;
+}
+
+.snackbar-info {
+  --mdc-snackbar-container-color: #1d4ed8;
+  --mdc-snackbar-supporting-text-color: #ffffff;
+  --mat-snack-bar-button-color: #dbeafe;
+}
+
+// -----------------------------------------------------------------------------
+// Reusable helpers
+// -----------------------------------------------------------------------------
+.mat-mdc-card {
+  --mdc-elevated-card-container-color: var(--mat-sys-surface);
+}
+
+// Material Symbols / Icons ligature font support
+.material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
+
+// Thin, theme-aware scrollbars
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--mat-sys-outline-variant, #c3c8cf) transparent;
+}
+
+// Shared dialog form layout — a single-column stack of full-width fields.
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: min(420px, 82vw);
+  padding-top: 8px;
+
+  .mat-mdc-form-field {
+    width: 100%;
+  }
+
+  &.two-col {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 16px;
+  }
+}
+
+@media (max-width: 560px) {
+  .form-grid.two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-grid .hint {
+  grid-column: 1 / -1;
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+
+  &.warn {
+    color: var(--mat-sys-error);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Status / label chips (used by the data table and detail pages)
+// -----------------------------------------------------------------------------
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.chip-primary {
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+.chip-info {
+  background: color-mix(in srgb, #2563eb 16%, transparent);
+  color: #1d4ed8;
+}
+.chip-success {
+  background: color-mix(in srgb, #0f766e 18%, transparent);
+  color: #0f766e;
+}
+.chip-warning {
+  background: color-mix(in srgb, #b45309 18%, transparent);
+  color: #b45309;
+}
+.chip-danger {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+.chip-neutral {
+  background: var(--mat-sys-surface-container-highest);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+html.dark {
+  .chip-info {
+    color: #93c5fd;
+  }
+  .chip-success {
+    color: #5eead4;
+  }
+  .chip-warning {
+    color: #fcd34d;
+  }
+}

@@ -38,7 +38,7 @@ namespace Clinic.Application
             var Token = new JwtSecurityToken(
                 issuer : _configuration["JWT:Issuer"],
                 audience : _configuration["JWT:Audience"],
-                expires : DateTime.Parse(_configuration["JWT:ExpireInDays"]),
+                expires : DateTime.UtcNow.AddDays(double.Parse(_configuration["JWT:ExpireInDays"]!)),
                 claims : AuthClaim,
                 signingCredentials : new SigningCredentials(Key,SecurityAlgorithms.HmacSha256Signature)
                 );

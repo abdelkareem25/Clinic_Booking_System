@@ -1,0 +1,36 @@
+<app-page-header
+  title="Patients"
+  subtitle="Register and manage patient records."
+  icon="groups"
+  actionLabel="Add patient"
+  actionIcon="add"
+  (action)="openCreate()"
+/>
+
+<app-search-filter-bar
+  searchPlaceholder="Search by name"
+  (filtersChanged)="onFiltersChanged($event)"
+/>
+
+<app-data-table
+  [columns]="columns"
+  [actions]="actions"
+  [rows]="patients()"
+  [loading]="loading()"
+  emptyIcon="badge"
+  emptyTitle="No patients found"
+  emptyMessage="Add a patient or adjust your search."
+  (rowAction)="onRowAction($event)"
+  (sortChange)="onSortChanged($event)"
+/>
+
+@if (total() > 0) {
+  <mat-paginator
+    [length]="total()"
+    [pageIndex]="pageIndex"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="[5, 10, 20]"
+    showFirstLastButtons
+    (page)="onPage($event)"
+  />
+}

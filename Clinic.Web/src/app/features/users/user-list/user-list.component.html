@@ -1,0 +1,24 @@
+<app-page-header
+  title="Users"
+  subtitle="Manage clinic accounts and roles."
+  icon="manage_accounts"
+/>
+
+<div class="notice">
+  <mat-icon>info</mat-icon>
+  <p>
+    The clinic API currently exposes only registration and login endpoints — there is no
+    users-listing endpoint. This view shows the currently authenticated account. Once the backend
+    adds a <code>GET /api/Accounts</code> endpoint, this table will populate automatically.
+  </p>
+</div>
+
+<app-data-table
+  [columns]="columns"
+  [actions]="actions"
+  [rows]="users"
+  emptyIcon="group_off"
+  emptyTitle="No active session"
+  emptyMessage="Sign in to view account details."
+  (rowAction)="onRowAction($event)"
+/>

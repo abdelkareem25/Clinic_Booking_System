@@ -1,0 +1,55 @@
+@if (user; as sessionUser) {
+  <app-page-header title="User profile" [subtitle]="sessionUser.email" icon="account_circle" />
+
+  <div class="detail-actions">
+    <a mat-stroked-button routerLink="/users">
+      <mat-icon>arrow_back</mat-icon>
+      Back
+    </a>
+  </div>
+
+  <mat-card class="profile-card" appearance="outlined">
+    <mat-card-content>
+      <div class="identity">
+        <span class="avatar">{{ initials(sessionUser.displayName) }}</span>
+        <div>
+          <h2>{{ sessionUser.displayName }}</h2>
+          <p>{{ sessionUser.email }}</p>
+        </div>
+      </div>
+
+      <dl class="fact-list">
+        <div>
+          <dt>User ID</dt>
+          <dd>{{ sessionUser.id }}</dd>
+        </div>
+        <div>
+          <dt>Username</dt>
+          <dd>{{ sessionUser.username || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Roles</dt>
+          <dd>
+            @if (sessionUser.roles.length) {
+              @for (role of sessionUser.roles; track role) {
+                <span class="chip chip-primary">{{ role }}</span>
+              }
+            } @else {
+              <span class="chip chip-neutral">No role assigned</span>
+            }
+          </dd>
+        </div>
+        <div>
+          <dt>Session expires</dt>
+          <dd>{{ sessionUser.expiresAt ? (sessionUser.expiresAt | date: 'medium') : '—' }}</dd>
+        </div>
+      </dl>
+    </mat-card-content>
+  </mat-card>
+} @else {
+  <app-empty-state
+    icon="group_off"
+    title="No active session"
+    message="Sign in to view your profile."
+  />
+}
