@@ -7,7 +7,7 @@ namespace Clinic.Domain.Interfaces.Specifications.PatientSpec
         // get all patients with appointments
         public PatientsWithAppointmentsSpecification() : base()
         {
-            Includes.Add(p => p.Appointments);
+            AddInclude(p => p.Appointments);
            
         }
     }

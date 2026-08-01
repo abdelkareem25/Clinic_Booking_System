@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace Clinic.Api.DTOs.Identity
 {
@@ -17,5 +17,13 @@ namespace Clinic.Api.DTOs.Identity
         [Required]
         [Phone]
         public string PhoneNumber { get; set; }
+
+        /// <summary>
+        /// Which role the new account gets. Optional; defaults to Patient, the least privileged.
+        /// Validated against ClinicRoles in the controller - an unrecognised value has to be
+        /// rejected rather than silently ignored, or the account ends up with no role at all and
+        /// every authorised endpoint answers 403 for reasons nobody can see.
+        /// </summary>
+        public string? Role { get; set; }
     }
 }

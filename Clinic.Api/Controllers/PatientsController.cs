@@ -54,6 +54,7 @@ namespace Clinic.Api.Controllers
         {
             var patient = _mapper.Map<CreatePatientDto, Patient>(dto);
             await _unitOfWork.Repository<Patient>().AddAsync(patient);
+            await _unitOfWork.CompleteAsync(); // commit before mapping so the generated Id is populated
             var mappedPatient = _mapper.Map<GetPatientDto>(patient);
             return Ok(mappedPatient);
         }
@@ -65,6 +66,7 @@ namespace Clinic.Api.Controllers
             if (patient == null) return NotFound();
             _mapper.Map(dto, patient);
             await _unitOfWork.Repository<Patient>().UpdateAsync(patient);
+            await _unitOfWork.CompleteAsync();
             return NoContent();
         }
         // Delete
@@ -74,6 +76,7 @@ namespace Clinic.Api.Controllers
             var patient = await _unitOfWork.Repository<Patient>().GetByIdAsync(id);
             if (patient == null) return NotFound();
             await _unitOfWork.Repository<Patient>().DeleteAsync(patient);
+            await _unitOfWork.CompleteAsync();
             return NoContent();
         }
 

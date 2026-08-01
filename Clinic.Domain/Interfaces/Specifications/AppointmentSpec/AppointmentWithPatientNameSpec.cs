@@ -1,4 +1,4 @@
-﻿using Clinic.Domain.Entites;
+using Clinic.Domain.Entites;
 
 namespace Clinic.Domain.Interfaces.Specifications.AppointmentSpec
 {
@@ -6,14 +6,14 @@ namespace Clinic.Domain.Interfaces.Specifications.AppointmentSpec
     {
         public AppointmentWithPatientNameSpec()
         {
-            Includes.Add(a => a.Patient.Name);
-        } 
-        public AppointmentWithPatientNameSpec(string patientName):base(p=>p.Patient.Name==patientName)
+            AddInclude(a => a.Patient);
+            AddInclude(a => a.Doctor);
+        }
+
+        public AppointmentWithPatientNameSpec(string patientName) : base(p => p.Patient.Name == patientName)
         {
-            Includes.Add(a => a.Patient);
-            Includes.Add(a=>a.Doctor);
-        } 
-
-
+            AddInclude(a => a.Patient);
+            AddInclude(a => a.Doctor);
+        }
     }
 }

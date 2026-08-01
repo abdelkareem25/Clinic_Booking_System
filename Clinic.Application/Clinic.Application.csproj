@@ -10,6 +10,18 @@
 	  <PackageReference Include="AutoMapper" Version="16.1.1" />
 	  <PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.27" />
+
+    <!--
+      Pin the whole Microsoft.IdentityModel family to one version.
+
+      JwtBearer 8.0.27 pins System.IdentityModel.Tokens.Jwt / Protocols.OpenIdConnect at 7.1.2,
+      while Microsoft.Data.SqlClient (via EF Core SqlServer) drags Microsoft.IdentityModel.Tokens
+      up to 8.14.0. NuGet resolves each independently, producing an unsupported 7.x/8.x mix in which
+      JwtSecurityTokenHandler.WriteToken SILENTLY DROPS the "iss" and "nameid" claims. That makes
+      every token fail ValidateIssuer and leaves the API unable to identify the caller.
+    -->
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
+    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.14.0" />
   </ItemGroup>
 
   <ItemGroup>

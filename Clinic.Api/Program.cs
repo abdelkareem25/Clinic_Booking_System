@@ -1,6 +1,7 @@
-
+﻿
 using Clinic.Api.Extensions;
 using Clinic.Api.Helper;
+using Clinic.Api.Middleware;
 using Clinic.Domain.Entites.Identity;
 using Clinic.Domain.Interfaces.Repository;
 using Clinic.Infrastructure.Data.Context;
@@ -8,6 +9,7 @@ using Clinic.Infrastructure.Identity;
 using Clinic.Infrastructure.Repositores;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 
 namespace Clinic.Api
 {
@@ -20,6 +22,21 @@ namespace Clinic.Api
             // Add services to the container.
 
             builder.Services.AddControllers();
+
+            // One error contract for the whole API. AddProblemDetails also gives the automatic
+            // [ApiController] model-validation 400s and the bare status codes produced by routing
+            // and authorization the same RFC 7807 shape, so a client parses one thing.
+            builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+            builder.Services.AddProblemDetails(options =>
+            {
+                options.CustomizeProblemDetails = context =>
+                {
+                    context.ProblemDetails.Extensions["traceId"] =
+                        Activity.Current?.Id ?? context.HttpContext.TraceIdentifier;
+                    context.ProblemDetails.Instance ??= context.HttpContext.Request.Path;
+                };
+            });
+
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
@@ -31,7 +48,9 @@ namespace Clinic.Api
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("IdentityConnection"));
             });
-            builder.Services.AddIdentityServices();
+            builder.Services.AddIdentityServices(builder.Configuration);
+            builder.Services.AddClinicAuthorization();
+            builder.Services.AddClinicRateLimiting(builder.Configuration);
             builder.Services.AddApplicationServices();
 
             // Allow the Angular dev server (and its https variant) to call the API.
@@ -50,9 +69,21 @@ namespace Clinic.Api
             {
                 var services = scope.ServiceProvider;
                 var userManager = services.GetRequiredService<UserManager<AppUser>>();
-                await ClinicIdentityDbContextSeed.SeedUserAsync(userManager);
+                var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+                await ClinicIdentityDbContextSeed.SeedAsync(userManager, roleManager, builder.Configuration);
             }
             // Configure the HTTP request pipeline.
+
+            // Outermost, so it wraps every other middleware. Registered before the Swagger
+            // middleware for that reason, and it also takes precedence over the developer exception
+            // page WebApplication adds automatically in Development - deliberately, because that
+            // page leaks source and configuration to the caller.
+            app.UseExceptionHandler();
+
+            // Gives a body to responses that would otherwise be a bare status code: the 404 from
+            // routing and the 401/403 from authorization.
+            app.UseStatusCodePages();
+
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -63,6 +94,10 @@ namespace Clinic.Api
             app.UseCors(SpaCorsPolicy);
             app.UseAuthentication();
             app.UseAuthorization();
+
+            // After routing (added automatically) so per-endpoint [EnableRateLimiting] policies
+            // resolve from endpoint metadata.
+            app.UseRateLimiter();
 
 
             app.MapControllers();

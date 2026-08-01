@@ -13,7 +13,7 @@ namespace Clinic.Domain.Interfaces.Specifications.ScheduleSpec
                 || x.DayOfWeek == param.WeekDay)
             )
         {
-            Includes.Add(x => x.Doctor);
+            AddInclude(x => x.Doctor);
             switch (param.Sort)
             {
                 case "DayAsc":

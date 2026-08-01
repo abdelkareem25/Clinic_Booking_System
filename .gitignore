@@ -36,6 +36,15 @@ wwwroot/uploads/
 # Secrets
 secrets.json
 appsettings.Development.json
+appsettings.Production.json
+appsettings.Local.json
+appsettings.*.Local.json
+
+# Certificates and private keys - never commit these
+*.pfx
+*.p12
+*.pem
+*.key
 
 # Entity Framework
 *.dbmdl
