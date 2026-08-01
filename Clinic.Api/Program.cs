@@ -1,6 +1,7 @@
 ﻿
 using Clinic.Api.Extensions;
 using Clinic.Api.Helper;
+using Clinic.Api.Logging;
 using Clinic.Api.Middleware;
 using Clinic.Domain.Entites.Identity;
 using Clinic.Domain.Interfaces.Repository;
@@ -19,9 +20,19 @@ namespace Clinic.Api
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // Structured logging first, so anything that fails during the rest of startup is
+            // actually recorded somewhere.
+            builder.Host.AddClinicLogging();
+
             // Add services to the container.
 
-            builder.Services.AddControllers();
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddControllers(options =>
+            {
+                // Records who touched which patient record. Applies only to actions marked with
+                // [AuditPhiAccess]; everything else passes straight through.
+                options.Filters.Add<PhiAccessAuditFilter>();
+            });
 
             // One error contract for the whole API. AddProblemDetails also gives the automatic
             // [ApiController] model-validation 400s and the bare status codes produced by routing
@@ -79,6 +90,10 @@ namespace Clinic.Api
             // page WebApplication adds automatically in Development - deliberately, because that
             // page leaks source and configuration to the caller.
             app.UseExceptionHandler();
+
+            // Inside the exception handler so a failed request still produces a completion line,
+            // and outside everything else so the timing covers the whole pipeline.
+            app.UseClinicRequestLogging();
 
             // Gives a body to responses that would otherwise be a bare status code: the 404 from
             // routing and the 401/403 from authorization.

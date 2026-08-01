@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Clinic.Api.DTOs.PatientDto;
 using Clinic.Api.Helper;
+using Clinic.Api.Logging;
 using Clinic.Domain.Entites;
 using Clinic.Domain.Interfaces;
 using Clinic.Domain.Interfaces.Specifications.PatientSpec;
@@ -9,6 +10,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace Clinic.Api.Controllers
 {
 
+    // Every action here reads or writes protected health information.
+    [AuditPhiAccess("Patient")]
     public class PatientsController : APIBaseController
     {
         // private readonly IGenericRepository<Patient> _patientRepository;

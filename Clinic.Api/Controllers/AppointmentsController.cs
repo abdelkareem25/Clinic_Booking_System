@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Clinic.Api.DTOs.AppointmentDto;
 using Clinic.Api.Helper;
+using Clinic.Api.Logging;
 using Clinic.Domain.Entites;
 using Clinic.Domain.Entites.Identity;
 using Clinic.Domain.Interfaces;
@@ -11,6 +12,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace Clinic.Api.Controllers
 {
 
+    // Every action here reads or writes protected health information.
+    [AuditPhiAccess("Appointment")]
     public class AppointmentsController : APIBaseController
     {
         private readonly IMapper _mapper;
