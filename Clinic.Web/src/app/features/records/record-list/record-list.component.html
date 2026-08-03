@@ -1,0 +1,54 @@
+<div class="page">
+  <ui-page-header title="records.title" subtitle="records.subtitle" icon="records" />
+
+  <div class="filters surface">
+    <ui-search-field
+      class="search"
+      placeholder="patients.searchPlaceholder"
+      (search)="onSearch($event)"
+    />
+
+    <mat-form-field class="field-compact type">
+      <mat-label>{{ 'records.type' | translate }}</mat-label>
+      <mat-select [value]="type()" (valueChange)="onType($event)">
+        <mat-option value="all">{{ 'common.all' | translate }}</mat-option>
+        @for (option of recordTypes; track option) {
+          <mat-option [value]="option">{{ typeMeta[option].label | translate }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    @if (hasFilters()) {
+      <button mat-button type="button" (click)="clearFilters()">
+        <ui-icon name="close" size="sm" />
+        {{ 'common.clear' | translate }}
+      </button>
+    }
+  </div>
+
+  <ui-data-table
+    [columns]="columns"
+    [rows]="rows()"
+    [rowActions]="rowActions"
+    [sort]="sort()"
+    [page]="page()"
+    [total]="total()"
+    [clickableRows]="true"
+    [emptyTitle]="hasFilters() ? 'common.noResults' : 'records.empty'"
+    [emptyMessage]="hasFilters() ? 'patients.emptyFilteredHint' : 'records.emptyHint'"
+    [emptyIcon]="hasFilters() ? 'noResults' : 'empty'"
+    (sortChange)="onSort($event)"
+    (pageChange)="onPage($event)"
+    (rowClick)="openPatient($event)"
+    (action)="onRowAction($event)"
+  >
+    <ng-template uiCell="title" let-row>
+      <div class="title-cell">
+        <strong>{{ row.title }}</strong>
+        @if (row.diagnosis) {
+          <small>{{ row.diagnosis }}</small>
+        }
+      </div>
+    </ng-template>
+  </ui-data-table>
+</div>

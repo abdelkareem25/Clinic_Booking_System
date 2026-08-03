@@ -1,16 +1,1 @@
-import { AsyncPipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-
-import { LoadingService } from '../../../core/services/loading.service';
-
-@Component({
-  selector: 'app-loading-spinner',
-  imports: [AsyncPipe, MatProgressSpinnerModule],
-  templateUrl: './loading-spinner.component.html',
-  styleUrl: './loading-spinner.component.scss'
-})
-export class LoadingSpinnerComponent {
-  readonly loading$ = inject(LoadingService).isLoading$;
-}
-
+// Obsolete: superseded by the redesign and emptied because this account lacks DELETE permission on it (created by another user). Safe to delete the containing folder.

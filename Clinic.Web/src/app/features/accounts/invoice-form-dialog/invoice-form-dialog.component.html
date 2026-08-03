@@ -1,0 +1,148 @@
+<h2 mat-dialog-title>{{ (isEdit ? 'accounts.invoice' : 'accounts.newInvoice') | translate }}</h2>
+
+<mat-dialog-content>
+  <form class="invoice-form" [formGroup]="form" novalidate>
+    <div class="form-grid cols-2">
+      <div class="field">
+        <mat-form-field>
+          <mat-label>{{ 'appointments.patient' | translate }}</mat-label>
+          <mat-select formControlName="patientId">
+            @for (patient of data.patients; track patient.id) {
+              <mat-option [value]="patient.id">{{ patient.name }} — {{ patient.phone }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <ui-field-error [control]="form.controls.patientId" [submitted]="submitted()" />
+      </div>
+
+      <div class="field">
+        <mat-form-field>
+          <mat-label>{{ 'appointments.doctor' | translate }}</mat-label>
+          <mat-select formControlName="doctorId">
+            <mat-option [value]="null">{{ 'common.notSet' | translate }}</mat-option>
+            @for (doctor of data.doctors; track doctor.id) {
+              <mat-option [value]="doctor.id">{{ doctor.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="field">
+        <mat-form-field>
+          <mat-label>{{ 'accounts.issuedOn' | translate }}</mat-label>
+          <input
+            matInput
+            readonly
+            formControlName="issuedAt"
+            [matDatepicker]="issuedPicker"
+            (click)="issuedPicker.open()"
+          />
+          <mat-datepicker-toggle matIconSuffix [for]="issuedPicker" />
+          <mat-datepicker #issuedPicker />
+        </mat-form-field>
+      </div>
+
+      <div class="field">
+        <mat-form-field>
+          <mat-label>{{ 'accounts.dueOn' | translate }}</mat-label>
+          <input
+            matInput
+            readonly
+            formControlName="dueAt"
+            [matDatepicker]="duePicker"
+            (click)="duePicker.open()"
+          />
+          <mat-datepicker-toggle matIconSuffix [for]="duePicker" />
+          <mat-datepicker #duePicker />
+        </mat-form-field>
+      </div>
+    </div>
+
+    <!-- Line items ------------------------------------------------------- -->
+    <section class="items">
+      <header class="items-head">
+        <span class="text-label">{{ 'accounts.lineItems' | translate }}</span>
+        <button mat-button type="button" (click)="addItem()">
+          <ui-icon name="add" size="sm" />
+          {{ 'common.add' | translate }}
+        </button>
+      </header>
+
+      <div formArrayName="items" class="item-rows">
+        @for (row of items.controls; track $index; let i = $index) {
+          <div class="item-row" [formGroupName]="i">
+            <mat-form-field class="field-compact grow">
+              <mat-label>{{ 'accounts.itemDescription' | translate }}</mat-label>
+              <input matInput type="text" formControlName="description" />
+            </mat-form-field>
+
+            <mat-form-field class="field-compact qty">
+              <mat-label>{{ 'accounts.quantity' | translate }}</mat-label>
+              <input matInput type="number" min="1" formControlName="quantity" />
+            </mat-form-field>
+
+            <mat-form-field class="field-compact price">
+              <mat-label>{{ 'accounts.unitPrice' | translate }}</mat-label>
+              <input matInput type="number" min="0" step="0.01" formControlName="unitPrice" />
+            </mat-form-field>
+
+            <button
+              mat-icon-button
+              type="button"
+              class="remove"
+              [disabled]="items.length === 1"
+              [matTooltip]="'common.delete' | translate"
+              (click)="removeItem(i)"
+            >
+              <ui-icon name="delete" size="sm" />
+            </button>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Totals ----------------------------------------------------------- -->
+    <section class="totals">
+      <div class="totals-inputs">
+        <mat-form-field class="field-compact">
+          <mat-label>{{ 'accounts.discount' | translate }}</mat-label>
+          <input matInput type="number" min="0" step="0.01" formControlName="discount" />
+          <span matTextSuffix>{{ currency }}</span>
+        </mat-form-field>
+
+        <mat-form-field class="field-compact">
+          <mat-label>{{ 'accounts.tax' | translate }}</mat-label>
+          <input matInput type="number" min="0" max="100" step="0.1" formControlName="taxRate" />
+          <span matTextSuffix>%</span>
+        </mat-form-field>
+      </div>
+
+      <dl class="totals-summary">
+        <div>
+          <dt>{{ 'accounts.subtotal' | translate }}</dt>
+          <dd>{{ subtotal() }} {{ currency }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'accounts.tax' | translate }}</dt>
+          <dd>{{ taxAmount() }} {{ currency }}</dd>
+        </div>
+        <div class="grand">
+          <dt>{{ 'common.total' | translate }}</dt>
+          <dd>{{ total() }} {{ currency }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <mat-form-field>
+      <mat-label>{{ 'common.notes' | translate }}</mat-label>
+      <textarea matInput rows="2" formControlName="notes"></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="dialogRef.close(false)">
+    {{ 'common.cancel' | translate }}
+  </button>
+  <button mat-flat-button type="button" (click)="submit()">{{ 'common.save' | translate }}</button>
+</mat-dialog-actions>

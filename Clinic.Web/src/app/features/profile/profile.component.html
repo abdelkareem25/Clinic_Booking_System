@@ -1,0 +1,70 @@
+<div class="page">
+  <ui-page-header title="profile.title" subtitle="profile.subtitle" icon="user" />
+
+  @if (user(); as account) {
+    <div class="columns">
+      <ui-card title="profile.personalInfo" icon="user">
+        <div class="identity">
+          <span class="avatar avatar-lg">{{ initials() }}</span>
+          <div class="identity-text">
+            <strong>{{ account.displayName }}</strong>
+            <span class="text-muted">{{ account.email }}</span>
+          </div>
+        </div>
+
+        <ui-detail-list [items]="details()" />
+      </ui-card>
+
+      <div class="stack">
+        <ui-card title="settings.tabAppearance" icon="light">
+          <div class="pref">
+            <div class="pref-text">
+              <strong>{{ 'settings.theme' | translate }}</strong>
+              <small>
+                {{ (theme.isDark() ? 'settings.themeDark' : 'settings.themeLight') | translate }}
+              </small>
+            </div>
+            <mat-slide-toggle [checked]="theme.isDark()" (change)="theme.toggle()" />
+          </div>
+
+          <hr class="surface-divider" />
+
+          <div class="pref">
+            <div class="pref-text">
+              <strong>{{ 'settings.language' | translate }}</strong>
+              <small>{{ locale.definition().nativeName }}</small>
+            </div>
+            <div class="lang-buttons">
+              @for (language of locale.available; track language.code) {
+                <button
+                  type="button"
+                  class="lang"
+                  [class.lang-active]="locale.current() === language.code"
+                  (click)="setLanguage(language.code)"
+                >
+                  {{ language.nativeName }}
+                </button>
+              }
+            </div>
+          </div>
+        </ui-card>
+
+        <ui-card title="profile.security" icon="lock">
+          <!-- Stated rather than shown as a disabled form: the API has no
+               password-change endpoint, and a dead form invites the attempt. -->
+          <p class="note">
+            <ui-icon name="info" size="sm" />
+            {{ 'errors.genericBody' | translate }}
+          </p>
+
+          <div class="security-actions">
+            <button mat-stroked-button type="button" class="danger" (click)="logout()">
+              <ui-icon name="logout" size="sm" />
+              {{ 'common.logout' | translate }}
+            </button>
+          </div>
+        </ui-card>
+      </div>
+    </div>
+  }
+</div>

@@ -1,44 +1,67 @@
-.auth-card {
-  width: min(100%, 520px);
-  margin: 0 auto;
-  border-radius: 8px;
-  box-shadow: 0 20px 60px rgba(21, 37, 64, 0.16);
-}
-
-mat-card-header {
-  padding: 28px 28px 0;
-}
-
-mat-card-title {
-  font-size: 1.65rem;
-  letter-spacing: 0;
-}
-
-mat-card-content {
-  padding: 24px 28px 12px;
-}
-
+// Mirrors login.component.scss so the two auth screens are pixel-identical in
+// spacing; only the field count differs.
 .auth-form {
-  display: grid;
-  gap: 14px;
-}
-
-button[type='submit'] {
-  height: 48px;
-}
-
-mat-card-actions {
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 20px 24px;
-  color: #607086;
+  flex-direction: column;
+  gap: var(--sp-5);
 }
 
-@media (max-width: 520px) {
-  mat-card-actions {
-    align-items: stretch;
-    flex-direction: column;
-  }
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
 }
 
+.title {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+}
+
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  background: var(--c-danger-soft);
+  color: var(--c-danger-soft-fg);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.submit {
+  height: 44px;
+  margin-block-start: var(--sp-1);
+  font-size: var(--fs-base);
+}
+
+.progress {
+  margin-block-start: calc(var(--sp-1) * -1);
+}
+
+.foot {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  text-align: center;
+}
+
+.foot a {
+  font-weight: var(--fw-semibold);
+}

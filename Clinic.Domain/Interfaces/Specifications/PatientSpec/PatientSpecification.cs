@@ -22,8 +22,7 @@ namespace Clinic.Domain.Interfaces.Specifications.PatientSpec
                     break;
             }
 
-            ApplyPagination((param.PageIndex-1)*param.PageSize
-                ,param.PageSize);
+            ApplyPagination(param.Skip, param.PageSize);
         }
     }
 }

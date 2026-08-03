@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using Clinic.Api.Controllers;
 using Clinic.Api.DTOs.AppointmentDto;
 using Clinic.Api.DTOs.DoctorDto;
@@ -236,7 +236,13 @@ namespace Clinic.Tests.Controllers
             var appointment = new Appointment { DoctorId = 1, PatientId = 2 };
             var appointments = new Mock<IAppointmentRepository>();
             appointments.Setup(r => r.AddAsync(It.IsAny<Appointment>())).Returns(Task.CompletedTask);
-            appointments.Setup(r => r.IsDoctorAvailableAsync(1, It.IsAny<DateTime>(), null)).ReturnsAsync(true);
+            // TODO #17 replaced the exact-equality availability check with an interval overlap
+            // check plus a working-hours check. Here the slot is free and inside published hours.
+            appointments.Setup(r => r.IsWithinWorkingHoursAsync(1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                        .ReturnsAsync(true);
+            appointments.Setup(r => r.HasOverlappingAppointmentAsync(
+                            1, It.IsAny<DateTime>(), It.IsAny<DateTime>(), null))
+                        .ReturnsAsync(false);
 
             RepositoryFor<Doctor>().Setup(r => r.GetByIdAsync(1))
                 .ReturnsAsync(new Doctor { Id = 1, Name = "Dr. Aya", Specialization = "Cardiology" });
@@ -271,10 +277,14 @@ namespace Clinic.Tests.Controllers
         }
 
         [Fact]
-        public async Task AppointmentsController_Create_Does_Not_Commit_When_Doctor_Is_Unavailable()
+        public async Task AppointmentsController_Create_Does_Not_Commit_When_The_Slot_Overlaps()
         {
             var appointments = new Mock<IAppointmentRepository>();
-            appointments.Setup(r => r.IsDoctorAvailableAsync(1, It.IsAny<DateTime>(), null)).ReturnsAsync(false);
+            appointments.Setup(r => r.IsWithinWorkingHoursAsync(1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                        .ReturnsAsync(true);
+            appointments.Setup(r => r.HasOverlappingAppointmentAsync(
+                            1, It.IsAny<DateTime>(), It.IsAny<DateTime>(), null))
+                        .ReturnsAsync(true);
 
             RepositoryFor<Doctor>().Setup(r => r.GetByIdAsync(1))
                 .ReturnsAsync(new Doctor { Id = 1, Name = "Dr. Aya", Specialization = "Cardiology" });
@@ -283,7 +293,8 @@ namespace Clinic.Tests.Controllers
 
             var sut = new AppointmentsController(_mapper.Object, appointments.Object, _unitOfWork.Object);
 
-            Assert.IsType<BadRequestObjectResult>(
+            // An occupied slot is a 409, not a 400: the request is well formed, the state conflicts.
+            Assert.IsType<ConflictObjectResult>(
                 await sut.Create(new CreateAppointmentDto { DoctorId = 1, PatientId = 2 }));
 
             appointments.Verify(r => r.AddAsync(It.IsAny<Appointment>()), Times.Never);

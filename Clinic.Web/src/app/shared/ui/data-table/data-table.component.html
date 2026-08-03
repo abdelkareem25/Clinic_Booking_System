@@ -1,0 +1,151 @@
+<div class="table-shell">
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          @for (column of columns(); track column.key) {
+            <th
+              scope="col"
+              [style.width]="column.width"
+              [class]="'align-' + (column.align ?? 'start')"
+              [class.hide-sm]="column.hideBelow === 'sm'"
+              [class.hide-md]="column.hideBelow === 'md'"
+              [class.hide-lg]="column.hideBelow === 'lg'"
+              [attr.aria-sort]="ariaSortFor(column)"
+            >
+              @if (column.sortKey) {
+                <button type="button" class="sort-btn" (click)="onSort(column)">
+                  <span>{{ column.header | translate }}</span>
+                  <ui-icon
+                    class="sort-icon"
+                    [class.sort-active]="sortDirectionFor(column)"
+                    [name]="sortDirectionFor(column) === 'desc' ? 'chevronDown' : 'chevronUp'"
+                    size="sm"
+                  />
+                </button>
+              } @else {
+                <span>{{ column.header | translate }}</span>
+              }
+            </th>
+          }
+
+          @if (hasActions()) {
+            <th scope="col" class="actions-col align-end">
+              <span class="visually-hidden">{{ 'common.actions' | translate }}</span>
+            </th>
+          }
+        </tr>
+      </thead>
+
+      <tbody>
+        @if (showSkeleton()) {
+          @for (index of skeletonIndices(); track index) {
+            <tr class="skeleton-row" aria-hidden="true">
+              @for (column of columns(); track column.key) {
+                <td
+                  [class.hide-sm]="column.hideBelow === 'sm'"
+                  [class.hide-md]="column.hideBelow === 'md'"
+                  [class.hide-lg]="column.hideBelow === 'lg'"
+                >
+                  <span class="skeleton skeleton-cell"></span>
+                </td>
+              }
+              @if (hasActions()) {
+                <td class="actions-col"><span class="skeleton skeleton-cell short"></span></td>
+              }
+            </tr>
+          }
+        } @else {
+          @for (row of rows(); track row.id; let index = $index) {
+            <tr
+              [class.row-clickable]="clickableRows()"
+              [attr.tabindex]="clickableRows() ? 0 : null"
+              [attr.role]="clickableRows() ? 'button' : null"
+              (click)="onRowClick(row)"
+              (keydown)="onRowKeydown($event, row)"
+            >
+              @for (column of columns(); track column.key) {
+                <td
+                  [class]="'align-' + (column.align ?? 'start')"
+                  [class.hide-sm]="column.hideBelow === 'sm'"
+                  [class.hide-md]="column.hideBelow === 'md'"
+                  [class.hide-lg]="column.hideBelow === 'lg'"
+                  [attr.data-label]="column.header | translate"
+                >
+                  @if (templateMap().get(column.key); as slot) {
+                    <ng-container
+                      [ngTemplateOutlet]="slot.template"
+                      [ngTemplateOutletContext]="{ $implicit: row, index: index }"
+                    />
+                  } @else if (column.variant === 'badge') {
+                    @if (column.badge?.(row); as badge) {
+                      <span class="badge" [class]="'badge-' + badge.tone" [class.badge-dot]="badge.dot">
+                        {{ badge.label | translate }}
+                      </span>
+                    } @else {
+                      <span class="text-subtle">—</span>
+                    }
+                  } @else {
+                    <div class="cell-stack">
+                      <span [class]="'cell-' + (column.variant ?? 'text')">
+                        {{ cellText(column, row) }}
+                      </span>
+                      @if (secondaryText(column, row); as secondary) {
+                        <span class="cell-secondary">{{ secondary }}</span>
+                      }
+                    </div>
+                  }
+                </td>
+              }
+
+              @if (hasActions()) {
+                <td class="actions-col align-end" [attr.data-label]="'common.actions' | translate">
+                  <div class="row-actions" (click)="$event.stopPropagation()">
+                    @for (rowAction of visibleActions(row); track rowAction.id) {
+                      <button
+                        mat-icon-button
+                        type="button"
+                        class="action-btn"
+                        [class.action-danger]="rowAction.tone === 'danger'"
+                        [disabled]="rowAction.disabled?.(row) ?? false"
+                        [matTooltip]="rowAction.label | translate"
+                        [attr.aria-label]="rowAction.label | translate"
+                        (click)="action.emit({ action: rowAction.id, row })"
+                      >
+                        <ui-icon [name]="rowAction.icon" size="md" />
+                      </button>
+                    }
+                  </div>
+                </td>
+              }
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (showEmpty()) {
+    <ui-empty-state
+      [title]="emptyTitle()"
+      [message]="emptyMessage()"
+      [icon]="emptyIcon()"
+    >
+      <ng-content select="[emptyAction]" />
+    </ui-empty-state>
+  }
+
+  @if (page(); as pageState) {
+    @if (total() > 0) {
+      <mat-paginator
+        class="table-paginator"
+        [length]="total()"
+        [pageIndex]="pageState.pageIndex - 1"
+        [pageSize]="pageState.pageSize"
+        [pageSizeOptions]="pageSizeOptions()"
+        [showFirstLastButtons]="true"
+        (page)="onPage($event)"
+      />
+    }
+  }
+</div>

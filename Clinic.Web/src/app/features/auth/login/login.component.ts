@@ -1,14 +1,16 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { AuthService } from '../../../core/services/auth.service';
-import { NotificationService } from '../../../core/services/notification.service';
+import { FieldErrorComponent } from '../../../shared/ui/field-error/field-error.component';
+import { IconComponent } from '../../../shared/ui/icon/icon.component';
 
 @Component({
   selector: 'app-login',
@@ -16,46 +18,68 @@ import { NotificationService } from '../../../core/services/notification.service
     ReactiveFormsModule,
     RouterLink,
     MatButtonModule,
-    MatCardModule,
+    MatCheckboxModule,
     MatFormFieldModule,
-    MatIconModule,
-    MatInputModule
+    MatInputModule,
+    MatProgressBarModule,
+    TranslatePipe,
+    FieldErrorComponent,
+    IconComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './login.component.html',
-  styleUrl: './login.component.scss'
+  styleUrl: './login.component.scss',
 })
 export class LoginComponent {
   private readonly auth = inject(AuthService);
-  private readonly fb = inject(FormBuilder);
-  private readonly notifications = inject(NotificationService);
+  private readonly formBuilder = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  submitting = false;
-  hidePassword = true;
-
-  readonly form = this.fb.nonNullable.group({
+  protected readonly form = this.formBuilder.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required]]
+    password: ['', [Validators.required, Validators.minLength(6)]],
+    rememberMe: [true],
   });
 
-  submit(): void {
-    if (this.form.invalid) {
+  protected readonly submitting = signal(false);
+  protected readonly submitted = signal(false);
+  protected readonly showPassword = signal(false);
+  protected readonly serverError = signal<string | null>(null);
+
+  protected togglePassword(): void {
+    this.showPassword.update((value) => !value);
+  }
+
+  protected submit(): void {
+    this.submitted.set(true);
+    this.serverError.set(null);
+
+    if (this.form.invalid || this.submitting()) {
       this.form.markAllAsTouched();
       return;
     }
 
-    this.submitting = true;
-    this.auth.login(this.form.getRawValue()).subscribe({
+    this.submitting.set(true);
+    const { email, password } = this.form.getRawValue();
+
+    this.auth.login({ email, password }).subscribe({
       next: (user) => {
-        this.notifications.success(`Welcome back, ${user.displayName}.`);
-        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? this.auth.redirectPathFor(user);
-        void this.router.navigateByUrl(returnUrl);
+        this.submitting.set(false);
+        // `returnUrl` is set by the auth guard, so an expired session resumes
+        // where it left off instead of dumping the user on the dashboard.
+        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+        void this.router.navigateByUrl(returnUrl || this.auth.redirectPathFor(user));
       },
-      error: () => {
-        this.submitting = false;
-      }
+      error: (error: unknown) => {
+        this.submitting.set(false);
+        // 401/400 is the expected failure and earns the specific message; the
+        // HTTP interceptor already surfaces anything else as a toast.
+        const status = (error as { status?: number })?.status;
+        this.serverError.set(
+          status === 401 || status === 400 ? 'auth.invalidCredentials' : 'errors.genericBody'
+        );
+      },
     });
   }
 }
-

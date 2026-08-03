@@ -2,9 +2,129 @@
   display: block;
 }
 
-mat-paginator {
-  margin-top: 14px;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 14px;
-  background: var(--mat-sys-surface);
+.filters {
+  display: flex;
+  padding: var(--sp-3) var(--sp-4);
+}
+
+.search {
+  flex: 1 1 auto;
+  max-width: 420px;
+}
+
+.cards {
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.doctor-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition:
+    border-color var(--dur-micro) var(--ease-standard),
+    box-shadow var(--dur-micro) var(--ease-standard);
+}
+
+.doctor-card:hover {
+  border-color: var(--c-border-strong);
+  box-shadow: var(--sh-raised);
+}
+
+.card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-4) var(--sp-3);
+}
+
+.head-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.head-text strong {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  overflow-wrap: anywhere;
+}
+
+.card-actions {
+  display: flex;
+  gap: 2px;
+  flex: 0 0 auto;
+  color: var(--c-text-subtle);
+}
+
+.card-actions .danger:hover {
+  color: var(--c-danger);
+}
+
+.card-facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4);
+  border-block: 1px solid var(--c-border);
+  background: var(--c-surface-2);
+}
+
+.card-facts div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.card-facts dt {
+  font-size: var(--fs-xs);
+  color: var(--c-text-subtle);
+}
+
+.card-facts dd {
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  text-align: end;
+}
+
+.card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  margin-block-start: auto;
+}
+
+// -----------------------------------------------------------------------------
+// Loading placeholders — same footprint as a real card, so nothing shifts.
+// -----------------------------------------------------------------------------
+.card-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  min-height: 210px;
+}
+
+.sk-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--r-full);
+}
+
+.sk-line {
+  height: 12px;
+  border-radius: var(--r-full);
+}
+
+.sk-line.short {
+  width: 55%;
 }

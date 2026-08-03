@@ -36,11 +36,27 @@ namespace Clinic.Tests.Security
         }
 
         [Fact]
-        public void The_Drop_Is_The_Most_Recent_Migration()
+        public void No_Later_Migration_Recreates_The_Users_Table()
         {
-            // If something were scaffolded after it without the table being gone, the model and the
-            // migration history would have diverged.
-            Assert.EndsWith(MigrationName, ClinicMigrations().Last(), StringComparison.Ordinal);
+            // The drop is not necessarily the newest migration - later work adds more - so what
+            // matters is that nothing after it brings the table back.
+            var options = new DbContextOptionsBuilder<ClinicDbContext>()
+                .UseSqlServer("Server=none;Database=none;Trusted_Connection=True").Options;
+            using var context = new ClinicDbContext(options);
+            var assembly = context.GetService<IMigrationsAssembly>();
+
+            var ordered = assembly.Migrations.Keys.ToList();
+            var dropIndex = ordered.FindIndex(name => name.EndsWith(MigrationName, StringComparison.Ordinal));
+
+            Assert.True(dropIndex >= 0, "The RemoveLegacyUserTable migration is missing.");
+
+            foreach (var later in ordered.Skip(dropIndex + 1))
+            {
+                var migration = assembly.CreateMigration(assembly.Migrations[later], "SqlServer");
+
+                Assert.DoesNotContain(migration.UpOperations.OfType<CreateTableOperation>(),
+                    operation => operation.Name == "Users");
+            }
         }
 
         [Fact]

@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using Clinic.Api.DTOs.AppointmentDto;
 using Clinic.Api.DTOs.DoctorDto;
 using Clinic.Api.DTOs.PatientDto;
@@ -36,11 +36,19 @@ namespace Clinic.Api.Helper
             // Request DTO -> entity. The primary key and the navigation collection belong to the
             // domain and to EF, never to the request payload.
             CreateMap<CreatePatientDto, Patient>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .IgnoreSystemOwnedMembers()
+                // UserId links this record to an account. A request payload must never set it, or a
+                // caller could assign someone else's clinical record to their own login - which is
+                // precisely the ownership relationship it exists to express.
+                .ForMember(dest => dest.UserId, opt => opt.Ignore())
                 .ForMember(dest => dest.Appointments, opt => opt.Ignore());
 
             CreateMap<UpdatePatientDto, Patient>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .IgnoreSystemOwnedMembers()
+                // UserId links this record to an account. A request payload must never set it, or a
+                // caller could assign someone else's clinical record to their own login - which is
+                // precisely the ownership relationship it exists to express.
+                .ForMember(dest => dest.UserId, opt => opt.Ignore())
                 .ForMember(dest => dest.Appointments, opt => opt.Ignore());
             #endregion
 
@@ -49,12 +57,20 @@ namespace Clinic.Api.Helper
             CreateMap<Doctor, DoctorDto>();
 
             CreateMap<CreateDoctorDto, Doctor>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .IgnoreSystemOwnedMembers()
+                // UserId links this record to an account. A request payload must never set it, or a
+                // caller could assign someone else's clinical record to their own login - which is
+                // precisely the ownership relationship it exists to express.
+                .ForMember(dest => dest.UserId, opt => opt.Ignore())
                 .ForMember(dest => dest.Appointments, opt => opt.Ignore())
                 .ForMember(dest => dest.DoctorSchedules, opt => opt.Ignore());
 
             CreateMap<UpdateDoctorDto, Doctor>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .IgnoreSystemOwnedMembers()
+                // UserId links this record to an account. A request payload must never set it, or a
+                // caller could assign someone else's clinical record to their own login - which is
+                // precisely the ownership relationship it exists to express.
+                .ForMember(dest => dest.UserId, opt => opt.Ignore())
                 .ForMember(dest => dest.Appointments, opt => opt.Ignore())
                 .ForMember(dest => dest.DoctorSchedules, opt => opt.Ignore());
             #endregion
@@ -76,14 +92,14 @@ namespace Clinic.Api.Helper
             // controller ever needed.
 
             CreateMap<CreateAppointmentDto, Appointment>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .IgnoreSystemOwnedMembers()
                 .ForMember(dest => dest.Doctor, opt => opt.Ignore())
                 .ForMember(dest => dest.Patient, opt => opt.Ignore())
                 .ForMember(dest => dest.StartTime, opt => opt.Ignore())
                 .ForMember(dest => dest.EndTime, opt => opt.Ignore());
 
             CreateMap<UpdateAppointmentDto, Appointment>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .IgnoreSystemOwnedMembers()
                 .ForMember(dest => dest.Doctor, opt => opt.Ignore())
                 .ForMember(dest => dest.Patient, opt => opt.Ignore())
                 .ForMember(dest => dest.StartTime, opt => opt.Ignore())
@@ -98,14 +114,14 @@ namespace Clinic.Api.Helper
                 .ForMember(dest => dest.WeekDay, opt => opt.MapFrom(src => src.DayOfWeek));
 
             CreateMap<CreateDoctorScheduleDto, DoctorSchedule>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .IgnoreSystemOwnedMembers()
                 .ForMember(dest => dest.Doctor, opt => opt.Ignore())
                 .ForMember(dest => dest.DayOfWeek, opt => opt.MapFrom(src => src.WeekDay));
 
             // UpdateDoctorScheduleDto carries no DoctorId: a schedule cannot be reassigned to a
             // different doctor through an update.
             CreateMap<UpdateDoctorScheduleDto, DoctorSchedule>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .IgnoreSystemOwnedMembers()
                 .ForMember(dest => dest.Doctor, opt => opt.Ignore())
                 .ForMember(dest => dest.DoctorId, opt => opt.Ignore())
                 .ForMember(dest => dest.DayOfWeek, opt => opt.MapFrom(src => src.WeekDay));

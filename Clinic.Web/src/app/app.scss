@@ -1,0 +1,9 @@
+// A hairline at the very top of the viewport, above every layer including
+// dialogs — it reports progress without ever blocking interaction.
+.global-progress {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: var(--z-toast);
+  border-radius: 0;
+}

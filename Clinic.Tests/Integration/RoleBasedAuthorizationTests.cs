@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using Clinic.Api.Controllers;
 using Clinic.Api.Extensions;
 using Clinic.Api.Helper;
@@ -6,6 +6,7 @@ using Clinic.Domain.Entites;
 using Clinic.Domain.Entites.Identity;
 using Clinic.Domain.Interfaces;
 using Clinic.Domain.Service;
+using Clinic.Infrastructure.Data.Context;
 using Clinic.Infrastructure.Identity;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -72,7 +73,7 @@ namespace Clinic.Tests.Integration
                     webHost.ConfigureServices(services =>
                     {
                         services.AddSingleton<IConfiguration>(configuration);
-                        services.AddDbContext<ClinicIdentityDbContext>(o => o.UseSqlite(_connection));
+                        services.AddDbContext<ClinicDbContext>(o => o.UseSqlite(_connection));
                         services.AddControllers().AddApplicationPart(typeof(AppointmentsController).Assembly);
                         services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
 
@@ -93,7 +94,7 @@ namespace Clinic.Tests.Integration
                 .StartAsync();
 
             using var scope = _host.Services.CreateScope();
-            await scope.ServiceProvider.GetRequiredService<ClinicIdentityDbContext>()
+            await scope.ServiceProvider.GetRequiredService<ClinicDbContext>()
                        .Database.EnsureCreatedAsync();
 
             // The real seeder, exactly as Program.cs calls it.

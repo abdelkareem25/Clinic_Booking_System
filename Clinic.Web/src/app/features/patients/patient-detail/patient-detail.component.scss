@@ -2,56 +2,181 @@
   display: block;
 }
 
-.detail-actions {
+.head-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
 }
 
-.spacer {
-  flex: 1 1 auto;
-}
-
-.detail-grid {
+// -----------------------------------------------------------------------------
+// Clinical safety banner
+// -----------------------------------------------------------------------------
+.alerts {
   display: grid;
-  grid-template-columns: minmax(280px, 0.8fr) minmax(340px, 1.2fr);
-  gap: 18px;
+  gap: var(--sp-3);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+}
+
+.alert strong {
+  display: block;
+  font-size: var(--fs-sm);
+  margin-block-end: 5px;
+}
+
+.alert-danger {
+  background: var(--c-danger-soft);
+  color: var(--c-danger-soft-fg);
+  border-color: color-mix(in srgb, var(--c-danger) 26%, transparent);
+}
+
+.alert-warning {
+  background: var(--c-warning-soft);
+  color: var(--c-warning-soft-fg);
+  border-color: color-mix(in srgb, var(--c-warning) 26%, transparent);
+}
+
+.alert-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+// -----------------------------------------------------------------------------
+// Summary strip
+// -----------------------------------------------------------------------------
+.summary {
+  display: grid;
+  gap: var(--sp-3);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: var(--sp-3) var(--sp-4);
+}
+
+.summary-card strong {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.owing {
+  color: var(--c-danger);
+}
+
+// -----------------------------------------------------------------------------
+// Tabs
+// -----------------------------------------------------------------------------
+.tab-body {
+  padding-block-start: var(--sp-4);
+}
+
+.columns {
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   align-items: start;
 }
 
-.patient-avatar {
-  display: grid;
-  place-items: center;
-  color: var(--mat-sys-on-tertiary-container);
-  background: var(--mat-sys-tertiary-container);
+// -----------------------------------------------------------------------------
+// Lists
+// -----------------------------------------------------------------------------
+.plain-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.fact-list {
-  margin: 8px 0 0;
-  display: grid;
-  gap: 12px;
-
-  div {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--mat-sys-outline-variant);
-  }
-
-  dt {
-    color: var(--mat-sys-on-surface-variant);
-  }
-
-  dd {
-    margin: 0;
-    font-weight: 600;
-  }
+.plain-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--c-text);
 }
 
-@media (max-width: 900px) {
-  .detail-grid {
-    grid-template-columns: 1fr;
+.plain-list ui-icon {
+  color: var(--c-text-subtle);
+}
+
+.notes {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  line-height: var(--lh-normal);
+  white-space: pre-wrap;
+}
+
+.row-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+  border-block-end: 1px solid var(--c-border);
+}
+
+.row-list li:last-child {
+  border-block-end: 0;
+}
+
+.row-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.row-body strong {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+
+.row-body small {
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+}
+
+.invoice-amount {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+
+.invoice-amount small {
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-regular);
+  color: var(--c-danger);
+}
+
+@media (max-width: 640px) {
+  .row-list li {
+    padding-inline: var(--sp-4);
+    flex-wrap: wrap;
   }
 }

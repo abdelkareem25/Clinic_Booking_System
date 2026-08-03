@@ -1,6 +1,7 @@
-using Clinic.Application;
+﻿using Clinic.Application;
 using Clinic.Domain.Entites.Identity;
 using Clinic.Domain.Service;
+using Clinic.Infrastructure.Data.Context;
 using Clinic.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -52,7 +53,7 @@ namespace Clinic.Api.Extensions
                     .AddRoles<IdentityRole>()                     // must precede AddEntityFrameworkStores
                                                                   // so the IRoleStore is registered too
                     .AddSignInManager<SignInManager<AppUser>>()   // AddIdentityCore does not add this
-                    .AddEntityFrameworkStores<ClinicIdentityDbContext>()
+                    .AddEntityFrameworkStores<ClinicDbContext>()
                     .AddDefaultTokenProviders();
 
             // TokenValidationParameters are supplied by ConfigureJwtBearerOptions, which reads the

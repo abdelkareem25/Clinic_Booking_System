@@ -1,254 +1,328 @@
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { Router } from '@angular/router';
-import { of, switchMap } from 'rxjs';
+import { Router, RouterLink } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { catchError, forkJoin, of } from 'rxjs';
 
-import {
-  APPOINTMENT_TIME_STATUSES,
-  Appointment,
-  AppointmentTimeStatus
-} from '../../../core/models/appointment.model';
-import { DEFAULT_PAGE_SIZE } from '../../../core/models/pagination.model';
+import { PermissionService } from '../../../core/authz/permission.service';
+import { Appointment, AppointmentTimeStatus } from '../../../core/models/appointment.model';
+import { Doctor } from '../../../core/models/doctor.model';
 import { AppointmentsService } from '../../../core/services/appointments.service';
 import { DoctorsService } from '../../../core/services/doctors.service';
 import { NotificationService } from '../../../core/services/notification.service';
-import { PatientsService } from '../../../core/services/patients.service';
 import {
+  appointmentStatusLabel,
   appointmentStatusTone,
-  deriveAppointmentStatus
+  deriveAppointmentStatus,
 } from '../../../core/utils/appointment-status.util';
+import { isSameDay, parseDate } from '../../../core/utils/date.util';
+import { confirmDialog } from '../../../shared/ui/confirm-dialog/confirm-dialog.component';
+import { DataTableComponent } from '../../../shared/ui/data-table/data-table.component';
 import {
-  ConfirmDialogComponent,
-  ConfirmDialogData
-} from '../../../shared/components/confirm-dialog/confirm-dialog.component';
-import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
-import {
+  CellTemplateDirective,
+  PageState,
   RowActionEvent,
   SortState,
   TableColumn,
-  TableRowAction
-} from '../../../shared/components/data-table/data-table.model';
-import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { SelectOption } from '../../../shared/components/search-filter-bar/search-filter-bar.component';
+  TableRowAction,
+} from '../../../shared/ui/data-table/data-table.model';
+import { IconComponent } from '../../../shared/ui/icon/icon.component';
+import { PageHeaderComponent } from '../../../shared/ui/page-header/page-header.component';
 import {
-  AppointmentFormDialogComponent,
-  AppointmentFormDialogData
-} from '../dialogs/appointment-form-dialog.component';
+  SearchEvent,
+  SearchFieldComponent,
+} from '../../../shared/ui/search-field/search-field.component';
+
+const EMPTY_PAGE = { pageIndex: 1, pageSize: 0, count: 0, data: [] };
 
 @Component({
   selector: 'app-appointment-list',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    ReactiveFormsModule,
+    DatePipe,
+    RouterLink,
     MatButtonModule,
+    MatDatepickerModule,
     MatFormFieldModule,
-    MatIconModule,
-    MatPaginatorModule,
+    MatInputModule,
     MatSelectModule,
+    TranslatePipe,
+    CellTemplateDirective,
+    DataTableComponent,
+    IconComponent,
     PageHeaderComponent,
-    DataTableComponent
+    SearchFieldComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './appointment-list.component.html',
-  styleUrl: './appointment-list.component.scss'
+  styleUrl: './appointment-list.component.scss',
 })
 export class AppointmentListComponent {
-  private readonly appointmentsService = inject(AppointmentsService);
-  private readonly doctorsService = inject(DoctorsService);
-  private readonly patientsService = inject(PatientsService);
-  private readonly notifications = inject(NotificationService);
+  private readonly api = inject(AppointmentsService);
   private readonly dialog = inject(MatDialog);
+  private readonly doctorsApi = inject(DoctorsService);
+  private readonly notifications = inject(NotificationService);
   private readonly router = inject(Router);
-  private readonly fb = inject(FormBuilder);
+  private readonly translate = inject(TranslateService);
 
-  private readonly rows = signal<Appointment[]>([]);
-  private readonly statusFilter = signal<AppointmentTimeStatus | null>(null);
-  readonly total = signal(0);
-  readonly loading = signal(false);
-  readonly doctorOptions = signal<SelectOption[]>([]);
-  readonly patientOptions = signal<SelectOption[]>([]);
+  protected readonly permissions = inject(PermissionService);
 
-  readonly statuses = APPOINTMENT_TIME_STATUSES;
+  protected readonly all = signal<Appointment[]>([]);
+  protected readonly doctors = signal<Doctor[]>([]);
+  protected readonly loading = signal(true);
 
-  pageIndex = 0;
-  pageSize = DEFAULT_PAGE_SIZE;
-  private sort = '';
+  protected readonly search = signal<SearchEvent | null>(null);
+  protected readonly doctorId = signal<number | 'all'>('all');
+  protected readonly status = signal<AppointmentTimeStatus | 'all'>('all');
+  protected readonly day = signal<Date | null>(null);
+  protected readonly page = signal<PageState>({ pageIndex: 1, pageSize: 25 });
+  protected readonly sort = signal<SortState>({ key: 'appointmentDate', direction: 'desc' });
 
-  readonly filterForm = this.fb.nonNullable.group({
-    doctorId: this.fb.control<number | null>(null),
-    patientId: this.fb.control<number | null>(null),
-    status: this.fb.control<AppointmentTimeStatus | null>(null)
+  protected readonly hasFilters = computed(
+    () =>
+      Boolean(this.search()?.term) ||
+      this.doctorId() !== 'all' ||
+      this.status() !== 'all' ||
+      this.day() !== null
+  );
+
+  /**
+   * Filtering runs client-side against one wide fetch.
+   *
+   * The endpoint can filter by doctor or patient id but not by date range or
+   * derived status, and mixing server and client filters would make the pager
+   * lie about the total. One source of truth is simpler and correct.
+   */
+  private readonly filtered = computed(() => {
+    const term = this.search()?.term.toLowerCase() ?? '';
+    const doctorId = this.doctorId();
+    const status = this.status();
+    const day = this.day();
+    const doctorName = this.doctors().find((doctor) => doctor.id === doctorId)?.name;
+
+    return this.all().filter((appointment) => {
+      if (doctorId !== 'all') {
+        const matchesDoctor =
+          appointment.doctorId === doctorId || appointment.doctorName === doctorName;
+        if (!matchesDoctor) {
+          return false;
+        }
+      }
+
+      if (status !== 'all' && deriveAppointmentStatus(appointment.appointmentDate) !== status) {
+        return false;
+      }
+
+      if (day) {
+        const when = parseDate(appointment.appointmentDate);
+        if (!when || !isSameDay(when, day)) {
+          return false;
+        }
+      }
+
+      if (term) {
+        const haystack = `${appointment.patientName} ${appointment.doctorName}`.toLowerCase();
+        if (!haystack.includes(term)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
   });
 
-  // Status is derived client-side (the API has no status column), so it is
-  // filtered on the fetched page after doctor/patient server-side filtering.
-  readonly appointments = computed(() => {
-    const status = this.statusFilter();
-    const rows = this.rows();
-    return status ? rows.filter((row) => deriveAppointmentStatus(row.appointmentDate) === status) : rows;
+  protected readonly sorted = computed(() => {
+    const { key, direction } = this.sort();
+    const factor = direction === 'desc' ? -1 : 1;
+
+    return [...this.filtered()].sort((a, b) => {
+      const left = String(a[key as keyof Appointment] ?? '');
+      const right = String(b[key as keyof Appointment] ?? '');
+      return left.localeCompare(right, undefined, { numeric: true }) * factor;
+    });
   });
 
-  readonly columns: TableColumn<Appointment>[] = [
-    { key: 'id', header: '#', value: (row) => row.id },
-    { key: 'patientName', header: 'Patient', value: (row) => row.patientName, variant: 'strong' },
-    { key: 'doctorName', header: 'Doctor', value: (row) => row.doctorName },
+  protected readonly total = computed(() => this.sorted().length);
+
+  protected readonly rows = computed(() => {
+    const { pageIndex, pageSize } = this.page();
+    const start = (pageIndex - 1) * pageSize;
+    return this.sorted().slice(start, start + pageSize);
+  });
+
+  protected readonly todayCount = computed(
+    () =>
+      this.all().filter(
+        (appointment) => deriveAppointmentStatus(appointment.appointmentDate) === 'Today'
+      ).length
+  );
+
+  protected readonly columns: TableColumn<Appointment>[] = [
     {
       key: 'appointmentDate',
-      header: 'Date & time',
-      sortKey: 'date',
-      value: (row) => new Date(row.appointmentDate).toLocaleString()
+      header: 'appointments.date',
+      sortKey: 'appointmentDate',
+      value: (row) => row.appointmentDate,
+      width: '190px',
+    },
+    {
+      key: 'patientName',
+      header: 'appointments.patient',
+      sortKey: 'patientName',
+      value: (row) => row.patientName,
+      variant: 'strong',
+    },
+    {
+      key: 'doctorName',
+      header: 'appointments.doctor',
+      sortKey: 'doctorName',
+      value: (row) => row.doctorName,
+      hideBelow: 'sm',
     },
     {
       key: 'status',
-      header: 'Status',
-      align: 'center',
-      value: (row) => deriveAppointmentStatus(row.appointmentDate),
-      variant: 'chip',
-      chip: (row) => {
+      header: 'common.status',
+      variant: 'badge',
+      width: '130px',
+      badge: (row) => {
         const status = deriveAppointmentStatus(row.appointmentDate);
-        return { label: status, tone: appointmentStatusTone(status) };
-      }
-    }
+        return {
+          label: appointmentStatusLabel(status),
+          tone: appointmentStatusTone(status),
+          dot: status === 'Today',
+        };
+      },
+    },
   ];
 
-  readonly actions: TableRowAction<Appointment>[] = [
-    { id: 'view', icon: 'visibility', tooltip: 'View details', color: 'primary' },
-    { id: 'edit', icon: 'edit', tooltip: 'Edit appointment', color: 'accent' },
-    { id: 'delete', icon: 'delete', tooltip: 'Cancel appointment', color: 'warn' }
+  protected readonly rowActions: TableRowAction<Appointment>[] = [
+    { id: 'view', icon: 'show', label: 'common.view' },
+    {
+      id: 'edit',
+      icon: 'edit',
+      label: 'appointments.edit',
+      // A past appointment cannot be moved — its slot no longer exists.
+      visible: (row) => deriveAppointmentStatus(row.appointmentDate) !== 'Past',
+    },
+    { id: 'delete', icon: 'delete', label: 'appointments.delete', tone: 'danger' },
   ];
 
   constructor() {
-    this.loadOptions();
-    this.filterForm.controls.doctorId.valueChanges
-      .pipe(takeUntilDestroyed())
-      .subscribe(() => this.resetAndLoad());
-    this.filterForm.controls.patientId.valueChanges
-      .pipe(takeUntilDestroyed())
-      .subscribe(() => this.resetAndLoad());
-    this.filterForm.controls.status.valueChanges
-      .pipe(takeUntilDestroyed())
-      .subscribe((status) => this.statusFilter.set(status));
     this.load();
   }
 
-  onSortChanged(sort: SortState): void {
-    this.sort = sort.direction ? (sort.direction === 'asc' ? 'Ascending' : 'Descending') : '';
-    this.load();
+  protected load(): void {
+    this.loading.set(true);
+
+    forkJoin({
+      appointments: this.api
+        .getAppointments({ pageIndex: 1, pageSize: 500, sort: 'Descending' })
+        .pipe(catchError(() => of(EMPTY_PAGE))),
+      doctors: this.doctorsApi
+        .getDoctors({ pageIndex: 1, pageSize: 200 })
+        .pipe(catchError(() => of(EMPTY_PAGE))),
+    }).subscribe({
+      next: ({ appointments, doctors }) => {
+        this.all.set(appointments.data as Appointment[]);
+        this.doctors.set(doctors.data as Doctor[]);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
+    });
   }
 
-  onPage(event: PageEvent): void {
-    this.pageIndex = event.pageIndex;
-    this.pageSize = event.pageSize;
-    this.load();
+  protected onSearch(event: SearchEvent): void {
+    this.search.set(event.term ? event : null);
+    this.resetPage();
   }
 
-  resetFilters(): void {
-    this.filterForm.reset({ doctorId: null, patientId: null, status: null });
-    this.resetAndLoad();
+  protected onDoctor(value: number | 'all'): void {
+    this.doctorId.set(value);
+    this.resetPage();
   }
 
-  openCreate(): void {
-    this.openForm();
+  protected onStatus(value: AppointmentTimeStatus | 'all'): void {
+    this.status.set(value);
+    this.resetPage();
   }
 
-  onRowAction(event: RowActionEvent<Appointment>): void {
+  protected onDay(value: Date | null): void {
+    this.day.set(value);
+    this.resetPage();
+  }
+
+  protected onSort(sort: SortState): void {
+    this.sort.set(sort);
+  }
+
+  protected onPage(page: PageState): void {
+    this.page.set(page);
+  }
+
+  protected clearFilters(): void {
+    this.search.set(null);
+    this.doctorId.set('all');
+    this.status.set('all');
+    this.day.set(null);
+    this.resetPage();
+  }
+
+  protected showToday(): void {
+    this.day.set(new Date());
+    this.status.set('all');
+    this.resetPage();
+  }
+
+  protected openAppointment(row: Appointment): void {
+    void this.router.navigate(['/appointments', row.id]);
+  }
+
+  protected onRowAction(event: RowActionEvent<Appointment>): void {
     switch (event.action) {
       case 'view':
-        void this.router.navigate(['/appointments', event.row.id]);
+        this.openAppointment(event.row);
         break;
       case 'edit':
-        this.openForm(event.row);
+        void this.router.navigate(['/appointments', event.row.id, 'edit']);
         break;
       case 'delete':
-        this.confirmDelete(event.row);
+        this.confirmCancel(event.row);
         break;
     }
   }
 
-  private openForm(appointment?: Appointment): void {
-    const data: AppointmentFormDialogData = { appointment };
-    this.dialog
-      .open(AppointmentFormDialogComponent, { width: '620px', data })
-      .afterClosed()
-      .subscribe((saved) => {
-        if (saved) {
-          this.load();
-        }
+  protected statusOf(row: Appointment): AppointmentTimeStatus {
+    return deriveAppointmentStatus(row.appointmentDate);
+  }
+
+  private confirmCancel(row: Appointment): void {
+    confirmDialog(this.dialog, {
+      title: 'appointments.delete',
+      message: 'appointments.deleteConfirm',
+      messageParams: {
+        patient: row.patientName,
+        date: new Date(row.appointmentDate).toLocaleDateString(),
+      },
+      confirmLabel: 'common.confirm',
+      tone: 'danger',
+    }).subscribe((confirmed) => {
+      if (!confirmed) {
+        return;
+      }
+
+      this.api.cancelAppointment(row.id).subscribe(() => {
+        this.notifications.success(this.translate.instant('appointments.deleted'));
+        this.load();
       });
-  }
-
-  private confirmDelete(appointment: Appointment): void {
-    const data: ConfirmDialogData = {
-      title: 'Cancel appointment',
-      message: `Cancel the appointment for ${appointment.patientName} with ${appointment.doctorName}?`,
-      confirmText: 'Cancel appointment',
-      cancelText: 'Keep',
-      icon: 'event_busy'
-    };
-
-    this.dialog
-      .open(ConfirmDialogComponent, { width: '440px', data })
-      .afterClosed()
-      .pipe(
-        switchMap((confirmed) => (confirmed ? this.appointmentsService.cancelAppointment(appointment.id) : of(null)))
-      )
-      .subscribe((result) => {
-        if (result !== null) {
-          this.notifications.success('Appointment cancelled.');
-          if (this.rows().length === 1 && this.pageIndex > 0) {
-            this.pageIndex -= 1;
-          }
-          this.load();
-        }
-      });
-  }
-
-  private resetAndLoad(): void {
-    this.pageIndex = 0;
-    this.load();
-  }
-
-  private loadOptions(): void {
-    this.doctorsService.getDoctors({ pageIndex: 1, pageSize: 20, sort: 'nameAsc' }).subscribe({
-      next: (page) =>
-        this.doctorOptions.set(page.data.map((doctor) => ({ label: doctor.name, value: doctor.id }))),
-      error: () => this.doctorOptions.set([])
-    });
-    this.patientsService.getPatients({ pageIndex: 1, pageSize: 20, sort: 'Asc' }).subscribe({
-      next: (page) =>
-        this.patientOptions.set(page.data.map((patient) => ({ label: patient.name, value: patient.id }))),
-      error: () => this.patientOptions.set([])
     });
   }
 
-  private load(): void {
-    this.loading.set(true);
-    const { doctorId, patientId } = this.filterForm.getRawValue();
-    this.appointmentsService
-      .getAppointments({
-        pageIndex: this.pageIndex + 1,
-        pageSize: this.pageSize,
-        doctorId: doctorId ?? undefined,
-        patientId: patientId ?? undefined,
-        sort: this.sort
-      })
-      .subscribe({
-        next: (page) => {
-          this.rows.set(page.data);
-          this.total.set(page.count);
-          this.loading.set(false);
-        },
-        error: () => {
-          this.rows.set([]);
-          this.total.set(0);
-          this.loading.set(false);
-        }
-      });
+  private resetPage(): void {
+    this.page.update((page) => ({ ...page, pageIndex: 1 }));
   }
 }

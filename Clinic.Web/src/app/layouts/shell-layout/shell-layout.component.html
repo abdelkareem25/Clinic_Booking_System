@@ -1,86 +1,189 @@
-<mat-sidenav-container class="shell">
-  <mat-sidenav
-    #drawer
+<div class="shell" [class.shell-collapsed]="collapsed() && !isHandset()">
+  @if (drawerOpen() && isHandset()) {
+    <div class="scrim" (click)="closeDrawer()" aria-hidden="true"></div>
+  }
+
+  <aside
     class="sidebar"
-    [mode]="(isHandset$ | async) ? 'over' : 'side'"
-    [opened]="(isHandset$ | async) === false"
+    [class.sidebar-open]="drawerOpen()"
+    [attr.aria-label]="'nav.dashboard' | translate"
   >
-    <div class="sidebar-brand">
-      <span class="brand-mark">CB</span>
-      <span>
-        <strong>Clinic Booking</strong>
-        <small>Care operations</small>
-      </span>
-    </div>
+    <div class="brand">
+      <a class="brand-link" routerLink="/dashboard">
+        <span class="brand-mark">
+          <ui-icon name="vitals" size="lg" />
+        </span>
+        <span class="brand-text">
+          <strong>{{ 'app.name' | translate }}</strong>
+          <small>{{ 'app.tagline' | translate }}</small>
+        </span>
+      </a>
 
-    <mat-divider />
-
-    <mat-nav-list>
-      @for (item of navItems; track item.route) {
-        <a
-          mat-list-item
-          [routerLink]="item.route"
-          routerLinkActive="active-link"
-          (click)="closeOnHandset(drawer)"
+      @if (isHandset()) {
+        <button
+          mat-icon-button
+          type="button"
+          class="drawer-close"
+          [attr.aria-label]="'common.close' | translate"
+          (click)="closeDrawer()"
         >
-          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
-          <span matListItemTitle>{{ item.label }}</span>
-        </a>
-      }
-    </mat-nav-list>
-  </mat-sidenav>
-
-  <mat-sidenav-content>
-    <mat-toolbar class="topbar">
-      @if (isHandset$ | async) {
-        <button mat-icon-button type="button" aria-label="Open navigation" (click)="drawer.toggle()">
-          <mat-icon>menu</mat-icon>
+          <ui-icon name="close" size="md" />
         </button>
       }
+    </div>
 
-      <app-breadcrumb class="topbar-breadcrumb" />
-      <span class="spacer"></span>
+    <nav class="nav">
+      @for (group of navGroups(); track group.label) {
+        <div class="nav-group">
+          @if (group.label; as label) {
+            <span class="nav-group-label">{{ label | translate }}</span>
+          }
 
+          @for (item of group.items; track item.route) {
+            <a
+              class="nav-item"
+              [routerLink]="item.route"
+              routerLinkActive="nav-item-active"
+              [matTooltip]="collapsed() && !isHandset() ? (item.label | translate) : ''"
+              matTooltipPosition="after"
+            >
+              <ui-icon [name]="item.icon" size="md" />
+              <span class="nav-label">{{ item.label | translate }}</span>
+            </a>
+          }
+        </div>
+      }
+    </nav>
+
+    <div class="sidebar-foot">
+      <button
+        type="button"
+        class="nav-item nav-button"
+        [matTooltip]="(collapsed() ? 'nav.expand' : 'nav.collapse') | translate"
+        matTooltipPosition="after"
+        [attr.aria-label]="(collapsed() ? 'nav.expand' : 'nav.collapse') | translate"
+        (click)="toggleSidebar()"
+      >
+        <ui-icon name="sidebar" size="md" />
+        <span class="nav-label">{{ 'nav.collapse' | translate }}</span>
+      </button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
       <button
         mat-icon-button
         type="button"
-        [matTooltip]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
-        aria-label="Toggle theme"
-        (click)="toggleTheme()"
+        class="menu-btn"
+        [attr.aria-label]="'nav.openMenu' | translate"
+        (click)="toggleSidebar()"
       >
-        <mat-icon>{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+        <ui-icon name="menu" size="md" />
       </button>
 
-      @if (user$ | async; as user) {
-        <button mat-button [matMenuTriggerFor]="userMenu" class="user-button">
-          <span class="avatar">{{ initials(user) }}</span>
-          <span class="user-name">{{ user.displayName }}</span>
-          <mat-icon>expand_more</mat-icon>
+      <span class="spacer"></span>
+
+      <div class="topbar-actions">
+        <button
+          mat-icon-button
+          type="button"
+          [matMenuTriggerFor]="langMenu"
+          [matTooltip]="'nav.language' | translate"
+          [attr.aria-label]="'nav.language' | translate"
+        >
+          <ui-icon name="language" size="md" />
         </button>
-        <mat-menu #userMenu="matMenu">
-          <div class="menu-identity">
-            <strong>{{ user.displayName }}</strong>
-            <small>{{ user.email }}</small>
-          </div>
-          <mat-divider />
-          <button mat-menu-item type="button" disabled>
-            <mat-icon>verified_user</mat-icon>
-            <span>{{ roleLabel(user) }}</span>
-          </button>
-          <button mat-menu-item type="button" routerLink="/users">
-            <mat-icon>account_circle</mat-icon>
-            <span>My profile</span>
-          </button>
-          <button mat-menu-item type="button" (click)="logout()">
-            <mat-icon>logout</mat-icon>
-            <span>Logout</span>
-          </button>
+        <mat-menu #langMenu="matMenu">
+          @for (language of locale.available; track language.code) {
+            <button
+              mat-menu-item
+              type="button"
+              [class.menu-selected]="locale.current() === language.code"
+              (click)="setLanguage(language.code)"
+            >
+              <span class="menu-row">
+                <span>{{ language.nativeName }}</span>
+                @if (locale.current() === language.code) {
+                  <ui-icon name="check" size="sm" />
+                }
+              </span>
+            </button>
+          }
         </mat-menu>
-      }
-    </mat-toolbar>
+
+        <button
+          mat-icon-button
+          type="button"
+          [matTooltip]="(theme.isDark() ? 'nav.lightMode' : 'nav.darkMode') | translate"
+          [attr.aria-label]="(theme.isDark() ? 'nav.lightMode' : 'nav.darkMode') | translate"
+          (click)="theme.toggle()"
+        >
+          <ui-icon [name]="theme.isDark() ? 'light' : 'dark'" size="md" />
+        </button>
+
+        <a
+          mat-icon-button
+          routerLink="/notifications"
+          class="bell"
+          [matTooltip]="'notifications.title' | translate"
+          [attr.aria-label]="'notifications.title' | translate"
+        >
+          <ui-icon name="notifications" size="md" />
+          @if (notifications.unreadCount(); as count) {
+            <span class="bell-count">{{ count > 9 ? '9+' : count }}</span>
+          }
+        </a>
+
+        <mat-divider vertical class="topbar-divider" />
+
+        @if (user(); as currentUser) {
+          <button mat-button type="button" class="account" [matMenuTriggerFor]="userMenu">
+            <span class="avatar avatar-sm">{{ initials() }}</span>
+            <span class="account-text">
+              <strong>{{ currentUser.displayName }}</strong>
+              <small>{{ roleLabel() }}</small>
+            </span>
+            <ui-icon name="chevronDown" size="sm" />
+          </button>
+
+          <mat-menu #userMenu="matMenu">
+            <div class="account-head">
+              <span class="avatar">{{ initials() }}</span>
+              <span class="account-head-text">
+                <strong>{{ currentUser.displayName }}</strong>
+                <small>{{ currentUser.email }}</small>
+              </span>
+            </div>
+            <mat-divider />
+            <a mat-menu-item routerLink="/profile">
+              <span class="menu-row">
+                <ui-icon name="user" size="sm" />
+                {{ 'nav.profile' | translate }}
+              </span>
+            </a>
+            <a mat-menu-item routerLink="/settings">
+              <span class="menu-row">
+                <ui-icon name="settings" size="sm" />
+                {{ 'nav.settings' | translate }}
+              </span>
+            </a>
+            <mat-divider />
+            <button mat-menu-item type="button" class="menu-danger" (click)="logout()">
+              <span class="menu-row">
+                <ui-icon name="logout" size="sm" />
+                {{ 'common.logout' | translate }}
+              </span>
+            </button>
+          </mat-menu>
+        }
+      </div>
+    </header>
 
     <main class="content">
-      <router-outlet />
+      <div class="content-inner animate-rise">
+        <router-outlet />
+      </div>
     </main>
-  </mat-sidenav-content>
-</mat-sidenav-container>
+  </div>
+</div>

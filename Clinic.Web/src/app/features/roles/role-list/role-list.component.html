@@ -1,0 +1,160 @@
+<div class="page">
+  <ui-page-header title="roles.title" subtitle="roles.subtitle" icon="roles">
+    <div actions>
+      @if (canEdit()) {
+        <button mat-flat-button type="button" (click)="startCreate()">
+          <ui-icon name="add" size="sm" />
+          {{ 'roles.new' | translate }}
+        </button>
+      }
+    </div>
+  </ui-page-header>
+
+  <div class="layout">
+    <!-- Roles ------------------------------------------------------------ -->
+    <ui-card title="roles.title" icon="shield" [padded]="false">
+      <ul class="role-list">
+        @for (role of roles(); track role.id) {
+          <li>
+            <button
+              type="button"
+              class="role-item"
+              [class.role-active]="selected()?.id === role.id && !creating()"
+              (click)="select(role.id)"
+            >
+              <span class="icon-tile" [class.icon-tile-primary]="selected()?.id === role.id">
+                <ui-icon name="shield" size="sm" />
+              </span>
+              <span class="role-text">
+                <strong>{{ role.name }}</strong>
+                <small>
+                  {{
+                    'roles.permissionCount'
+                      | translate: { granted: grantedFor(role), total: totalPermissions }
+                  }}
+                </small>
+              </span>
+              @if (role.isSystem) {
+                <span
+                  class="badge badge-neutral"
+                  [matTooltip]="'roles.systemRoleHint' | translate"
+                >
+                  {{ 'roles.systemRole' | translate }}
+                </span>
+              } @else if (canEdit()) {
+                <span
+                  class="delete-role"
+                  role="button"
+                  tabindex="0"
+                  [attr.aria-label]="'common.delete' | translate"
+                  (click)="$event.stopPropagation(); remove(role)"
+                  (keydown.enter)="$event.stopPropagation(); remove(role)"
+                >
+                  <ui-icon name="delete" size="sm" />
+                </span>
+              }
+            </button>
+          </li>
+        }
+      </ul>
+    </ui-card>
+
+    <!-- Permission matrix ------------------------------------------------ -->
+    <ui-card
+      [title]="creating() ? 'roles.new' : 'roles.permissions'"
+      icon="checklist"
+      [subtitle]="creating() ? null : (selected()?.description ?? null)"
+    >
+      <div actions class="matrix-actions">
+        <span class="badge badge-info">
+          {{ 'roles.permissionCount' | translate: { granted: draftCount(), total: totalPermissions } }}
+        </span>
+        @if (canEdit()) {
+          <button mat-button type="button" (click)="selectAll()">
+            {{ 'roles.selectAll' | translate }}
+          </button>
+          <button mat-button type="button" (click)="clearAll()">
+            {{ 'roles.clearAll' | translate }}
+          </button>
+        }
+      </div>
+
+      @if (creating()) {
+        <form class="new-role" [formGroup]="form" novalidate>
+          <div class="field">
+            <mat-form-field>
+              <mat-label>{{ 'roles.name' | translate }}</mat-label>
+              <input matInput type="text" formControlName="name" />
+            </mat-form-field>
+            <ui-field-error [control]="form.controls.name" [submitted]="submitted()" />
+          </div>
+          <div class="field">
+            <mat-form-field>
+              <mat-label>{{ 'roles.description' | translate }}</mat-label>
+              <input matInput type="text" formControlName="description" />
+            </mat-form-field>
+          </div>
+        </form>
+      }
+
+      <div class="matrix">
+        @for (group of groups(); track group.module) {
+          <section class="module">
+            <header class="module-head">
+              <mat-checkbox
+                [checked]="group.allGranted"
+                [indeterminate]="group.someGranted"
+                [disabled]="!canEdit()"
+                (change)="toggleModule(group, $event.checked)"
+              >
+                <span class="module-label">
+                  <ui-icon [name]="group.icon" size="sm" />
+                  {{ group.label | translate }}
+                </span>
+              </mat-checkbox>
+
+              <span class="module-count text-subtle">
+                {{ group.grantedCount }}/{{ group.actions.length }}
+              </span>
+            </header>
+
+            <div class="actions">
+              @for (entry of group.actions; track entry.permission) {
+                <mat-checkbox
+                  [checked]="isGranted(entry.permission)"
+                  [disabled]="!canEdit()"
+                  (change)="toggle(entry.permission, $event.checked)"
+                >
+                  {{ entry.label | translate }}
+                </mat-checkbox>
+              }
+            </div>
+          </section>
+        }
+      </div>
+
+      @if (canEdit()) {
+        <div footer class="matrix-foot">
+          @if (creating()) {
+            <button mat-stroked-button type="button" (click)="cancelCreate()">
+              {{ 'common.cancel' | translate }}
+            </button>
+            <button mat-flat-button type="button" (click)="saveNew()">
+              <ui-icon name="save" size="sm" />
+              {{ 'common.create' | translate }}
+            </button>
+          } @else {
+            <button mat-stroked-button type="button" [disabled]="!dirty()" (click)="reset()">
+              <ui-icon name="undo" size="sm" />
+              {{ 'common.reset' | translate }}
+            </button>
+            <button mat-flat-button type="button" [disabled]="!dirty()" (click)="save()">
+              <ui-icon name="save" size="sm" />
+              {{ 'common.saveChanges' | translate }}
+            </button>
+          }
+        </div>
+      }
+    </ui-card>
+  </div>
+</div>

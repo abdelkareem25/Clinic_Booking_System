@@ -1,7 +1,8 @@
-using Clinic.Api.Controllers;
+﻿using Clinic.Api.Controllers;
 using Clinic.Api.Extensions;
 using Clinic.Domain.Entites.Identity;
 using Clinic.Domain.Service;
+using Clinic.Infrastructure.Data.Context;
 using Clinic.Infrastructure.Identity;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -61,7 +62,7 @@ namespace Clinic.Tests.Integration
                     webHost.ConfigureServices(services =>
                     {
                         services.AddSingleton<IConfiguration>(configuration);
-                        services.AddDbContext<ClinicIdentityDbContext>(o => o.UseSqlite(_connection));
+                        services.AddDbContext<ClinicDbContext>(o => o.UseSqlite(_connection));
                         services.AddControllers().AddApplicationPart(typeof(AccountsController).Assembly);
 
                         services.AddIdentityServices(configuration);
@@ -80,7 +81,7 @@ namespace Clinic.Tests.Integration
                 .StartAsync();
 
             using var scope = _host.Services.CreateScope();
-            await scope.ServiceProvider.GetRequiredService<ClinicIdentityDbContext>().Database.EnsureCreatedAsync();
+            await scope.ServiceProvider.GetRequiredService<ClinicDbContext>().Database.EnsureCreatedAsync();
 
             await ClinicIdentityDbContextSeed.SeedAsync(
                 scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>(),

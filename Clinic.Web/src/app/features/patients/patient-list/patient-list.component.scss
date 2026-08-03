@@ -2,9 +2,67 @@
   display: block;
 }
 
-mat-paginator {
-  margin-top: 14px;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 14px;
-  background: var(--mat-sys-surface);
+.filters {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.search {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.gender {
+  flex: 0 0 auto;
+  width: 170px;
+}
+
+.name-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.name-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+.name-text strong {
+  font-weight: var(--fw-semibold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.name-text small {
+  font-size: var(--fs-xs);
+  color: var(--c-text-subtle);
+}
+
+// The phone column is dropped on phones, so it rides under the name instead.
+.mobile-only {
+  display: none;
+}
+
+.flags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .mobile-only {
+    display: block;
+  }
+
+  .gender {
+    width: 100%;
+  }
 }

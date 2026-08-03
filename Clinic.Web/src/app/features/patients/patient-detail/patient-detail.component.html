@@ -1,74 +1,288 @@
-@if (patient(); as selectedPatient) {
-  <app-page-header [title]="selectedPatient.name" subtitle="Patient profile" icon="badge" />
+@if (patient(); as person) {
+  <div class="page">
+    <ui-page-header
+      [title]="person.name"
+      [subtitle]="person.profile.fileNumber"
+      backRoute="/patients"
+      [breadcrumbs]="[{ label: 'patients.title', route: '/patients' }, { label: 'common.details' }]"
+    >
+      <div actions class="head-actions">
+        @if (permissions.can('appointments.create')) {
+          <a mat-stroked-button [routerLink]="['/appointments/new']" [queryParams]="{ patientId: person.id }">
+            <ui-icon name="appointments" size="sm" />
+            {{ 'appointments.new' | translate }}
+          </a>
+        }
+        @if (permissions.can('records.create')) {
+          <button mat-stroked-button type="button" (click)="addRecord()">
+            <ui-icon name="records" size="sm" />
+            {{ 'records.new' | translate }}
+          </button>
+        }
+        @if (permissions.can('patients.edit')) {
+          <a mat-flat-button [routerLink]="['/patients', person.id, 'edit']">
+            <ui-icon name="edit" size="sm" />
+            {{ 'common.edit' | translate }}
+          </a>
+        }
+        @if (permissions.can('patients.delete')) {
+          <button
+            mat-icon-button
+            type="button"
+            [matTooltip]="'common.delete' | translate"
+            (click)="confirmDelete()"
+          >
+            <ui-icon name="delete" size="md" />
+          </button>
+        }
+      </div>
+    </ui-page-header>
 
-  <div class="detail-actions">
-    <a mat-stroked-button routerLink="/patients">
-      <mat-icon>arrow_back</mat-icon>
-      Back
-    </a>
-    <span class="spacer"></span>
-    <button mat-stroked-button color="primary" type="button" (click)="edit()">
-      <mat-icon>edit</mat-icon>
-      Edit
-    </button>
-    <button mat-stroked-button color="warn" type="button" (click)="remove()">
-      <mat-icon>delete</mat-icon>
-      Delete
-    </button>
-  </div>
+    <!-- Safety banner: allergies and chronic conditions are the two things that
+         must be visible before anyone treats this patient, so they sit above
+         the tabs rather than inside one. -->
+    @if (person.profile.allergies.length || person.profile.chronicDiseases.length) {
+      <section class="alerts">
+        @if (person.profile.allergies.length) {
+          <div class="alert alert-danger">
+            <ui-icon name="warning" size="md" />
+            <div>
+              <strong>{{ 'patients.allergies' | translate }}</strong>
+              <div class="alert-chips">
+                @for (item of person.profile.allergies; track item) {
+                  <span class="badge badge-danger">{{ item }}</span>
+                }
+              </div>
+            </div>
+          </div>
+        }
+        @if (person.profile.chronicDiseases.length) {
+          <div class="alert alert-warning">
+            <ui-icon name="vitals" size="md" />
+            <div>
+              <strong>{{ 'patients.chronicDiseases' | translate }}</strong>
+              <div class="alert-chips">
+                @for (item of person.profile.chronicDiseases; track item) {
+                  <span class="badge badge-warning">{{ item }}</span>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </section>
+    }
 
-  <div class="detail-grid">
-    <mat-card class="profile-card" appearance="outlined">
-      <mat-card-header>
-        <div mat-card-avatar class="patient-avatar">
-          <mat-icon>person</mat-icon>
+    <section class="summary">
+      <div class="summary-card surface">
+        <span class="text-label">{{ 'patients.lastVisit' | translate }}</span>
+        <strong>
+          {{
+            lastVisit()
+              ? (lastVisit()!.appointmentDate | date: 'd MMM y')
+              : ('common.notSet' | translate)
+          }}
+        </strong>
+      </div>
+      <div class="summary-card surface">
+        <span class="text-label">{{ 'patients.nextVisit' | translate }}</span>
+        <strong>
+          {{
+            nextVisit()
+              ? (nextVisit()!.appointmentDate | date: 'd MMM y, h:mm a')
+              : ('common.notSet' | translate)
+          }}
+        </strong>
+      </div>
+      <div class="summary-card surface">
+        <span class="text-label">{{ 'patients.totalVisits' | translate }}</span>
+        <strong>{{ patientAppointments().length }}</strong>
+      </div>
+      @if (permissions.can('accounts.view')) {
+        <div class="summary-card surface">
+          <span class="text-label">{{ 'patients.balance' | translate }}</span>
+          <strong [class.owing]="balance() > 0">{{ balance() }} {{ currency() }}</strong>
         </div>
-        <mat-card-title>{{ selectedPatient.name }}</mat-card-title>
-        <mat-card-subtitle>#{{ selectedPatient.id }}</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <dl class="fact-list">
-          <div>
-            <dt>Phone</dt>
-            <dd>{{ selectedPatient.phone }}</dd>
-          </div>
-          <div>
-            <dt>Date of birth</dt>
-            <dd>{{ selectedPatient.dateOfBirth | date: 'mediumDate' }}</dd>
-          </div>
-          <div>
-            <dt>Age</dt>
-            <dd>{{ age() ?? '—' }}</dd>
-          </div>
-          <div>
-            <dt>Gender</dt>
-            <dd>{{ selectedPatient.gender }}</dd>
-          </div>
-        </dl>
-      </mat-card-content>
-    </mat-card>
+      }
+    </section>
 
-    <mat-card class="appointments-card" appearance="outlined">
-      <mat-card-header>
-        <mat-card-title>Appointments</mat-card-title>
-        <mat-card-subtitle>Visit history for this patient</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <app-data-table
-          [columns]="appointmentColumns"
-          [rows]="appointments()"
-          [loading]="loading()"
-          emptyIcon="event_busy"
-          emptyTitle="No appointments"
-          emptyMessage="This patient has no appointments yet."
-        />
-      </mat-card-content>
-    </mat-card>
+    <mat-tab-group class="tabs-segmented" animationDuration="180ms">
+      <!-- Overview ------------------------------------------------------- -->
+      <mat-tab [label]="'patients.tabOverview' | translate">
+        <div class="tab-body columns">
+          <ui-card title="patients.sectionIdentity" icon="user">
+            <ui-detail-list [items]="identityItems()" />
+          </ui-card>
+
+          <ui-card title="patients.sectionContact" icon="phone">
+            <ui-detail-list [items]="contactItems()" />
+          </ui-card>
+
+          <ui-card title="patients.currentMedications" icon="prescription">
+            @if (person.profile.currentMedications.length) {
+              <ul class="plain-list">
+                @for (item of person.profile.currentMedications; track item) {
+                  <li>
+                    <ui-icon name="prescription" size="sm" />
+                    {{ item }}
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="text-subtle">{{ 'patients.noMedications' | translate }}</p>
+            }
+          </ui-card>
+
+          <ui-card title="patients.sectionNotes" icon="note">
+            @if (person.profile.notes) {
+              <p class="notes">{{ person.profile.notes }}</p>
+            } @else {
+              <p class="text-subtle">{{ 'common.notSet' | translate }}</p>
+            }
+          </ui-card>
+        </div>
+      </mat-tab>
+
+      <!-- Medical history ------------------------------------------------ -->
+      <mat-tab [label]="'patients.tabHistory' | translate">
+        <div class="tab-body">
+          <ui-card title="records.timeline" icon="records">
+            @if (permissions.can('records.create')) {
+              <button actions mat-stroked-button type="button" (click)="addRecord()">
+                <ui-icon name="add" size="sm" />
+                {{ 'records.new' | translate }}
+              </button>
+            }
+
+            @if (timeline().length) {
+              <ui-timeline [entries]="timeline()">
+                <ng-template uiCell="actions" let-entry>
+                  @if (permissions.can('records.edit')) {
+                    <button
+                      mat-icon-button
+                      type="button"
+                      [matTooltip]="'common.edit' | translate"
+                      (click)="editRecord(entry)"
+                    >
+                      <ui-icon name="edit" size="sm" />
+                    </button>
+                  }
+                  @if (permissions.can('records.delete')) {
+                    <button
+                      mat-icon-button
+                      type="button"
+                      [matTooltip]="'common.delete' | translate"
+                      (click)="deleteRecord(entry)"
+                    >
+                      <ui-icon name="delete" size="sm" />
+                    </button>
+                  }
+                </ng-template>
+              </ui-timeline>
+            } @else {
+              <ui-empty-state icon="records" title="records.empty" message="records.emptyHint">
+                @if (permissions.can('records.create')) {
+                  <button mat-flat-button type="button" (click)="addRecord()">
+                    {{ 'records.new' | translate }}
+                  </button>
+                }
+              </ui-empty-state>
+            }
+          </ui-card>
+        </div>
+      </mat-tab>
+
+      <!-- Appointments --------------------------------------------------- -->
+      <mat-tab [label]="'patients.tabAppointments' | translate">
+        <div class="tab-body">
+          <ui-card title="appointments.title" icon="appointments" [padded]="false">
+            @if (patientAppointments().length) {
+              <ul class="row-list">
+                @for (appointment of patientAppointments(); track appointment.id) {
+                  <li>
+                    <span class="icon-tile icon-tile-primary">
+                      <ui-icon name="appointments" size="sm" />
+                    </span>
+                    <span class="row-body">
+                      <strong>{{ appointment.appointmentDate | date: 'EEEE, d MMM y' }}</strong>
+                      <small>
+                        {{ appointment.appointmentDate | date: 'h:mm a' }} ·
+                        {{ appointment.doctorName }}
+                      </small>
+                    </span>
+                    <a
+                      mat-button
+                      [routerLink]="['/appointments', appointment.id]"
+                    >
+                      {{ 'common.view' | translate }}
+                    </a>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <ui-empty-state
+                icon="appointments"
+                title="appointments.empty"
+                message="appointments.emptyHint"
+              >
+                @if (permissions.can('appointments.create')) {
+                  <a
+                    mat-flat-button
+                    routerLink="/appointments/new"
+                    [queryParams]="{ patientId: person.id }"
+                  >
+                    {{ 'appointments.new' | translate }}
+                  </a>
+                }
+              </ui-empty-state>
+            }
+          </ui-card>
+        </div>
+      </mat-tab>
+
+      <!-- Billing -------------------------------------------------------- -->
+      @if (permissions.can('accounts.view')) {
+        <mat-tab [label]="'patients.tabBilling' | translate">
+          <div class="tab-body">
+            <ui-card title="accounts.tabInvoices" icon="invoice" [padded]="false">
+              @if (invoices().length) {
+                <ul class="row-list">
+                  @for (invoice of invoices(); track invoice.id) {
+                    <li>
+                      <span class="icon-tile icon-tile-info">
+                        <ui-icon name="invoice" size="sm" />
+                      </span>
+                      <span class="row-body">
+                        <strong>{{ invoice.number }}</strong>
+                        <small>{{ invoice.issuedAt | date: 'd MMM y' }}</small>
+                      </span>
+                      <span class="invoice-amount money">
+                        {{ invoice.total }} {{ currency() }}
+                        @if (invoice.remaining > 0) {
+                          <small>{{ 'accounts.remaining' | translate }}: {{ invoice.remaining }}</small>
+                        }
+                      </span>
+                      <a mat-button [routerLink]="['/accounts/invoices', invoice.id]">
+                        {{ 'common.view' | translate }}
+                      </a>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <ui-empty-state icon="invoice" title="accounts.empty" message="accounts.emptyHint" />
+              }
+            </ui-card>
+          </div>
+        </mat-tab>
+      }
+    </mat-tab-group>
   </div>
-} @else if (notFound()) {
-  <app-empty-state
-    icon="person_off"
-    title="Patient not found"
-    message="This patient may have been removed."
-  />
+} @else if (!loading()) {
+  <ui-empty-state
+    icon="noResults"
+    tone="warning"
+    title="errors.notFoundTitle"
+    message="errors.notFoundBody"
+  >
+    <a mat-flat-button routerLink="/patients">{{ 'patients.title' | translate }}</a>
+  </ui-empty-state>
 }

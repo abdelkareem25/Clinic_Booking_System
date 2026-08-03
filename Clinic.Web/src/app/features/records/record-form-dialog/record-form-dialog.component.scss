@@ -1,0 +1,43 @@
+.record-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  width: min(680px, 84vw);
+  padding-block-start: var(--sp-1);
+}
+
+.patient-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-sm);
+  background: var(--c-surface-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--c-text-muted);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.vitals {
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4) var(--sp-1);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-surface-2);
+}
+
+.vitals legend {
+  padding-inline: var(--sp-1);
+}

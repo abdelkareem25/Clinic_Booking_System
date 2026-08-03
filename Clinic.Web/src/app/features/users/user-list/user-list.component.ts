@@ -1,73 +1,72 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { MatIconModule } from '@angular/material/icon';
-import { Router } from '@angular/router';
+import { DatePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { MatButtonModule } from '@angular/material/button';
+import { RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 
+import { PermissionService } from '../../../core/authz/permission.service';
+import { RolesStore } from '../../../core/authz/roles.store';
 import { AuthService } from '../../../core/services/auth.service';
 import { JwtService } from '../../../core/services/jwt.service';
-import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
-import {
-  RowActionEvent,
-  TableColumn,
-  TableRowAction
-} from '../../../shared/components/data-table/data-table.model';
-import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { SessionUser } from '../user.model';
+import { CardComponent } from '../../../shared/ui/card/card.component';
+import { EmptyStateComponent } from '../../../shared/ui/empty-state/empty-state.component';
+import { IconComponent } from '../../../shared/ui/icon/icon.component';
+import { PageHeaderComponent } from '../../../shared/ui/page-header/page-header.component';
 
+/**
+ * Staff accounts.
+ *
+ * The API exposes registration and login but **no endpoint that lists users**,
+ * so this screen shows the signed-in account and its resolved permissions, and
+ * says plainly that the roster is unavailable. Inventing a list would be worse
+ * than an honest gap — an administrator would act on it.
+ */
 @Component({
   selector: 'app-user-list',
+  imports: [
+    DatePipe,
+    RouterLink,
+    MatButtonModule,
+    TranslatePipe,
+    CardComponent,
+    EmptyStateComponent,
+    IconComponent,
+    PageHeaderComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatIconModule, PageHeaderComponent, DataTableComponent],
   templateUrl: './user-list.component.html',
-  styleUrl: './user-list.component.scss'
+  styleUrl: './user-list.component.scss',
 })
 export class UserListComponent {
   private readonly auth = inject(AuthService);
   private readonly jwt = inject(JwtService);
-  private readonly router = inject(Router);
+  private readonly rolesStore = inject(RolesStore);
 
-  readonly users: SessionUser[] = this.buildRows();
+  protected readonly permissions = inject(PermissionService);
 
-  readonly columns: TableColumn<SessionUser>[] = [
-    { key: 'displayName', header: 'Name', value: (row) => row.displayName, variant: 'strong' },
-    { key: 'email', header: 'Email', value: (row) => row.email },
-    {
-      key: 'roles',
-      header: 'Roles',
-      align: 'center',
-      value: (row) => (row.roles.length ? row.roles.join(', ') : 'None'),
-      variant: 'chip',
-      chip: (row) => ({
-        label: row.roles.length ? row.roles.join(', ') : 'No role',
-        tone: row.roles.includes('Admin') ? 'primary' : 'neutral'
-      })
+  protected readonly user = toSignal(this.auth.currentUser$, {
+    initialValue: this.auth.currentUser,
+  });
+
+  protected readonly roleNames = computed(() => this.permissions.roleNames());
+
+  protected readonly grantedCount = computed(() => this.permissions.granted().size);
+
+  protected readonly sessionExpiry = computed(() =>
+    this.jwt.getExpiry(this.user()?.token)
+  );
+
+  protected readonly initials = computed(() => {
+    const name = this.user()?.displayName?.trim();
+    if (!name) {
+      return '—';
     }
-  ];
+    const parts = name.split(/\s+/).filter(Boolean);
+    return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase();
+  });
 
-  readonly actions: TableRowAction<SessionUser>[] = [
-    { id: 'view', icon: 'visibility', tooltip: 'View profile', color: 'primary' }
-  ];
-
-  onRowAction(event: RowActionEvent<SessionUser>): void {
-    if (event.action === 'view') {
-      void this.router.navigate(['/users', 'me']);
-    }
-  }
-
-  private buildRows(): SessionUser[] {
-    const user = this.auth.currentUser;
-    if (!user) {
-      return [];
-    }
-
-    return [
-      {
-        id: this.jwt.getUserId(user.token) ?? 'me',
-        displayName: user.displayName,
-        username: this.jwt.getUserName(user.token),
-        email: user.email,
-        roles: user.roles,
-        expiresAt: this.jwt.getExpiry(user.token)
-      }
-    ];
+  protected roleDescription(roleName: string): string {
+    return this.rolesStore.getByName(roleName)?.description ?? '';
   }
 }

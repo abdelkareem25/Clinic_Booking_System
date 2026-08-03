@@ -60,7 +60,9 @@ namespace Clinic.Infrastructure.Repositores
 
         public async Task<int> CountAsync(ISpecification<T> spec)
         {
-            return await ApplaySpecification(spec).CountAsync();
+            // Note: GetCountQuery, not ApplaySpecification. A count must reflect the whole filtered
+            // set, so pagination is never applied - see the explanation on GetCountQuery.
+            return await SpecificationEvalutor<T>.GetCountQuery(_context.Set<T>(), spec).CountAsync();
         }
     }
 }

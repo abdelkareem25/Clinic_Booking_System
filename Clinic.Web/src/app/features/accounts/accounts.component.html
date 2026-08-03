@@ -1,0 +1,243 @@
+<div class="page">
+  <ui-page-header title="accounts.title" subtitle="accounts.subtitle" icon="accounts">
+    <div actions class="head-actions">
+      @if (permissions.can('accounts.create')) {
+        <button mat-stroked-button type="button" (click)="openTransaction('expense')">
+          <ui-icon name="expense" size="sm" />
+          {{ 'accounts.newExpense' | translate }}
+        </button>
+        <button mat-stroked-button type="button" (click)="openTransaction('payment')">
+          <ui-icon name="payment" size="sm" />
+          {{ 'accounts.newPayment' | translate }}
+        </button>
+        <button mat-flat-button type="button" (click)="newInvoice()">
+          <ui-icon name="add" size="sm" />
+          {{ 'accounts.newInvoice' | translate }}
+        </button>
+      }
+    </div>
+  </ui-page-header>
+
+  <mat-tab-group class="tabs-segmented" animationDuration="180ms">
+    <!-- Overview ---------------------------------------------------------- -->
+    <mat-tab [label]="'accounts.tabOverview' | translate">
+      <div class="tab-body">
+        <section class="stats">
+          <ui-stat-card
+            label="accounts.income"
+            icon="money"
+            tone="success"
+            caption="common.thisMonth"
+            [value]="money(monthTotals().income)"
+          />
+          <ui-stat-card
+            label="accounts.expenses"
+            icon="expense"
+            tone="warning"
+            caption="common.thisMonth"
+            [value]="money(monthTotals().expenses)"
+          />
+          <ui-stat-card
+            label="accounts.netProfit"
+            icon="savings"
+            tone="primary"
+            caption="common.thisMonth"
+            [value]="money(monthTotals().net)"
+          />
+          <ui-stat-card
+            label="accounts.outstanding"
+            icon="balance"
+            tone="danger"
+            caption="accounts.tabInvoices"
+            [value]="money(store.outstanding())"
+          />
+        </section>
+
+        <section class="charts">
+          <ui-card title="accounts.revenueStatistics" subtitle="common.last30Days">
+            <ui-chart
+              type="line"
+              tone="primary"
+              caption="accounts.revenueStatistics"
+              [unit]="currency()"
+              [points]="revenueTrend()"
+            />
+          </ui-card>
+
+          <ui-card title="accounts.expenses" subtitle="common.thisMonth">
+            @if (expenseBreakdown().length) {
+              <ui-chart
+                type="column"
+                tone="accent"
+                caption="accounts.expenses"
+                [unit]="currency()"
+                [points]="expenseBreakdown()"
+              />
+            } @else {
+              <ui-empty-state
+                [compact]="true"
+                icon="expense"
+                title="accounts.empty"
+                message="accounts.emptyHint"
+              />
+            }
+          </ui-card>
+        </section>
+
+        <ui-card title="accounts.cashFlow" icon="currency">
+          <div class="flow">
+            <div class="flow-item">
+              <span class="text-label">{{ 'dashboard.revenueToday' | translate }}</span>
+              <strong class="positive">{{ money(todayTotals().income) }}</strong>
+            </div>
+            <div class="flow-item">
+              <span class="text-label">{{ 'accounts.expenses' | translate }}</span>
+              <strong class="negative">{{ money(todayTotals().expenses) }}</strong>
+            </div>
+            <div class="flow-item">
+              <span class="text-label">{{ 'accounts.netProfit' | translate }}</span>
+              <strong>{{ money(todayTotals().net) }}</strong>
+            </div>
+          </div>
+        </ui-card>
+      </div>
+    </mat-tab>
+
+    <!-- Invoices ---------------------------------------------------------- -->
+    <mat-tab [label]="'accounts.tabInvoices' | translate">
+      <div class="tab-body">
+        <ui-data-table
+          [columns]="invoiceColumns"
+          [rows]="store.invoices()"
+          [rowActions]="permissions.can('accounts.edit') ? invoiceActions : []"
+          emptyTitle="accounts.empty"
+          emptyMessage="accounts.emptyHint"
+          (action)="onInvoiceAction($event)"
+        >
+          @if (permissions.can('accounts.create')) {
+            <button emptyAction mat-flat-button type="button" (click)="newInvoice()">
+              {{ 'accounts.newInvoice' | translate }}
+            </button>
+          }
+        </ui-data-table>
+      </div>
+    </mat-tab>
+
+    <!-- Payments ---------------------------------------------------------- -->
+    <mat-tab [label]="'accounts.tabPayments' | translate">
+      <div class="tab-body">
+        <ui-data-table
+          [columns]="paymentColumns"
+          [rows]="store.payments()"
+          [rowActions]="permissions.can('accounts.delete') ? deleteAction : []"
+          emptyTitle="accounts.empty"
+          emptyMessage="accounts.emptyHint"
+          (action)="onPaymentAction($any($event))"
+        >
+          @if (permissions.can('accounts.create')) {
+            <button emptyAction mat-flat-button type="button" (click)="openTransaction('payment')">
+              {{ 'accounts.newPayment' | translate }}
+            </button>
+          }
+        </ui-data-table>
+      </div>
+    </mat-tab>
+
+    <!-- Expenses ---------------------------------------------------------- -->
+    <mat-tab [label]="'accounts.tabExpenses' | translate">
+      <div class="tab-body">
+        <ui-data-table
+          [columns]="expenseColumns"
+          [rows]="store.expenses()"
+          [rowActions]="permissions.can('accounts.delete') ? deleteAction : []"
+          emptyTitle="accounts.empty"
+          emptyMessage="accounts.emptyHint"
+          (action)="onExpenseAction($any($event))"
+        >
+          @if (permissions.can('accounts.create')) {
+            <button emptyAction mat-flat-button type="button" (click)="openTransaction('expense')">
+              {{ 'accounts.newExpense' | translate }}
+            </button>
+          }
+        </ui-data-table>
+      </div>
+    </mat-tab>
+
+    <!-- Refunds ----------------------------------------------------------- -->
+    <mat-tab [label]="'accounts.tabRefunds' | translate">
+      <div class="tab-body">
+        <ui-data-table
+          [columns]="refundColumns"
+          [rows]="store.refunds()"
+          [rowActions]="permissions.can('accounts.delete') ? deleteAction : []"
+          emptyTitle="accounts.empty"
+          emptyMessage="accounts.emptyHint"
+          (action)="onRefundAction($any($event))"
+        >
+          @if (permissions.can('accounts.create')) {
+            <button emptyAction mat-flat-button type="button" (click)="openTransaction('refund')">
+              {{ 'accounts.newRefund' | translate }}
+            </button>
+          }
+        </ui-data-table>
+      </div>
+    </mat-tab>
+
+    <!-- Daily closing ----------------------------------------------------- -->
+    <mat-tab [label]="'accounts.tabClosing' | translate">
+      <div class="tab-body">
+        <ui-card title="accounts.dailyClosing" icon="checklist">
+          <div actions>
+            @if (permissions.can('accounts.create')) {
+              <button
+                mat-flat-button
+                type="button"
+                [disabled]="!!todaysClosing()"
+                [matTooltip]="todaysClosing() ? ('accounts.dayClosed' | translate) : ''"
+                (click)="closeDay()"
+              >
+                <ui-icon name="check" size="sm" />
+                {{ 'accounts.closeDay' | translate }}
+              </button>
+            }
+          </div>
+
+          @if (todaysClosing(); as closing) {
+            <div class="closing-summary">
+              <div>
+                <span class="text-label">{{ 'accounts.openingBalance' | translate }}</span>
+                <strong>{{ money(closing.openingBalance) }}</strong>
+              </div>
+              <div>
+                <span class="text-label">{{ 'accounts.income' | translate }}</span>
+                <strong class="positive">{{ money(closing.cashIn) }}</strong>
+              </div>
+              <div>
+                <span class="text-label">{{ 'accounts.expenses' | translate }}</span>
+                <strong class="negative">{{ money(closing.cashOut) }}</strong>
+              </div>
+              <div>
+                <span class="text-label">{{ 'accounts.closingBalance' | translate }}</span>
+                <strong>{{ money(closing.closingBalance) }}</strong>
+              </div>
+            </div>
+          } @else {
+            <p class="note">
+              <ui-icon name="info" size="sm" />
+              {{ 'accounts.emptyHint' | translate }}
+            </p>
+          }
+        </ui-card>
+
+        <div class="closing-table">
+          <ui-data-table
+            [columns]="closingColumns"
+            [rows]="store.closings()"
+            emptyTitle="accounts.empty"
+            emptyMessage="accounts.emptyHint"
+          />
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

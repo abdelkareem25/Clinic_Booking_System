@@ -170,16 +170,33 @@ namespace Clinic.Tests.Integration
         }
 
         [Fact]
-        public async Task A_Patient_With_No_Appointments_Still_Answers_Without_Throwing()
+        public async Task A_Patient_With_No_Appointments_Returns_An_Empty_Array()
         {
             _appointments.Setup(r => r.ListAsync(It.IsAny<ISpecification<Appointment>>()))
                          .ReturnsAsync([]);
 
             var response = await _client.GetAsync("/api/Appointments/patient/Nobody");
 
-            // 404 on an empty collection is its own finding (TODO #20); what matters here is that
-            // the endpoint answers deterministically instead of throwing.
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            // Asserted 404 until TODO #20 (finding H7). "This patient has no appointments" is a
+            // true answer, not a missing resource - and it now matches GetByDoctorName.
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            Assert.Equal(JsonValueKind.Array, json.RootElement.ValueKind);
+            Assert.Equal(0, json.RootElement.GetArrayLength());
+        }
+
+        [Fact]
+        public async Task The_Empty_Response_Does_Not_Echo_The_Searched_Name_Back()
+        {
+            // The old 404 body was $"No appointments found for patient '{patientName}'." - an
+            // unvalidated name reflected straight into the response.
+            _appointments.Setup(r => r.ListAsync(It.IsAny<ISpecification<Appointment>>()))
+                         .ReturnsAsync([]);
+
+            var body = await (await _client.GetAsync("/api/Appointments/patient/Nobody")).Content.ReadAsStringAsync();
+
+            Assert.DoesNotContain("Nobody", body, StringComparison.OrdinalIgnoreCase);
         }
 
         public async Task DisposeAsync()

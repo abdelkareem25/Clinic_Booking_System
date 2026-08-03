@@ -1,0 +1,13 @@
+.doctor-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  width: min(420px, 84vw);
+  padding-block-start: var(--sp-1);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}

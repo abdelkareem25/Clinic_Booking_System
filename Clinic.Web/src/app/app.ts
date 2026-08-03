@@ -1,17 +1,24 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { RouterOutlet } from '@angular/router';
 
-import { ThemeService } from './core/services/theme.service';
-import { LoadingSpinnerComponent } from './shared/components/loading-spinner/loading-spinner.component';
+import { LoadingService } from './core/services/loading.service';
 
+/**
+ * The application root.
+ *
+ * The only chrome here is a top progress bar driven by the HTTP loading
+ * interceptor — a 2px line at the very top of the viewport rather than a
+ * blocking spinner, so an in-flight request never takes the UI away from the
+ * user mid-task.
+ */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, LoadingSpinnerComponent],
+  imports: [RouterOutlet, MatProgressBarModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styleUrl: './app.scss',
 })
 export class App {
-  // Instantiate the theme service at bootstrap so the persisted dark/light
-  // preference is applied before the first view (including the auth pages).
-  private readonly theme = inject(ThemeService);
+  protected readonly loading = inject(LoadingService);
 }

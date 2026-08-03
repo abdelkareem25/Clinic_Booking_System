@@ -14,8 +14,17 @@ namespace Clinic.Domain.Interfaces.Specifications
         /// </summary>
         public IReadOnlyList<Expression<Func<T, object>>> Includes { get; }
 
-        public Expression<Func<T,object>>? OrderBy { get; set; }
-        public Expression<Func<T,object>>? OrderByDescending { get; set; }
+        /// <summary>
+        /// Ascending sort key, if any. Mutually exclusive with <see cref="OrderByDescending"/> -
+        /// the setters on BaseSpecification clear one another.
+        /// </summary>
+        public Expression<Func<T,object>>? OrderBy { get; }
+
+        public Expression<Func<T,object>>? OrderByDescending { get; }
+
+        /// <summary>Issue one query per included collection instead of a single joined query.</summary>
+        public bool AsSplitQuery { get; }
+
         public int Take { get; set; }
         public int Skip { get; set; }
         public bool IsPaginationEnable { get; set; }

@@ -1,6 +1,7 @@
-using Clinic.Api.Extensions;
+﻿using Clinic.Api.Extensions;
 using Clinic.Domain.Entites.Identity;
 using Clinic.Domain.Service;
+using Clinic.Infrastructure.Data.Context;
 using Clinic.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -48,7 +49,7 @@ namespace Clinic.Tests.Extensions
             var services = new ServiceCollection();
             services.AddLogging(b => b.AddProvider(NullLoggerProvider.Instance));
             services.AddSingleton<IConfiguration>(configuration);
-            services.AddDbContext<ClinicIdentityDbContext>(o => o.UseSqlite(_connection));
+            services.AddDbContext<ClinicDbContext>(o => o.UseSqlite(_connection));
 
             services.AddIdentityServices(configuration); // the system under test
 

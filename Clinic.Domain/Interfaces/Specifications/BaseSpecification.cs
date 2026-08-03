@@ -12,8 +12,9 @@ namespace Clinic.Domain.Interfaces.Specifications
         public int Take { get; set; }
         public int Skip { get; set; }
         public bool IsPaginationEnable { get; set; }
-        public Expression<Func<T, object>>? OrderBy { get; set; }
-        public Expression<Func<T, object>>? OrderByDescending { get; set; }
+        public Expression<Func<T, object>>? OrderBy { get; private set; }
+        public Expression<Func<T, object>>? OrderByDescending { get; private set; }
+        public bool AsSplitQuery { get; protected set; }
 
         //get all
         public BaseSpecification()
@@ -40,14 +41,33 @@ namespace Clinic.Domain.Interfaces.Specifications
             _includes.Add(includeExpression);
         }
 
+        /// <summary>
+        /// Sorts ascending. Clears any descending sort: a specification holding both was silently
+        /// ambiguous, and the evaluator resolved it by letting one overwrite the other.
+        /// </summary>
         public void AddOrderBy(Expression<Func<T, object>> orderBy)
         {
             OrderBy = orderBy;
+            OrderByDescending = null;
         }
+
+        /// <summary>Sorts descending. Clears any ascending sort - see <see cref="AddOrderBy"/>.</summary>
         public void AddOrderByDescending(Expression<Func<T,object >> orderByDescending)
         {
             OrderByDescending = orderByDescending;
+            OrderBy = null;
         }
+
+        /// <summary>
+        /// Splits a query with multiple collection includes into one round trip per collection.
+        ///
+        /// A single query joining two collections returns the cartesian product of both: 50
+        /// appointments and 50 schedules for one doctor become 2,500 rows on the wire, of which EF
+        /// discards all but 100. Worth turning on for any specification that includes more than one
+        /// collection.
+        /// </summary>
+        protected void UseSplitQuery() => AsSplitQuery = true;
+
         public void ApplyPagination(int skip , int take)
         {
             Take = take;

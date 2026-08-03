@@ -1,0 +1,232 @@
+// =============================================================================
+// Design tokens
+// -----------------------------------------------------------------------------
+// The single source of truth for the visual language. Components may ONLY use
+// these variables — never a raw hex value, never a Material `--mat-sys-*` token
+// directly. Dark mode re-maps the same names, so no component ever branches on
+// the active theme.
+//
+//   --c-*    colour          --r-*   radius
+//   --sp-*   spacing (4px)   --sh-*  shadow
+//   --fs-*   font size       --fw-*  font weight
+//   --dur-*  duration        --ease-* easing
+//   --z-*    stacking        --lay-* layout metrics
+// =============================================================================
+
+:root {
+  // ---------------------------------------------------------------- palette --
+  // Brand ramp (kept as literals so `color-mix()` tints stay predictable).
+  --brand-700: #0f766e;
+  --brand-600: #128077;
+  --brand-500: #14b8a6;
+  --brand-400: #2dd4bf;
+  --accent-600: #2563eb;
+  --accent-500: #3b82f6;
+  --success-500: #22c55e;
+  --success-600: #16a34a;
+  --warning-500: #f59e0b;
+  --warning-600: #d97706;
+  --danger-500: #ef4444;
+  --danger-600: #dc2626;
+
+  // --------------------------------------------------------------- surfaces --
+  --c-canvas: #f7f8fa; // page background
+  --c-surface: #ffffff; // cards, panels, table body
+  --c-surface-2: #f2f4f7; // inset areas, table header, disabled fields
+  --c-surface-3: #e9edf2; // hover on a surface-2 element
+  --c-surface-inverse: #101828;
+  --c-overlay: #ffffff; // dialogs / menus / popovers
+  --c-scrim: rgb(16 24 40 / 44%);
+
+  // ------------------------------------------------------------------- text --
+  --c-text: #101828; // headings, primary content
+  --c-text-muted: #475467; // labels, secondary content
+  --c-text-subtle: #98a2b3; // placeholders, meta, disabled
+  --c-text-inverse: #ffffff;
+
+  // ---------------------------------------------------------------- borders --
+  --c-border: #e4e7ec; // default hairline
+  --c-border-strong: #d0d5dd; // inputs, dividers that must read
+  --c-ring: color-mix(in srgb, var(--brand-700) 40%, transparent);
+
+  // ------------------------------------------------------- semantic (solid) --
+  --c-primary: var(--brand-700);
+  --c-primary-hover: #0c625b;
+  --c-primary-active: #0a524c;
+  --c-primary-fg: #ffffff;
+
+  --c-secondary: var(--brand-500);
+  --c-secondary-fg: #04302b;
+
+  --c-accent: var(--accent-600);
+  --c-accent-fg: #ffffff;
+
+  --c-success: var(--success-600);
+  --c-success-fg: #ffffff;
+
+  --c-warning: var(--warning-600);
+  --c-warning-fg: #ffffff;
+
+  --c-danger: var(--danger-600);
+  --c-danger-fg: #ffffff;
+
+  // -------------------------------------------------------- semantic (soft) --
+  // Tinted backgrounds for chips, badges, alert banners and icon tiles.
+  --c-primary-soft: color-mix(in srgb, var(--brand-700) 10%, #ffffff);
+  --c-primary-soft-fg: #0b5d56;
+  --c-secondary-soft: color-mix(in srgb, var(--brand-500) 14%, #ffffff);
+  --c-secondary-soft-fg: #0f766e;
+  --c-accent-soft: color-mix(in srgb, var(--accent-600) 10%, #ffffff);
+  --c-accent-soft-fg: #1d4ed8;
+  --c-success-soft: color-mix(in srgb, var(--success-500) 14%, #ffffff);
+  --c-success-soft-fg: #15803d;
+  --c-warning-soft: color-mix(in srgb, var(--warning-500) 16%, #ffffff);
+  --c-warning-soft-fg: #b45309;
+  --c-danger-soft: color-mix(in srgb, var(--danger-500) 12%, #ffffff);
+  --c-danger-soft-fg: #b42318;
+  --c-neutral-soft: #f2f4f7;
+  --c-neutral-soft-fg: #475467;
+
+  // ------------------------------------------------------------------ radii --
+  --r-xs: 6px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 14px; // the house radius — cards, dialogs, inputs
+  --r-xl: 20px;
+  --r-2xl: 28px;
+  --r-full: 999px;
+
+  // ---------------------------------------------------------------- spacing --
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 32px;
+  --sp-8: 40px;
+  --sp-9: 48px;
+  --sp-10: 64px;
+
+  // ---------------------------------------------------------------- shadows --
+  // Three only. Soft, low-spread, tinted with the neutral hue rather than pure
+  // black so they read as depth instead of dirt.
+  --sh-card: 0 1px 2px rgb(16 24 40 / 4%), 0 1px 3px rgb(16 24 40 / 6%);
+  --sh-raised: 0 2px 4px rgb(16 24 40 / 5%), 0 8px 20px -6px rgb(16 24 40 / 10%);
+  --sh-overlay: 0 8px 12px -4px rgb(16 24 40 / 8%), 0 24px 48px -12px rgb(16 24 40 / 18%);
+  --sh-focus: 0 0 0 3px var(--c-ring);
+
+  // ------------------------------------------------------------- typography --
+  --ff-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --ff-arabic: 'IBM Plex Sans Arabic', 'Cairo', 'Segoe UI', system-ui, sans-serif;
+  --ff-mono: 'JetBrains Mono', 'SFMono-Regular', ui-monospace, monospace;
+
+  --fs-2xs: 0.6875rem; // 11px — table meta, badges
+  --fs-xs: 0.75rem; // 12px — labels, captions
+  --fs-sm: 0.8125rem; // 13px — table cells, secondary body
+  --fs-base: 0.875rem; // 14px — body default (dense ERP baseline)
+  --fs-md: 1rem; // 16px — emphasised body, card titles
+  --fs-lg: 1.125rem; // 18px — section titles
+  --fs-xl: 1.375rem; // 22px — page titles
+  --fs-2xl: 1.75rem; // 28px — metric values
+  --fs-3xl: 2.25rem; // 36px — hero numbers
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  --lh-tight: 1.25;
+  --lh-snug: 1.4;
+  --lh-normal: 1.55;
+
+  // ----------------------------------------------------------------- motion --
+  --dur-micro: 120ms; // hover, focus, colour changes
+  --dur-fast: 180ms; // panels, menus, expanding rows
+  --dur-slow: 260ms; // route + drawer transitions
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  // ------------------------------------------------------------------ layout --
+  --lay-sidebar: 264px;
+  --lay-sidebar-collapsed: 72px;
+  --lay-topbar: 60px;
+  --lay-gutter: 24px;
+  --lay-content-max: 1560px;
+
+  // ------------------------------------------------------------------ z-index --
+  --z-sticky: 10;
+  --z-drawer: 40;
+  --z-topbar: 50;
+  --z-overlay: 1000;
+  --z-toast: 1100;
+}
+
+// =============================================================================
+// Dark theme — same token names, re-pointed. Never add a new token here that
+// does not exist in `:root`.
+// =============================================================================
+html.dark {
+  --c-canvas: #0b0f14;
+  --c-surface: #111820;
+  --c-surface-2: #172029;
+  --c-surface-3: #1e2833;
+  --c-surface-inverse: #f2f4f7;
+  --c-overlay: #151e27;
+  --c-scrim: rgb(0 0 0 / 62%);
+
+  --c-text: #e8edf2;
+  --c-text-muted: #9aa7b4;
+  --c-text-subtle: #6b7986;
+  --c-text-inverse: #0b0f14;
+
+  --c-border: #202b36;
+  --c-border-strong: #2c3945;
+  --c-ring: color-mix(in srgb, var(--brand-400) 45%, transparent);
+
+  // Solid fills lighten so they keep contrast against the dark canvas.
+  --c-primary: #17a394;
+  --c-primary-hover: #1cb5a4;
+  --c-primary-active: #148d81;
+  --c-primary-fg: #04211e;
+
+  --c-secondary: var(--brand-400);
+  --c-secondary-fg: #04302b;
+
+  --c-accent: var(--accent-500);
+  --c-accent-fg: #06152e;
+
+  --c-success: var(--success-500);
+  --c-success-fg: #04240f;
+
+  --c-warning: var(--warning-500);
+  --c-warning-fg: #2a1a02;
+
+  --c-danger: var(--danger-500);
+  --c-danger-fg: #2c0707;
+
+  // Soft tints mix into the surface instead of white.
+  --c-primary-soft: color-mix(in srgb, var(--brand-400) 16%, #111820);
+  --c-primary-soft-fg: #5eead4;
+  --c-secondary-soft: color-mix(in srgb, var(--brand-400) 18%, #111820);
+  --c-secondary-soft-fg: #7ff0e0;
+  --c-accent-soft: color-mix(in srgb, var(--accent-500) 18%, #111820);
+  --c-accent-soft-fg: #93b4fd;
+  --c-success-soft: color-mix(in srgb, var(--success-500) 18%, #111820);
+  --c-success-soft-fg: #6ee7a0;
+  --c-warning-soft: color-mix(in srgb, var(--warning-500) 20%, #111820);
+  --c-warning-soft-fg: #fcd34d;
+  --c-danger-soft: color-mix(in srgb, var(--danger-500) 20%, #111820);
+  --c-danger-soft-fg: #fca5a5;
+  --c-neutral-soft: #1c2631;
+  --c-neutral-soft-fg: #9aa7b4;
+
+  --sh-card: 0 1px 2px rgb(0 0 0 / 30%), 0 1px 3px rgb(0 0 0 / 24%);
+  --sh-raised: 0 2px 4px rgb(0 0 0 / 30%), 0 8px 20px -6px rgb(0 0 0 / 44%);
+  --sh-overlay: 0 8px 12px -4px rgb(0 0 0 / 36%), 0 24px 48px -12px rgb(0 0 0 / 56%);
+}
+
+// Arabic switches the sans stack without touching any other token.
+html[dir='rtl'] {
+  --ff-sans: var(--ff-arabic);
+}

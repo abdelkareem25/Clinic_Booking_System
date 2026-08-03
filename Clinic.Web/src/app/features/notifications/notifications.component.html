@@ -1,0 +1,91 @@
+<div class="page">
+  <ui-page-header
+    title="notifications.title"
+    subtitle="notifications.subtitle"
+    icon="notifications"
+  >
+    <div actions class="head-actions">
+      <div class="segmented">
+        <button
+          type="button"
+          [class.segment-active]="filter() === 'all'"
+          (click)="filter.set('all')"
+        >
+          {{ 'common.all' | translate }}
+        </button>
+        <button
+          type="button"
+          [class.segment-active]="filter() === 'unread'"
+          (click)="filter.set('unread')"
+        >
+          {{ 'notifications.unread' | translate }}
+          @if (store.unreadCount()) {
+            <span class="badge badge-danger">{{ store.unreadCount() }}</span>
+          }
+        </button>
+      </div>
+
+      @if (store.unreadCount()) {
+        <button mat-stroked-button type="button" (click)="store.markAllRead()">
+          <ui-icon name="check" size="sm" />
+          {{ 'notifications.markAllRead' | translate }}
+        </button>
+      }
+    </div>
+  </ui-page-header>
+
+  @if (entries().length) {
+    <ui-card [padded]="false">
+      <ul class="feed">
+        @for (entry of entries(); track entry.id) {
+          <li
+            class="entry"
+            [class.entry-unread]="!entry.read"
+            [class.entry-clickable]="entry.route"
+            tabindex="0"
+            (click)="open(entry)"
+            (keydown.enter)="open(entry)"
+          >
+            <span class="icon-tile" [class]="'icon-tile-' + entry.tone">
+              <ui-icon [name]="entry.icon" size="md" />
+            </span>
+
+            <div class="entry-body">
+              <strong>{{ entry.title }}</strong>
+              <p>{{ entry.body }}</p>
+              <time>{{ entry.createdAt | date: 'd MMM y, h:mm a' }}</time>
+            </div>
+
+            <div class="entry-actions">
+              @if (!entry.read) {
+                <button
+                  mat-icon-button
+                  type="button"
+                  [matTooltip]="'notifications.markRead' | translate"
+                  (click)="markRead(entry, $event)"
+                >
+                  <ui-icon name="check" size="sm" />
+                </button>
+              }
+              <button
+                mat-icon-button
+                type="button"
+                [matTooltip]="'common.delete' | translate"
+                (click)="remove(entry, $event)"
+              >
+                <ui-icon name="close" size="sm" />
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+    </ui-card>
+  } @else {
+    <ui-empty-state
+      icon="notifications"
+      tone="primary"
+      title="notifications.empty"
+      message="notifications.emptyHint"
+    />
+  }
+</div>

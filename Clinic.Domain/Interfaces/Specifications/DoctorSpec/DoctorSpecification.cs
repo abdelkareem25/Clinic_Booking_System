@@ -25,7 +25,7 @@ namespace Clinic.Domain.Interfaces.Specifications.DoctorSpec
                     AddOrderBy(x => x.Id);
                     break;
             }
-            ApplyPagination((param.PageIndex-1)*param.PageSize,param.PageSize);
+            ApplyPagination(param.Skip, param.PageSize);
         }
     }
 }

@@ -1,0 +1,246 @@
+<form class="page" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <ui-page-header
+    [title]="isEdit() ? 'patients.edit' : 'patients.new'"
+    subtitle="patients.subtitle"
+    icon="patients"
+    [backRoute]="isEdit() ? '/patients/' + patientId() : '/patients'"
+    [breadcrumbs]="[
+      { label: 'patients.title', route: '/patients' },
+      { label: isEdit() ? 'common.edit' : 'common.create' },
+    ]"
+  >
+    <div actions class="head-actions">
+      <button mat-stroked-button type="button" (click)="cancel()">
+        {{ 'common.cancel' | translate }}
+      </button>
+      <button mat-flat-button type="submit" [disabled]="saving() || loading()">
+        <ui-icon name="save" size="sm" />
+        {{ (saving() ? 'common.saving' : 'common.save') | translate }}
+      </button>
+    </div>
+  </ui-page-header>
+
+  <div class="form-columns">
+    <div class="stack">
+      <!-- Identity -------------------------------------------------------- -->
+      <ui-card title="patients.sectionIdentity" icon="user">
+        <div class="form-grid cols-2">
+          <div class="field span-full">
+            <mat-form-field>
+              <mat-label>{{ 'patients.name' | translate }}</mat-label>
+              <input matInput type="text" formControlName="name" autocomplete="name" />
+            </mat-form-field>
+            <ui-field-error [control]="form.controls.name" [submitted]="submitted()" />
+          </div>
+
+          <div class="field">
+            <!-- Dates are never typed: the input is readonly and the picker owns it. -->
+            <mat-form-field>
+              <mat-label>{{ 'patients.dateOfBirth' | translate }}</mat-label>
+              <input
+                matInput
+                readonly
+                formControlName="dateOfBirth"
+                [matDatepicker]="dobPicker"
+                [max]="maxDate"
+                (click)="dobPicker.open()"
+              />
+              <mat-datepicker-toggle matIconSuffix [for]="dobPicker" />
+              <mat-datepicker #dobPicker startView="multi-year" />
+            </mat-form-field>
+            <ui-field-error [control]="form.controls.dateOfBirth" [submitted]="submitted()" />
+          </div>
+
+          <div class="field">
+            <mat-form-field>
+              <mat-label>{{ 'patients.gender' | translate }}</mat-label>
+              <mat-select formControlName="gender">
+                @for (option of genders; track option) {
+                  <mat-option [value]="option">
+                    {{
+                      (option === 'Male'
+                        ? 'patients.genderMale'
+                        : option === 'Female'
+                          ? 'patients.genderFemale'
+                          : 'patients.genderOther'
+                      ) | translate
+                    }}
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <ui-field-error [control]="form.controls.gender" [submitted]="submitted()" />
+          </div>
+
+          <div class="field span-full">
+            <mat-form-field>
+              <mat-label>{{ 'patients.nationalId' | translate }}</mat-label>
+              <input
+                matInput
+                type="text"
+                formControlName="nationalId"
+                inputmode="numeric"
+                maxlength="14"
+              />
+              <mat-hint>{{ 'common.optional' | translate }}</mat-hint>
+            </mat-form-field>
+            <ui-field-error [control]="form.controls.nationalId" [submitted]="submitted()" />
+          </div>
+        </div>
+      </ui-card>
+
+      <!-- Contact --------------------------------------------------------- -->
+      <ui-card title="patients.sectionContact" icon="phone">
+        <div class="form-grid cols-2">
+          <div class="field">
+            <mat-form-field>
+              <mat-label>{{ 'patients.phone' | translate }}</mat-label>
+              <input
+                matInput
+                type="tel"
+                formControlName="phone"
+                inputmode="numeric"
+                autocomplete="tel"
+                maxlength="14"
+                placeholder="01012345678"
+              />
+            </mat-form-field>
+            <ui-field-error [control]="form.controls.phone" [submitted]="submitted()" />
+          </div>
+
+          <div class="field">
+            <mat-form-field>
+              <mat-label>{{ 'patients.emergencyContactPhone' | translate }}</mat-label>
+              <input
+                matInput
+                type="tel"
+                formControlName="emergencyContactPhone"
+                inputmode="numeric"
+                maxlength="14"
+              />
+            </mat-form-field>
+            <ui-field-error
+              [control]="form.controls.emergencyContactPhone"
+              [submitted]="submitted()"
+            />
+          </div>
+
+          <div class="field">
+            <mat-form-field>
+              <mat-label>{{ 'patients.emergencyContactName' | translate }}</mat-label>
+              <input matInput type="text" formControlName="emergencyContactName" />
+            </mat-form-field>
+            <ui-field-error
+              [control]="form.controls.emergencyContactName"
+              [submitted]="submitted()"
+            />
+          </div>
+
+          <div class="field">
+            <mat-form-field>
+              <mat-label>{{ 'patients.emergencyRelation' | translate }}</mat-label>
+              <input matInput type="text" formControlName="emergencyRelation" />
+            </mat-form-field>
+          </div>
+
+          <div class="field span-full">
+            <mat-form-field>
+              <mat-label>{{ 'patients.address' | translate }}</mat-label>
+              <textarea matInput rows="2" formControlName="address"></textarea>
+            </mat-form-field>
+            <ui-field-error [control]="form.controls.address" [submitted]="submitted()" />
+          </div>
+        </div>
+      </ui-card>
+    </div>
+
+    <div class="stack">
+      <!-- Clinical -------------------------------------------------------- -->
+      <ui-card title="patients.sectionMedical" icon="vitals">
+        <div class="stack">
+          <div class="field">
+            <mat-form-field>
+              <mat-label>{{ 'patients.bloodGroup' | translate }}</mat-label>
+              <mat-select formControlName="bloodGroup">
+                <mat-option value="">{{ 'common.notSet' | translate }}</mat-option>
+                @for (group of bloodGroups; track group) {
+                  <mat-option [value]="group">{{ group }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Chip inputs: allergies, conditions and medications are lists, and
+               a comma-separated text field makes them unqueryable. -->
+          <mat-form-field>
+            <mat-label>{{ 'patients.allergies' | translate }}</mat-label>
+            <mat-chip-grid #allergyGrid>
+              @for (item of chipsFor('allergies'); track item) {
+                <mat-chip-row (removed)="removeChip('allergies', item)">
+                  {{ item }}
+                  <button matChipRemove [attr.aria-label]="'common.delete' | translate">
+                    <ui-icon name="close" size="sm" />
+                  </button>
+                </mat-chip-row>
+              }
+            </mat-chip-grid>
+            <input
+              [matChipInputFor]="allergyGrid"
+              [matChipInputAddOnBlur]="true"
+              [placeholder]="'patients.addAllergy' | translate"
+              (matChipInputTokenEnd)="addChip('allergies', $event)"
+            />
+          </mat-form-field>
+
+          <mat-form-field>
+            <mat-label>{{ 'patients.chronicDiseases' | translate }}</mat-label>
+            <mat-chip-grid #chronicGrid>
+              @for (item of chipsFor('chronicDiseases'); track item) {
+                <mat-chip-row (removed)="removeChip('chronicDiseases', item)">
+                  {{ item }}
+                  <button matChipRemove [attr.aria-label]="'common.delete' | translate">
+                    <ui-icon name="close" size="sm" />
+                  </button>
+                </mat-chip-row>
+              }
+            </mat-chip-grid>
+            <input
+              [matChipInputFor]="chronicGrid"
+              [matChipInputAddOnBlur]="true"
+              [placeholder]="'patients.addCondition' | translate"
+              (matChipInputTokenEnd)="addChip('chronicDiseases', $event)"
+            />
+          </mat-form-field>
+
+          <mat-form-field>
+            <mat-label>{{ 'patients.currentMedications' | translate }}</mat-label>
+            <mat-chip-grid #medicationGrid>
+              @for (item of chipsFor('currentMedications'); track item) {
+                <mat-chip-row (removed)="removeChip('currentMedications', item)">
+                  {{ item }}
+                  <button matChipRemove [attr.aria-label]="'common.delete' | translate">
+                    <ui-icon name="close" size="sm" />
+                  </button>
+                </mat-chip-row>
+              }
+            </mat-chip-grid>
+            <input
+              [matChipInputFor]="medicationGrid"
+              [matChipInputAddOnBlur]="true"
+              [placeholder]="'patients.addMedication' | translate"
+              (matChipInputTokenEnd)="addChip('currentMedications', $event)"
+            />
+          </mat-form-field>
+        </div>
+      </ui-card>
+
+      <ui-card title="patients.sectionNotes" icon="note">
+        <mat-form-field>
+          <mat-label>{{ 'common.notes' | translate }}</mat-label>
+          <textarea matInput rows="5" formControlName="notes"></textarea>
+        </mat-form-field>
+        <ui-field-error [control]="form.controls.notes" [submitted]="submitted()" />
+      </ui-card>
+    </div>
+  </div>
+</form>

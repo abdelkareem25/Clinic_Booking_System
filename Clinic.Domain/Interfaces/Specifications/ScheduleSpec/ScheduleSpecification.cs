@@ -26,7 +26,7 @@ namespace Clinic.Domain.Interfaces.Specifications.ScheduleSpec
                     AddOrderBy(x => x.DayOfWeek);
                     break;
             }
-            ApplyPagination((param.PageIndex - 1) * param.PageSize, param.PageSize);
+            ApplyPagination(param.Skip, param.PageSize);
         }
     }
 }

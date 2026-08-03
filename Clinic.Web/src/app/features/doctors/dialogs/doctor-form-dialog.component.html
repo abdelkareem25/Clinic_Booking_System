@@ -1,44 +1,37 @@
-<h2 mat-dialog-title>{{ isEdit ? 'Edit doctor' : 'Add doctor' }}</h2>
+<h2 mat-dialog-title>{{ (isEdit ? 'doctors.edit' : 'doctors.new') | translate }}</h2>
 
-<form [formGroup]="form" (ngSubmit)="submit()">
-  <mat-dialog-content class="form-grid">
-    <mat-form-field>
-      <mat-label>Full name</mat-label>
-      <mat-icon matPrefix>person</mat-icon>
-      <input matInput formControlName="name" autocomplete="off" />
-      @if (form.controls.name.hasError('required')) {
-        <mat-error>Name is required.</mat-error>
-      }
-      @if (form.controls.name.hasError('minlength')) {
-        <mat-error>Name is too short.</mat-error>
-      }
-      @if (form.controls.name.hasError('server')) {
-        <mat-error>{{ form.controls.name.getError('server') }}</mat-error>
-      }
-    </mat-form-field>
+<mat-dialog-content>
+  <form class="doctor-form" [formGroup]="form" novalidate>
+    <div class="field">
+      <mat-form-field>
+        <mat-label>{{ 'doctors.name' | translate }}</mat-label>
+        <input matInput type="text" formControlName="name" autocomplete="name" />
+      </mat-form-field>
+      <ui-field-error [control]="form.controls.name" [submitted]="submitted()" />
+    </div>
 
-    <mat-form-field>
-      <mat-label>Specialization</mat-label>
-      <mat-icon matPrefix>medical_information</mat-icon>
-      <mat-select formControlName="specialization">
-        @for (option of specializations; track option) {
-          <mat-option [value]="option">{{ option }}</mat-option>
-        }
-      </mat-select>
-      @if (form.controls.specialization.hasError('required')) {
-        <mat-error>Specialization is required.</mat-error>
-      }
-      @if (form.controls.specialization.hasError('server')) {
-        <mat-error>{{ form.controls.specialization.getError('server') }}</mat-error>
-      }
-    </mat-form-field>
-  </mat-dialog-content>
+    <div class="field">
+      <!-- Autocomplete rather than a select: specialities in use are suggested,
+           but a clinic must still be able to enter one we did not predict. -->
+      <mat-form-field>
+        <mat-label>{{ 'doctors.specialization' | translate }}</mat-label>
+        <input matInput type="text" formControlName="specialization" [matAutocomplete]="specAuto" />
+        <mat-autocomplete #specAuto>
+          @for (specialization of specializations; track specialization) {
+            <mat-option [value]="specialization">{{ specialization }}</mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+      <ui-field-error [control]="form.controls.specialization" [submitted]="submitted()" />
+    </div>
+  </form>
+</mat-dialog-content>
 
-  <mat-dialog-actions align="end">
-    <button mat-button type="button" mat-dialog-close>Cancel</button>
-    <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
-      <mat-icon>save</mat-icon>
-      {{ isEdit ? 'Save changes' : 'Create doctor' }}
-    </button>
-  </mat-dialog-actions>
-</form>
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="dialogRef.close(false)">
+    {{ 'common.cancel' | translate }}
+  </button>
+  <button mat-flat-button type="button" [disabled]="saving()" (click)="submit()">
+    {{ (saving() ? 'common.saving' : 'common.save') | translate }}
+  </button>
+</mat-dialog-actions>

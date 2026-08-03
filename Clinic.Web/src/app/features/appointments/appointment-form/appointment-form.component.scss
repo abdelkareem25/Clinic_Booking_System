@@ -1,0 +1,196 @@
+:host {
+  display: block;
+}
+
+.booking {
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: minmax(0, 3fr) minmax(300px, 1fr);
+  align-items: start;
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.step-index {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-full);
+  background: var(--c-primary-soft);
+  color: var(--c-primary-soft-fg);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+}
+
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.option-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.option-text small {
+  font-size: var(--fs-xs);
+  color: var(--c-text-subtle);
+}
+
+.hint,
+.placeholder {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+}
+
+.placeholder {
+  padding: var(--sp-4);
+  border: 1px dashed var(--c-border-strong);
+  border-radius: var(--r-md);
+  background: var(--c-surface-2);
+}
+
+// -----------------------------------------------------------------------------
+// Time slots
+//
+// Taken slots stay visible and carry the name that holds them — hiding them
+// makes a full day look like a broken picker, and showing who has the slot is
+// what lets reception offer an alternative on the phone.
+// -----------------------------------------------------------------------------
+.slots-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-block: var(--sp-3) var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: var(--sp-2);
+}
+
+.slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-height: 44px;
+  padding: 6px 8px;
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-sm);
+  background: var(--c-surface);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-micro) var(--ease-standard),
+    background-color var(--dur-micro) var(--ease-standard);
+}
+
+.slot:hover:not(:disabled) {
+  border-color: var(--c-primary);
+  background: var(--c-primary-soft);
+}
+
+.slot-selected,
+.slot-selected:hover {
+  border-color: var(--c-primary);
+  background: var(--c-primary);
+  color: var(--c-primary-fg);
+}
+
+.slot-taken {
+  border-style: dashed;
+  border-color: var(--c-border);
+  background: var(--c-surface-2);
+  color: var(--c-text-subtle);
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.slot small {
+  font-size: 10px;
+  font-weight: var(--fw-regular);
+  text-decoration: none;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// -----------------------------------------------------------------------------
+// Review panel
+// -----------------------------------------------------------------------------
+.review {
+  position: sticky;
+  top: calc(var(--lay-topbar) + var(--sp-4));
+}
+
+.review-note {
+  margin-block-end: var(--sp-3);
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+}
+
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin: 0 0 var(--sp-4);
+}
+
+.review-list div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.review-list dt {
+  font-size: var(--fs-xs);
+  color: var(--c-text-subtle);
+}
+
+.review-list dd {
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+}
+
+.review-time {
+  font-size: var(--fs-md) !important;
+  font-weight: var(--fw-semibold) !important;
+  color: var(--c-primary-soft-fg);
+}
+
+.review-actions {
+  display: flex;
+  gap: var(--sp-2);
+  justify-content: flex-end;
+}
+
+@media (max-width: 1023px) {
+  .booking {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .review {
+    position: static;
+  }
+}

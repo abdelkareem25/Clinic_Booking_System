@@ -1,0 +1,167 @@
+:host {
+  display: block;
+}
+
+.layout {
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  align-items: start;
+}
+
+// -----------------------------------------------------------------------------
+// Role picker
+// -----------------------------------------------------------------------------
+.role-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.role-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: var(--sp-3) var(--sp-4);
+  border: 0;
+  border-block-end: 1px solid var(--c-border);
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: background-color var(--dur-micro) var(--ease-standard);
+}
+
+.role-item:hover {
+  background: var(--c-surface-2);
+}
+
+.role-active {
+  background: var(--c-primary-soft);
+}
+
+.role-active:hover {
+  background: var(--c-primary-soft);
+}
+
+.role-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.role-text strong {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+
+.role-text small {
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+}
+
+.delete-role {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-xs);
+  color: var(--c-text-subtle);
+  cursor: pointer;
+}
+
+.delete-role:hover {
+  background: var(--c-danger-soft);
+  color: var(--c-danger-soft-fg);
+}
+
+// -----------------------------------------------------------------------------
+// Matrix
+// -----------------------------------------------------------------------------
+.matrix-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.new-role {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--sp-3);
+  margin-block-end: var(--sp-4);
+  padding-block-end: var(--sp-4);
+  border-block-end: 1px solid var(--c-border);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.matrix {
+  display: grid;
+  gap: var(--sp-3);
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.module {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
+}
+
+.module-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding-block-end: var(--sp-2);
+  border-block-end: 1px solid var(--c-border);
+}
+
+.module-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: var(--fw-semibold);
+}
+
+.module-count {
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+// Actions sit in two columns: a single column makes a five-action module tall
+// enough to push the grid out of alignment.
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px var(--sp-2);
+  padding-inline-start: var(--sp-2);
+}
+
+.matrix-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+}
+
+@media (max-width: 1023px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .new-role {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,93 +1,91 @@
-import { ChangeDetectionStrategy, Component, Inject, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { DEFAULT_SPECIALIZATIONS, Doctor } from '../../../core/models/doctor.model';
 import { DoctorsService } from '../../../core/services/doctors.service';
 import { NotificationService } from '../../../core/services/notification.service';
-import { applyServerValidationErrors } from '../../../core/utils/form-errors.util';
+import { nameValidators } from '../../../core/utils/validators';
+import { FieldErrorComponent } from '../../../shared/ui/field-error/field-error.component';
 
-export interface DoctorFormDialogData {
+export interface DoctorDialogData {
   doctor?: Doctor;
+  /** Specialities already in use, offered before the built-in list. */
+  knownSpecializations: string[];
 }
 
 @Component({
   selector: 'app-doctor-form-dialog',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
+    MatAutocompleteModule,
     MatButtonModule,
     MatDialogModule,
     MatFormFieldModule,
-    MatIconModule,
     MatInputModule,
-    MatSelectModule
+    TranslatePipe,
+    FieldErrorComponent,
   ],
-  templateUrl: './doctor-form-dialog.component.html'
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  templateUrl: './doctor-form-dialog.component.html',
+  styleUrl: './doctor-form-dialog.component.scss',
 })
 export class DoctorFormDialogComponent {
-  private readonly doctorsService = inject(DoctorsService);
+  private readonly api = inject(DoctorsService);
+  private readonly formBuilder = inject(FormBuilder);
   private readonly notifications = inject(NotificationService);
-  private readonly fb = inject(FormBuilder);
-  private readonly dialogRef = inject(MatDialogRef<DoctorFormDialogComponent, boolean>);
+  private readonly translate = inject(TranslateService);
 
-  readonly submitting = signal(false);
-  readonly isEdit: boolean;
-  readonly specializations: string[];
+  readonly dialogRef = inject<MatDialogRef<DoctorFormDialogComponent, boolean>>(MatDialogRef);
+  readonly data = inject<DoctorDialogData>(MAT_DIALOG_DATA);
 
-  readonly form = this.fb.nonNullable.group({
-    name: ['', [Validators.required, Validators.minLength(2)]],
-    specialization: ['', [Validators.required]]
+  protected readonly isEdit = Boolean(this.data.doctor);
+  protected readonly saving = signal(false);
+  protected readonly submitted = signal(false);
+
+  /** In-use specialities first, then the defaults, de-duplicated. */
+  protected readonly specializations = [
+    ...new Set([...this.data.knownSpecializations, ...DEFAULT_SPECIALIZATIONS]),
+  ].sort((a, b) => a.localeCompare(b));
+
+  protected readonly form = this.formBuilder.nonNullable.group({
+    name: [this.data.doctor?.name ?? '', nameValidators],
+    specialization: [
+      this.data.doctor?.specialization ?? '',
+      [Validators.required, Validators.maxLength(60)],
+    ],
   });
 
-  constructor(@Inject(MAT_DIALOG_DATA) private readonly data: DoctorFormDialogData) {
-    this.isEdit = !!data?.doctor;
-    this.specializations = Array.from(
-      new Set([...DEFAULT_SPECIALIZATIONS, data?.doctor?.specialization].filter(Boolean) as string[])
-    ).sort((a, b) => a.localeCompare(b));
+  protected submit(): void {
+    this.submitted.set(true);
 
-    if (data?.doctor) {
-      this.form.patchValue({
-        name: data.doctor.name,
-        specialization: data.doctor.specialization
-      });
-    }
-  }
-
-  submit(): void {
-    if (this.form.invalid || this.submitting()) {
+    if (this.form.invalid || this.saving()) {
       this.form.markAllAsTouched();
       return;
     }
 
-    this.submitting.set(true);
-    const value = this.form.getRawValue();
+    this.saving.set(true);
+    const raw = this.form.getRawValue();
+    const payload = { name: raw.name.trim(), specialization: raw.specialization.trim() };
 
-    const request$ = this.isEdit
-      ? this.doctorsService.updateDoctor(this.data.doctor!.id, {
-          id: this.data.doctor!.id,
-          name: value.name,
-          specialization: value.specialization
-        })
-      : this.doctorsService.createDoctor({ name: value.name, specialization: value.specialization });
+    const request = this.data.doctor
+      ? this.api.updateDoctor(this.data.doctor.id, { ...payload, id: this.data.doctor.id })
+      : this.api.createDoctor(payload);
 
-    request$.subscribe({
+    request.subscribe({
       next: () => {
-        this.notifications.success(this.isEdit ? 'Doctor updated.' : 'Doctor created.');
+        this.saving.set(false);
+        this.notifications.success(
+          this.translate.instant(this.isEdit ? 'doctors.updated' : 'doctors.created')
+        );
         this.dialogRef.close(true);
       },
-      error: (error: unknown) => {
-        this.submitting.set(false);
-        const unmatched = applyServerValidationErrors(this.form, error);
-        if (unmatched.length) {
-          this.notifications.error(unmatched.join(' '));
-        }
-      }
+      error: () => this.saving.set(false),
     });
   }
 }

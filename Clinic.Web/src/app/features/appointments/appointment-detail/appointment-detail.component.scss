@@ -2,60 +2,32 @@
   display: block;
 }
 
-.detail-actions {
+.head-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
 }
 
-.spacer {
-  flex: 1 1 auto;
+.danger-btn {
+  color: var(--c-danger);
 }
 
-.detail-card {
-  max-width: 640px;
-}
-
-.status-row {
-  margin-bottom: 8px;
-}
-
-.fact-list {
-  margin: 0;
+.columns {
   display: grid;
-  gap: 14px;
+  gap: var(--sp-4);
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  align-items: start;
+}
 
-  div {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--mat-sys-outline-variant);
-  }
+.linked {
+  margin-block-end: var(--sp-3);
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+}
 
-  div:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-  }
-
-  dt {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--mat-sys-on-surface-variant);
-
-    mat-icon {
-      font-size: 20px;
-      width: 20px;
-      height: 20px;
-    }
-  }
-
-  dd {
-    margin: 0;
-    font-weight: 600;
-    text-align: end;
+@media (max-width: 900px) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

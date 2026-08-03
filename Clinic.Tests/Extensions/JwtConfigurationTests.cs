@@ -1,5 +1,6 @@
-using Clinic.Api.Extensions;
+﻿using Clinic.Api.Extensions;
 using Clinic.Application;
+using Clinic.Infrastructure.Data.Context;
 using Clinic.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Data.Sqlite;
@@ -43,7 +44,7 @@ namespace Clinic.Tests.Extensions
             var services = new ServiceCollection();
             services.AddLogging();
             services.AddSingleton<IConfiguration>(configuration);
-            services.AddDbContext<ClinicIdentityDbContext>(o => o.UseSqlite(_connection));
+            services.AddDbContext<ClinicDbContext>(o => o.UseSqlite(_connection));
             services.AddIdentityServices(configuration);
 
             return services.BuildServiceProvider();

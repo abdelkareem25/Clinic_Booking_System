@@ -1,0 +1,226 @@
+<div class="page">
+  <ui-page-header
+    [title]="isEdit() ? 'appointments.edit' : 'appointments.new'"
+    subtitle="appointments.subtitle"
+    icon="appointments"
+    backRoute="/appointments"
+    [breadcrumbs]="[
+      { label: 'appointments.title', route: '/appointments' },
+      { label: isEdit() ? 'common.edit' : 'common.create' },
+    ]"
+  />
+
+  @if (!loading() && !hasDoctorsWithSchedules()) {
+    <!-- Booking is impossible without a schedule, so say that instead of
+         showing a wizard that dead-ends at an empty date picker. -->
+    <ui-empty-state
+      icon="schedules"
+      tone="warning"
+      title="schedules.empty"
+      message="schedules.emptyHint"
+    >
+      <a mat-flat-button routerLink="/schedules">{{ 'schedules.new' | translate }}</a>
+    </ui-empty-state>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="booking">
+        <!-- Steps ------------------------------------------------------- -->
+        <div class="steps">
+          <!-- 1 · Doctor -->
+          <ui-card title="appointments.stepDoctor" icon="doctors">
+            <span actions class="step-index">1</span>
+
+            <mat-form-field>
+              <mat-label>{{ 'appointments.doctor' | translate }}</mat-label>
+              <mat-select formControlName="doctorId">
+                @for (doctor of doctors(); track doctor.id) {
+                  <mat-option [value]="doctor.id">
+                    <span class="option-row">
+                      <span class="avatar avatar-sm">{{ doctor.name.charAt(0) }}</span>
+                      <span class="option-text">
+                        <strong>{{ doctor.name }}</strong>
+                        <small>{{ doctor.specialization }}</small>
+                      </span>
+                    </span>
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <ui-field-error [control]="form.controls.doctorId" [submitted]="submitted()" />
+
+            @if (selectedDoctor()) {
+              <p class="hint">
+                <ui-icon name="clock" size="sm" />
+                {{ 'appointments.worksOn' | translate: { days: workingDayLabels() } }}
+              </p>
+            }
+          </ui-card>
+
+          <!-- 2 · Patient -->
+          <ui-card title="appointments.stepPatient" icon="patients">
+            <span actions class="step-index">2</span>
+
+            <mat-form-field>
+              <mat-label>{{ 'appointments.patient' | translate }}</mat-label>
+              <input
+                matInput
+                type="text"
+                formControlName="patientId"
+                [matAutocomplete]="patientAuto"
+                [placeholder]="'patients.searchPlaceholder' | translate"
+                (input)="onPatientInput($any($event.target).value)"
+              />
+              <mat-autocomplete #patientAuto [displayWith]="displayPatient">
+                @for (patient of filteredPatients(); track patient.id) {
+                  <mat-option [value]="patient.id">
+                    <span class="option-row">
+                      <span class="avatar avatar-sm">{{ patient.name.charAt(0) }}</span>
+                      <span class="option-text">
+                        <strong>{{ patient.name }}</strong>
+                        <small>{{ patient.phone }}</small>
+                      </span>
+                    </span>
+                  </mat-option>
+                }
+              </mat-autocomplete>
+            </mat-form-field>
+            <ui-field-error [control]="form.controls.patientId" [submitted]="submitted()" />
+          </ui-card>
+
+          <!-- 3 · Date -->
+          <ui-card title="appointments.stepSlot" icon="appointments">
+            <span actions class="step-index">3</span>
+
+            @if (!selectedDoctor()) {
+              <p class="placeholder">
+                <ui-icon name="info" size="sm" />
+                {{ 'appointments.selectDoctorFirst' | translate }}
+              </p>
+            } @else {
+              <mat-form-field>
+                <mat-label>{{ 'appointments.date' | translate }}</mat-label>
+                <!-- readonly: dates are chosen, never typed, and `dateFilter`
+                     blocks every day the doctor does not work. -->
+                <input
+                  matInput
+                  readonly
+                  formControlName="date"
+                  [matDatepicker]="datePicker"
+                  [matDatepickerFilter]="dateFilter()"
+                  [min]="minDate"
+                  (click)="datePicker.open()"
+                />
+                <mat-datepicker-toggle matIconSuffix [for]="datePicker" />
+                <mat-datepicker #datePicker />
+                <mat-hint>{{ 'appointments.onlyWorkingDays' | translate }}</mat-hint>
+              </mat-form-field>
+              <ui-field-error [control]="form.controls.date" [submitted]="submitted()" />
+
+              <!-- Slots -->
+              @if (!selectedDate()) {
+                <p class="placeholder">
+                  <ui-icon name="info" size="sm" />
+                  {{ 'appointments.selectDateFirst' | translate }}
+                </p>
+              } @else if (!dayAvailability().slots.length) {
+                <ui-empty-state
+                  [compact]="true"
+                  icon="calendarX"
+                  tone="warning"
+                  title="appointments.noSlots"
+                  message="appointments.noSlotsHint"
+                />
+              } @else {
+                <div class="slots-head">
+                  <span class="text-label">{{ 'appointments.availableSlots' | translate }}</span>
+                  <span class="badge badge-neutral">{{ shiftLabel() }}</span>
+                </div>
+
+                <div class="slots" role="radiogroup">
+                  @for (slot of dayAvailability().slots; track slot.start) {
+                    <button
+                      type="button"
+                      class="slot"
+                      role="radio"
+                      [class.slot-selected]="selectedSlot() === slot.start"
+                      [class.slot-taken]="!slot.available"
+                      [disabled]="!slot.available"
+                      [attr.aria-checked]="selectedSlot() === slot.start"
+                      [title]="
+                        slot.available
+                          ? slot.label
+                          : (('appointments.bookedSlots' | translate) + ': ' + (slot.takenBy ?? ''))
+                      "
+                      (click)="selectSlot(slot)"
+                    >
+                      {{ slot.label }}
+                      @if (!slot.available && !slot.past) {
+                        <small>{{ slot.takenBy }}</small>
+                      }
+                    </button>
+                  }
+                </div>
+                <ui-field-error [control]="form.controls.startMinutes" [submitted]="submitted()" />
+              }
+            }
+          </ui-card>
+        </div>
+
+        <!-- Review ------------------------------------------------------ -->
+        <aside class="review">
+          <ui-card title="appointments.stepReview" icon="checklist">
+            <p class="review-note">{{ 'appointments.reviewSummary' | translate }}</p>
+
+            <dl class="review-list">
+              <div>
+                <dt>{{ 'appointments.doctor' | translate }}</dt>
+                <dd>{{ selectedDoctor()?.name ?? ('common.notSet' | translate) }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'appointments.patient' | translate }}</dt>
+                <dd>{{ selectedPatient()?.name ?? ('common.notSet' | translate) }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'appointments.date' | translate }}</dt>
+                <dd>
+                  {{
+                    selectedDate()
+                      ? selectedDate()!.toLocaleDateString(undefined, {
+                          weekday: 'long',
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })
+                      : ('common.notSet' | translate)
+                  }}
+                </dd>
+              </div>
+              <div>
+                <dt>{{ 'appointments.time' | translate }}</dt>
+                <dd class="review-time">
+                  {{ selectedSlotLabel() ?? ('common.notSet' | translate) }}
+                </dd>
+              </div>
+            </dl>
+
+            <mat-form-field>
+              <mat-label>{{ 'appointments.reason' | translate }}</mat-label>
+              <textarea matInput rows="3" formControlName="reason"></textarea>
+              <mat-hint>{{ 'common.optional' | translate }}</mat-hint>
+            </mat-form-field>
+
+            <div footer class="review-actions">
+              <button mat-stroked-button type="button" (click)="cancel()">
+                {{ 'common.cancel' | translate }}
+              </button>
+              <button mat-flat-button type="submit" [disabled]="saving() || form.invalid">
+                <ui-icon name="check" size="sm" />
+                {{ (saving() ? 'common.saving' : 'appointments.new') | translate }}
+              </button>
+            </div>
+          </ui-card>
+        </aside>
+      </div>
+    </form>
+  }
+</div>

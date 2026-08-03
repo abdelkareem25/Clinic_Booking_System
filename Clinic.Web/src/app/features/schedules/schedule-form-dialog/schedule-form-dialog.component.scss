@@ -1,0 +1,37 @@
+.schedule-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  width: min(440px, 84vw);
+  padding-block-start: var(--sp-1);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.times {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-sm);
+  background: var(--c-danger-soft);
+  color: var(--c-danger-soft-fg);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+}
+
+@media (max-width: 480px) {
+  .times {
+    grid-template-columns: 1fr;
+  }
+}

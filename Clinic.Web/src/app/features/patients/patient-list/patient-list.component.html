@@ -1,36 +1,85 @@
-<app-page-header
-  title="Patients"
-  subtitle="Register and manage patient records."
-  icon="groups"
-  actionLabel="Add patient"
-  actionIcon="add"
-  (action)="openCreate()"
-/>
+<div class="page">
+  <ui-page-header title="patients.title" subtitle="patients.subtitle" icon="patients">
+    <div actions>
+      @if (permissions.can('patients.create')) {
+        <a mat-flat-button routerLink="/patients/new">
+          <ui-icon name="add" size="sm" />
+          {{ 'patients.new' | translate }}
+        </a>
+      }
+    </div>
+  </ui-page-header>
 
-<app-search-filter-bar
-  searchPlaceholder="Search by name"
-  (filtersChanged)="onFiltersChanged($event)"
-/>
+  <!-- One filter row above everything it scopes. -->
+  <div class="filters surface">
+    <ui-search-field
+      class="search"
+      placeholder="patients.searchPlaceholder"
+      hint="patients.searchHint"
+      (search)="onSearch($event)"
+    />
 
-<app-data-table
-  [columns]="columns"
-  [actions]="actions"
-  [rows]="patients()"
-  [loading]="loading()"
-  emptyIcon="badge"
-  emptyTitle="No patients found"
-  emptyMessage="Add a patient or adjust your search."
-  (rowAction)="onRowAction($event)"
-  (sortChange)="onSortChanged($event)"
-/>
+    <mat-form-field class="field-compact gender">
+      <mat-label>{{ 'patients.gender' | translate }}</mat-label>
+      <mat-select [value]="gender()" (valueChange)="onGender($event)">
+        <mat-option value="all">{{ 'common.all' | translate }}</mat-option>
+        <mat-option value="Male">{{ 'patients.genderMale' | translate }}</mat-option>
+        <mat-option value="Female">{{ 'patients.genderFemale' | translate }}</mat-option>
+        <mat-option value="Other">{{ 'patients.genderOther' | translate }}</mat-option>
+      </mat-select>
+    </mat-form-field>
 
-@if (total() > 0) {
-  <mat-paginator
-    [length]="total()"
-    [pageIndex]="pageIndex"
-    [pageSize]="pageSize"
-    [pageSizeOptions]="[5, 10, 20]"
-    showFirstLastButtons
-    (page)="onPage($event)"
-  />
-}
+    @if (hasFilters()) {
+      <button mat-button type="button" (click)="clearFilters()">
+        <ui-icon name="close" size="sm" />
+        {{ 'common.clear' | translate }}
+      </button>
+    }
+  </div>
+
+  <ui-data-table
+    [columns]="columns"
+    [rows]="visibleRows()"
+    [loading]="loading()"
+    [rowActions]="rowActions"
+    [sort]="sort()"
+    [page]="page()"
+    [total]="total()"
+    [clickableRows]="true"
+    [emptyTitle]="hasFilters() ? 'patients.emptyFiltered' : 'patients.empty'"
+    [emptyMessage]="hasFilters() ? 'patients.emptyFilteredHint' : 'patients.emptyHint'"
+    [emptyIcon]="hasFilters() ? 'noResults' : 'empty'"
+    (sortChange)="onSort($event)"
+    (pageChange)="onPage($event)"
+    (rowClick)="openPatient($event)"
+    (action)="onRowAction($event)"
+  >
+    <ng-template uiCell="name" let-row>
+      <div class="name-cell">
+        <span class="avatar avatar-sm">{{ row.name.charAt(0) }}</span>
+        <span class="name-text">
+          <strong>{{ row.name }}</strong>
+          <small class="mobile-only">{{ row.phone }}</small>
+        </span>
+      </div>
+    </ng-template>
+
+    <ng-template uiCell="medical" let-row>
+      @if (medicalFlags(row).length) {
+        <div class="flags">
+          @for (flag of medicalFlags(row); track flag.label + flag.tone) {
+            <span class="badge" [class]="'badge-' + flag.tone">{{ flag.label }}</span>
+          }
+        </div>
+      } @else {
+        <span class="text-subtle">—</span>
+      }
+    </ng-template>
+
+    @if (permissions.can('patients.create')) {
+      <a emptyAction mat-flat-button routerLink="/patients/new">
+        {{ 'patients.new' | translate }}
+      </a>
+    }
+  </ui-data-table>
+</div>

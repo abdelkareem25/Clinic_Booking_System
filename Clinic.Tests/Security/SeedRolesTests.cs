@@ -1,4 +1,5 @@
-using Clinic.Domain.Entites.Identity;
+﻿using Clinic.Domain.Entites.Identity;
+using Clinic.Infrastructure.Data.Context;
 using Clinic.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.Sqlite;
@@ -28,15 +29,15 @@ namespace Clinic.Tests.Security
 
             var services = new ServiceCollection();
             services.AddLogging();
-            services.AddDbContext<ClinicIdentityDbContext>(o => o.UseSqlite(_connection));
+            services.AddDbContext<ClinicDbContext>(o => o.UseSqlite(_connection));
             services.AddIdentityCore<AppUser>(o => o.User.RequireUniqueEmail = true)
                     .AddRoles<IdentityRole>()
-                    .AddEntityFrameworkStores<ClinicIdentityDbContext>();
+                    .AddEntityFrameworkStores<ClinicDbContext>();
 
             _provider = services.BuildServiceProvider();
 
             using var scope = _provider.CreateScope();
-            scope.ServiceProvider.GetRequiredService<ClinicIdentityDbContext>().Database.EnsureCreated();
+            scope.ServiceProvider.GetRequiredService<ClinicDbContext>().Database.EnsureCreated();
         }
 
         private UserManager<AppUser> Users =>

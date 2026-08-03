@@ -1,0 +1,97 @@
+:host {
+  display: block;
+}
+
+.head-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.date {
+  width: 180px;
+}
+
+.quick {
+  display: flex;
+  gap: var(--sp-1);
+  margin-inline-start: auto;
+  flex-wrap: wrap;
+}
+
+.stats {
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.charts {
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  align-items: start;
+}
+
+.insight-row {
+  display: grid;
+  gap: var(--sp-3);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.insight {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+}
+
+.insight div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.insight strong {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+}
+
+// -----------------------------------------------------------------------------
+// Print — the report is a document, so the app chrome comes off.
+// -----------------------------------------------------------------------------
+@media print {
+  .filters,
+  .head-actions {
+    display: none;
+  }
+
+  .charts,
+  .stats,
+  .insight-row {
+    break-inside: avoid;
+  }
+}
+
+@media (max-width: 640px) {
+  .stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .quick {
+    margin-inline-start: 0;
+    width: 100%;
+  }
+
+  .date {
+    flex: 1 1 auto;
+    width: auto;
+  }
+}

@@ -1,24 +1,87 @@
-<app-page-header
-  title="Users"
-  subtitle="Manage clinic accounts and roles."
-  icon="manage_accounts"
-/>
+<div class="page">
+  <ui-page-header title="users.title" subtitle="users.subtitle" icon="users">
+    <div actions>
+      @if (permissions.can('users.create')) {
+        <a mat-flat-button routerLink="/auth/register">
+          <ui-icon name="userAdd" size="sm" />
+          {{ 'users.new' | translate }}
+        </a>
+      }
+    </div>
+  </ui-page-header>
 
-<div class="notice">
-  <mat-icon>info</mat-icon>
-  <p>
-    The clinic API currently exposes only registration and login endpoints — there is no
-    users-listing endpoint. This view shows the currently authenticated account. Once the backend
-    adds a <code>GET /api/Accounts</code> endpoint, this table will populate automatically.
-  </p>
+  @if (user(); as account) {
+    <div class="columns">
+      <ui-card title="profile.signedInAs" icon="user">
+        <div class="identity">
+          <span class="avatar avatar-lg">{{ initials() }}</span>
+          <div class="identity-text">
+            <strong>{{ account.displayName }}</strong>
+            <span class="text-muted">{{ account.email }}</span>
+            <div class="roles">
+              @for (role of roleNames(); track role) {
+                <span class="badge badge-primary">{{ role }}</span>
+              }
+            </div>
+          </div>
+        </div>
+
+        <dl class="facts">
+          <div>
+            <dt>{{ 'roles.permissions' | translate }}</dt>
+            <dd>{{ grantedCount() }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'users.status' | translate }}</dt>
+            <dd><span class="badge badge-success badge-dot">{{ 'common.active' | translate }}</span></dd>
+          </div>
+          @if (sessionExpiry(); as expiry) {
+            <div>
+              <dt>{{ 'users.lastActive' | translate }}</dt>
+              <dd>{{ expiry | date: 'd MMM y, h:mm a' }}</dd>
+            </div>
+          }
+        </dl>
+
+        <div footer class="card-foot">
+          <a mat-button routerLink="/profile">
+            <ui-icon name="user" size="sm" />
+            {{ 'nav.profile' | translate }}
+          </a>
+          @if (permissions.can('roles.view')) {
+            <a mat-button routerLink="/roles">
+              <ui-icon name="roles" size="sm" />
+              {{ 'nav.roles' | translate }}
+            </a>
+          }
+        </div>
+      </ui-card>
+
+      <ui-card title="roles.title" icon="roles">
+        <div class="role-list">
+          @for (role of roleNames(); track role) {
+            <div class="role-row">
+              <span class="icon-tile icon-tile-primary"><ui-icon name="shield" size="sm" /></span>
+              <div class="role-text">
+                <strong>{{ role }}</strong>
+                <small>{{ roleDescription(role) }}</small>
+              </div>
+            </div>
+          }
+        </div>
+      </ui-card>
+    </div>
+
+    <!-- The gap is stated, not hidden. -->
+    <ui-empty-state
+      icon="help"
+      tone="warning"
+      title="users.empty"
+      message="users.emptyHint"
+    >
+      @if (permissions.can('users.create')) {
+        <a mat-stroked-button routerLink="/auth/register">{{ 'users.new' | translate }}</a>
+      }
+    </ui-empty-state>
+  }
 </div>
-
-<app-data-table
-  [columns]="columns"
-  [actions]="actions"
-  [rows]="users"
-  emptyIcon="group_off"
-  emptyTitle="No active session"
-  emptyMessage="Sign in to view account details."
-  (rowAction)="onRowAction($event)"
-/>

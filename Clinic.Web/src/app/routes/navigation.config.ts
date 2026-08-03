@@ -1,18 +1,82 @@
-import { Role } from '../core/models/auth.model';
+import { Permission } from '../core/authz/permission.model';
+import { IconName } from '../shared/ui/icon/icon.registry';
 
 export interface NavItem {
+  /** Translation key. */
   label: string;
-  icon: string;
+  icon: IconName;
   route: string;
-  /** Roles allowed to see this item. Empty array = any authenticated user. */
-  roles: Role[];
+  /** Shown only if the user holds at least one of these. Empty = always. */
+  permissions: Permission[];
 }
 
-export const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', icon: 'dashboard', route: '/dashboard', roles: [] },
-  { label: 'Doctors', icon: 'medical_services', route: '/doctors', roles: [] },
-  { label: 'Patients', icon: 'groups', route: '/patients', roles: [] },
-  { label: 'Appointments', icon: 'event_available', route: '/appointments', roles: [] },
-  { label: 'Doctor Schedules', icon: 'calendar_month', route: '/doctor-schedules', roles: [] },
-  { label: 'Users', icon: 'manage_accounts', route: '/users', roles: ['Admin'] }
+export interface NavGroup {
+  /** Translation key for the group heading; `null` renders the items ungrouped. */
+  label: string | null;
+  items: NavItem[];
+}
+
+/**
+ * The sidebar.
+ *
+ * Fourteen flat entries — the reference app's approach — is a wall a new
+ * receptionist has to read top to bottom every time. Grouping by what someone
+ * is trying to *do* (see a patient, run the day, handle money, administer the
+ * system) turns it into four short scans, and matches how clinic roles divide.
+ *
+ * Groups whose items are all permission-filtered away disappear entirely, so a
+ * Receptionist never sees an empty "Finance" heading.
+ */
+export const NAV_GROUPS: NavGroup[] = [
+  {
+    label: null,
+    items: [
+      {
+        label: 'nav.dashboard',
+        icon: 'dashboard',
+        route: '/dashboard',
+        permissions: ['dashboard.view'],
+      },
+    ],
+  },
+  {
+    label: 'nav.groupClinical',
+    items: [
+      { label: 'nav.patients', icon: 'patients', route: '/patients', permissions: ['patients.view'] },
+      { label: 'nav.doctors', icon: 'doctors', route: '/doctors', permissions: ['doctors.view'] },
+      { label: 'nav.records', icon: 'records', route: '/records', permissions: ['records.view'] },
+    ],
+  },
+  {
+    label: 'nav.groupOperations',
+    items: [
+      {
+        label: 'nav.appointments',
+        icon: 'appointments',
+        route: '/appointments',
+        permissions: ['appointments.view'],
+      },
+      {
+        label: 'nav.schedules',
+        icon: 'schedules',
+        route: '/schedules',
+        permissions: ['schedules.view'],
+      },
+    ],
+  },
+  {
+    label: 'nav.groupFinance',
+    items: [
+      { label: 'nav.accounts', icon: 'accounts', route: '/accounts', permissions: ['accounts.view'] },
+      { label: 'nav.reports', icon: 'reports', route: '/reports', permissions: ['reports.view'] },
+    ],
+  },
+  {
+    label: 'nav.groupAdmin',
+    items: [
+      { label: 'nav.users', icon: 'users', route: '/users', permissions: ['users.view'] },
+      { label: 'nav.roles', icon: 'roles', route: '/roles', permissions: ['roles.view'] },
+      { label: 'nav.settings', icon: 'settings', route: '/settings', permissions: ['settings.view'] },
+    ],
+  },
 ];

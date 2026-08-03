@@ -1,38 +1,120 @@
-<app-page-header
-  title="Doctors"
-  subtitle="Manage the clinic's medical staff and specializations."
-  icon="medical_services"
-  actionLabel="Add doctor"
-  actionIcon="add"
-  (action)="openCreate()"
-/>
+<div class="page">
+  <ui-page-header title="doctors.title" subtitle="doctors.subtitle" icon="doctors">
+    <div actions>
+      @if (permissions.can('doctors.create')) {
+        <button mat-flat-button type="button" (click)="openForm()">
+          <ui-icon name="add" size="sm" />
+          {{ 'doctors.new' | translate }}
+        </button>
+      }
+    </div>
+  </ui-page-header>
 
-<app-search-filter-bar
-  searchPlaceholder="Search by name"
-  filterLabel="Specialization"
-  [filterOptions]="specializationOptions"
-  (filtersChanged)="onFiltersChanged($event)"
-/>
+  <div class="filters surface">
+    <ui-search-field
+      class="search"
+      placeholder="doctors.searchPlaceholder"
+      (search)="onSearch($event)"
+    />
+  </div>
 
-<app-data-table
-  [columns]="columns"
-  [actions]="actions"
-  [rows]="doctors()"
-  [loading]="loading()"
-  emptyIcon="person_search"
-  emptyTitle="No doctors found"
-  emptyMessage="Add a doctor or adjust your search filters."
-  (rowAction)="onRowAction($event)"
-  (sortChange)="onSortChanged($event)"
-/>
+  @if (loading()) {
+    <div class="cards">
+      @for (placeholder of [1, 2, 3, 4, 5, 6]; track placeholder) {
+        <div class="card-skeleton surface">
+          <div class="skeleton sk-avatar"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line short"></div>
+        </div>
+      }
+    </div>
+  } @else if (cards().length) {
+    <div class="cards">
+      @for (card of cards(); track card.doctor.id) {
+        <article class="doctor-card surface">
+          <header class="card-head">
+            <span class="avatar avatar-lg">{{ card.doctor.name.charAt(0) }}</span>
+            <div class="head-text">
+              <strong>{{ card.doctor.name }}</strong>
+              <span class="badge badge-secondary">{{ card.doctor.specialization }}</span>
+            </div>
 
-@if (total() > 0) {
-  <mat-paginator
-    [length]="total()"
-    [pageIndex]="pageIndex"
-    [pageSize]="pageSize"
-    [pageSizeOptions]="[5, 10, 20]"
-    showFirstLastButtons
-    (page)="onPage($event)"
-  />
-}
+            @if (permissions.canAny(['doctors.edit', 'doctors.delete'])) {
+              <div class="card-actions">
+                @if (permissions.can('doctors.edit')) {
+                  <button
+                    mat-icon-button
+                    type="button"
+                    [matTooltip]="'common.edit' | translate"
+                    (click)="openForm(card.doctor)"
+                  >
+                    <ui-icon name="edit" size="md" />
+                  </button>
+                }
+                @if (permissions.can('doctors.delete')) {
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="danger"
+                    [matTooltip]="'common.delete' | translate"
+                    (click)="confirmDelete(card.doctor)"
+                  >
+                    <ui-icon name="delete" size="md" />
+                  </button>
+                }
+              </div>
+            }
+          </header>
+
+          <dl class="card-facts">
+            <div>
+              <dt>{{ 'doctors.workingDays' | translate }}</dt>
+              <dd>
+                @if (card.hasSchedule) {
+                  {{ card.workingDays }}
+                } @else {
+                  <span class="text-subtle">{{ 'schedules.noHours' | translate }}</span>
+                }
+              </dd>
+            </div>
+            <div>
+              <dt>{{ 'common.total' | translate }}</dt>
+              <dd>{{ 'schedules.hoursPerWeek' | translate: { count: card.weeklyHours } }}</dd>
+            </div>
+          </dl>
+
+          <footer class="card-foot">
+            <a mat-button routerLink="/schedules">
+              <ui-icon name="schedules" size="sm" />
+              {{ 'doctors.viewSchedule' | translate }}
+            </a>
+
+            @if (permissions.can('appointments.create')) {
+              <button
+                mat-flat-button
+                type="button"
+                [disabled]="!card.hasSchedule"
+                [matTooltip]="card.hasSchedule ? '' : ('schedules.emptyHint' | translate)"
+                (click)="book(card.doctor)"
+              >
+                {{ 'appointments.new' | translate }}
+              </button>
+            }
+          </footer>
+        </article>
+      }
+    </div>
+  } @else {
+    <ui-empty-state
+      [icon]="search() ? 'noResults' : 'doctors'"
+      [title]="search() ? 'common.noResults' : 'doctors.empty'"
+      [message]="search() ? 'patients.emptyFilteredHint' : 'doctors.emptyHint'"
+    >
+      @if (permissions.can('doctors.create')) {
+        <button mat-flat-button type="button" (click)="openForm()">
+          {{ 'doctors.new' | translate }}
+        </button>
+      }
+    </ui-empty-state>
+  }
+</div>

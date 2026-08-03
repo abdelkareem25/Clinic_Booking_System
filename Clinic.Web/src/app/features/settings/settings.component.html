@@ -1,0 +1,234 @@
+<form class="page" [formGroup]="form" (ngSubmit)="save()" novalidate>
+  <ui-page-header title="settings.title" subtitle="settings.subtitle" icon="settings">
+    <div actions class="head-actions">
+      @if (canManage()) {
+        <button mat-stroked-button type="button" (click)="resetToDefaults()">
+          <ui-icon name="undo" size="sm" />
+          {{ 'common.reset' | translate }}
+        </button>
+        <button mat-flat-button type="submit">
+          <ui-icon name="save" size="sm" />
+          {{ 'common.saveChanges' | translate }}
+        </button>
+      }
+    </div>
+  </ui-page-header>
+
+  <mat-tab-group class="tabs-segmented" animationDuration="180ms">
+    <!-- Clinic ------------------------------------------------------------ -->
+    <mat-tab [label]="'settings.tabClinic' | translate">
+      <div class="tab-body">
+        <ui-card title="settings.tabClinic" icon="clinic">
+          <div class="form-grid cols-2">
+            <div class="field">
+              <mat-form-field>
+                <mat-label>{{ 'settings.clinicName' | translate }}</mat-label>
+                <input matInput type="text" formControlName="clinicName" />
+              </mat-form-field>
+              <ui-field-error [control]="form.controls.clinicName" [submitted]="submitted()" />
+            </div>
+
+            <div class="field">
+              <mat-form-field>
+                <mat-label>{{ 'settings.clinicPhone' | translate }}</mat-label>
+                <input matInput type="tel" formControlName="clinicPhone" inputmode="numeric" />
+              </mat-form-field>
+            </div>
+
+            <div class="field">
+              <mat-form-field>
+                <mat-label>{{ 'settings.headDoctor' | translate }}</mat-label>
+                <input matInput type="text" formControlName="headDoctor" />
+              </mat-form-field>
+            </div>
+
+            <div class="field span-full">
+              <mat-form-field>
+                <mat-label>{{ 'settings.clinicAddress' | translate }}</mat-label>
+                <textarea matInput rows="2" formControlName="clinicAddress"></textarea>
+              </mat-form-field>
+            </div>
+          </div>
+        </ui-card>
+      </div>
+    </mat-tab>
+
+    <!-- Scheduling -------------------------------------------------------- -->
+    <mat-tab [label]="'settings.tabScheduling' | translate">
+      <div class="tab-body columns">
+        <ui-card title="settings.tabScheduling" icon="clock">
+          <div class="form-grid cols-2">
+            <div class="field">
+              <mat-form-field>
+                <mat-label>{{ 'settings.openingTime' | translate }}</mat-label>
+                <input matInput formControlName="startTime" [matTimepicker]="openPicker" />
+                <mat-timepicker-toggle matIconSuffix [for]="openPicker" />
+                <mat-timepicker #openPicker interval="30m" />
+              </mat-form-field>
+            </div>
+
+            <div class="field">
+              <mat-form-field>
+                <mat-label>{{ 'settings.closingTime' | translate }}</mat-label>
+                <input matInput formControlName="endTime" [matTimepicker]="closePicker" />
+                <mat-timepicker-toggle matIconSuffix [for]="closePicker" />
+                <mat-timepicker #closePicker interval="30m" />
+              </mat-form-field>
+            </div>
+
+            <div class="field">
+              <mat-form-field>
+                <mat-label>{{ 'settings.slotDuration' | translate }}</mat-label>
+                <mat-select formControlName="slotMinutes">
+                  @for (option of slotOptions; track option) {
+                    <mat-option [value]="option">{{ minutesLabel(option) }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div class="field">
+              <mat-form-field>
+                <mat-label>{{ 'settings.bufferBetween' | translate }}</mat-label>
+                <mat-select formControlName="bufferMinutes">
+                  @for (option of bufferOptions; track option) {
+                    <mat-option [value]="option">{{ minutesLabel(option) }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </div>
+
+          @if (form.hasError('timeRange')) {
+            <p class="inline-error">
+              <ui-icon name="warning" size="sm" />
+              {{ 'validation.timeRange' | translate }}
+            </p>
+          }
+
+          <!-- Slot length drives the booking screen, so its effect is stated
+               here rather than discovered later. -->
+          <p class="note">
+            <ui-icon name="info" size="sm" />
+            {{ timePreview('startTime') }} – {{ timePreview('endTime') }}
+          </p>
+        </ui-card>
+
+        <ui-card title="settings.workingDays" icon="appointments">
+          <div class="days">
+            @for (day of weekDays; track day.value) {
+              <mat-checkbox
+                [checked]="isWorkingDay(day.value)"
+                (change)="toggleDay(day.value, $event.checked)"
+              >
+                {{ 'weekday.' + day.value | translate }}
+              </mat-checkbox>
+            }
+          </div>
+        </ui-card>
+      </div>
+    </mat-tab>
+
+    <!-- Finance ----------------------------------------------------------- -->
+    @if (permissions.can('accounts.view')) {
+      <mat-tab [label]="'settings.tabFinance' | translate">
+        <div class="tab-body">
+          <ui-card title="settings.tabFinance" icon="money">
+            <div class="form-grid cols-3">
+              <div class="field">
+                <mat-form-field>
+                  <mat-label>{{ 'settings.currency' | translate }}</mat-label>
+                  <mat-select formControlName="currency">
+                    @for (code of currencies; track code) {
+                      <mat-option [value]="code">{{ code }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <div class="field">
+                <mat-form-field>
+                  <mat-label>{{ 'settings.taxRate' | translate }}</mat-label>
+                  <input matInput type="number" min="0" max="100" formControlName="taxRate" />
+                  <span matTextSuffix>%</span>
+                </mat-form-field>
+                <ui-field-error [control]="form.controls.taxRate" [submitted]="submitted()" />
+              </div>
+
+              <div class="field">
+                <mat-form-field>
+                  <mat-label>{{ 'settings.invoicePrefix' | translate }}</mat-label>
+                  <input matInput type="text" formControlName="invoicePrefix" />
+                </mat-form-field>
+              </div>
+            </div>
+          </ui-card>
+        </div>
+      </mat-tab>
+    }
+
+    <!-- Appearance -------------------------------------------------------- -->
+    <mat-tab [label]="'settings.tabAppearance' | translate">
+      <div class="tab-body columns">
+        <ui-card title="settings.theme" icon="light">
+          <div class="pref">
+            <div class="pref-text">
+              <strong>{{ 'settings.theme' | translate }}</strong>
+              <small>
+                {{ (theme.isDark() ? 'settings.themeDark' : 'settings.themeLight') | translate }}
+              </small>
+            </div>
+            <mat-slide-toggle [checked]="theme.isDark()" (change)="theme.toggle()" />
+          </div>
+        </ui-card>
+
+        <ui-card title="settings.language" icon="language">
+          <div class="lang-buttons">
+            @for (language of locale.available; track language.code) {
+              <button
+                type="button"
+                class="lang"
+                [class.lang-active]="locale.current() === language.code"
+                (click)="setLanguage(language.code)"
+              >
+                {{ language.nativeName }}
+              </button>
+            }
+          </div>
+          <p class="note">
+            <ui-icon name="info" size="sm" />
+            {{ locale.definition().nativeName }} · {{ locale.definition().locale }}
+          </p>
+        </ui-card>
+      </div>
+    </mat-tab>
+
+    <!-- Notifications ----------------------------------------------------- -->
+    <mat-tab [label]="'settings.tabNotifications' | translate">
+      <div class="tab-body">
+        <ui-card title="settings.tabNotifications" icon="notifications">
+          <div class="pref">
+            <div class="pref-text">
+              <strong>{{ 'settings.appointmentReminders' | translate }}</strong>
+              <small>{{ 'notifications.subtitle' | translate }}</small>
+            </div>
+            <mat-slide-toggle formControlName="appointmentReminders" />
+          </div>
+
+          <hr class="surface-divider" />
+
+          <div class="field reminder">
+            <mat-form-field>
+              <mat-label>{{ 'settings.reminderLeadTime' | translate }}</mat-label>
+              <mat-select formControlName="reminderLeadMinutes">
+                @for (option of reminderOptions; track option) {
+                  <mat-option [value]="option">{{ minutesLabel(option) }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </ui-card>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</form>

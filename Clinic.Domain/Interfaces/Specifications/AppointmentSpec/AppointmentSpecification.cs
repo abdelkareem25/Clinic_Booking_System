@@ -25,7 +25,7 @@ namespace Clinic.Domain.Interfaces.Specifications.AppointmentSpec
                     AddOrderBy(a=> a.AppointmentDate);
                     break;
             }
-            ApplyPagination((param.PageIndex-1)*param.PageSize,param.PageSize);
+            ApplyPagination(param.Skip, param.PageSize);
         }
     }
 }

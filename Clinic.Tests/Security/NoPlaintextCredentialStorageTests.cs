@@ -1,4 +1,4 @@
-using Clinic.Domain.Entites;
+﻿using Clinic.Domain.Entites;
 using Clinic.Infrastructure.Data.Context;
 using Clinic.Infrastructure.Identity;
 using Microsoft.Data.Sqlite;
@@ -22,7 +22,6 @@ namespace Clinic.Tests.Security
     {
         private readonly SqliteConnection _connection;
         private readonly DbContextOptions<ClinicDbContext> _clinicOptions;
-        private readonly DbContextOptions<ClinicIdentityDbContext> _identityOptions;
 
         public NoPlaintextCredentialStorageTests()
         {
@@ -30,7 +29,6 @@ namespace Clinic.Tests.Security
             _connection.Open();
 
             _clinicOptions = new DbContextOptionsBuilder<ClinicDbContext>().UseSqlite(_connection).Options;
-            _identityOptions = new DbContextOptionsBuilder<ClinicIdentityDbContext>().UseSqlite(_connection).Options;
         }
 
         [Fact]
@@ -83,18 +81,24 @@ namespace Clinic.Tests.Security
         }
 
         [Fact]
-        public void The_Clinic_Context_Exposes_No_Users_DbSet()
+        public void The_Only_Users_DbSet_Is_Identitys()
         {
+            // Since TODO #23 the context derives from IdentityDbContext, which legitimately exposes
+            // DbSet<AppUser> Users. What must never come back is a SECOND, hand-rolled user table -
+            // the legacy Clinic.Domain.Entites.User with its plaintext password column.
             var offenders = typeof(ClinicDbContext)
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Where(p => p.PropertyType.IsGenericType
-                         && p.PropertyType.GetGenericTypeDefinition() == typeof(DbSet<>)
-                         && p.Name == "Users")
-                .Select(p => p.Name)
+                         && p.PropertyType.GetGenericTypeDefinition() == typeof(DbSet<>))
+                .Select(p => p.PropertyType.GetGenericArguments()[0])
+                .Where(entity => entity.Name == "User"
+                              || entity.FullName == "Clinic.Domain.Entites.User")
+                .Select(entity => entity.FullName!)
                 .ToList();
 
             Assert.True(offenders.Count == 0,
-                "ClinicDbContext exposes a Users DbSet again; user accounts belong to ClinicIdentityDbContext.");
+                "ClinicDbContext exposes a legacy Users DbSet again. Accounts live in AspNetUsers, " +
+                "which Identity maps - there must be no second, hand-rolled user table.");
         }
 
         [Fact]
@@ -124,7 +128,7 @@ namespace Clinic.Tests.Security
         {
             // The point is not "no credential storage" - it is that the only credential storage is
             // Identity's, and it is a hash.
-            using var context = new ClinicIdentityDbContext(_identityOptions);
+            using var context = new ClinicDbContext(_clinicOptions);
 
             var appUser = context.Model.GetEntityTypes()
                 .Single(e => e.ClrType == typeof(Domain.Entites.Identity.AppUser));

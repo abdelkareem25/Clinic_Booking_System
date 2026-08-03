@@ -2,16 +2,23 @@ import { Routes } from '@angular/router';
 
 import { authGuard } from './core/guards/auth.guard';
 import { guestGuard } from './core/guards/guest.guard';
-import { roleGuard } from './core/guards/role.guard';
+import { permissionGuard } from './core/guards/permission.guard';
 import { AuthLayoutComponent } from './layouts/auth-layout/auth-layout.component';
 import { ShellLayoutComponent } from './layouts/shell-layout/shell-layout.component';
 
+/**
+ * Routing.
+ *
+ * Every feature is lazy-loaded and states the *permission* it needs rather than
+ * a role list, so changing what a Receptionist may reach is a change on the
+ * Roles screen and not in this file.
+ */
 export const routes: Routes = [
   {
     path: 'auth',
     component: AuthLayoutComponent,
     canActivate: [guestGuard],
-    loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES)
+    loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES),
   },
   {
     path: '',
@@ -19,58 +26,123 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+
       {
         path: 'dashboard',
-        title: 'Dashboard | Clinic Booking',
-        data: { breadcrumb: 'Dashboard' },
+        title: 'Dashboard | Clinic',
+        data: { breadcrumb: 'nav.dashboard' },
+        canActivate: [permissionGuard('dashboard.view')],
         loadComponent: () =>
-          import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent)
+          import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
+      },
+
+      // ------------------------------------------------------------ clinical --
+      {
+        path: 'patients',
+        data: { breadcrumb: 'nav.patients' },
+        loadChildren: () =>
+          import('./features/patients/patients.routes').then((m) => m.PATIENTS_ROUTES),
       },
       {
         path: 'doctors',
-        data: { breadcrumb: 'Doctors' },
-        loadChildren: () => import('./features/doctors/doctors.routes').then((m) => m.DOCTORS_ROUTES)
+        data: { breadcrumb: 'nav.doctors' },
+        loadChildren: () =>
+          import('./features/doctors/doctors.routes').then((m) => m.DOCTORS_ROUTES),
       },
       {
-        path: 'patients',
-        data: { breadcrumb: 'Patients' },
-        loadChildren: () => import('./features/patients/patients.routes').then((m) => m.PATIENTS_ROUTES)
+        path: 'records',
+        data: { breadcrumb: 'nav.records' },
+        loadChildren: () =>
+          import('./features/records/records.routes').then((m) => m.RECORDS_ROUTES),
       },
+
+      // ---------------------------------------------------------- operations --
       {
         path: 'appointments',
-        data: { breadcrumb: 'Appointments' },
+        data: { breadcrumb: 'nav.appointments' },
         loadChildren: () =>
-          import('./features/appointments/appointments.routes').then((m) => m.APPOINTMENTS_ROUTES)
+          import('./features/appointments/appointments.routes').then((m) => m.APPOINTMENTS_ROUTES),
       },
       {
-        path: 'doctor-schedules',
-        data: { breadcrumb: 'Doctor Schedules' },
+        path: 'schedules',
+        data: { breadcrumb: 'nav.schedules' },
         loadChildren: () =>
-          import('./features/doctor-schedules/doctor-schedules.routes').then(
-            (m) => m.DOCTOR_SCHEDULES_ROUTES
-          )
+          import('./features/schedules/schedules.routes').then((m) => m.SCHEDULES_ROUTES),
       },
+      // The module was renamed; the old path is kept so existing bookmarks and
+      // links in saved documents keep working.
+      { path: 'doctor-schedules', redirectTo: 'schedules', pathMatch: 'full' },
+
+      // ------------------------------------------------------------- finance --
+      {
+        path: 'accounts',
+        data: { breadcrumb: 'nav.accounts' },
+        loadChildren: () =>
+          import('./features/accounts/accounts.routes').then((m) => m.ACCOUNTS_ROUTES),
+      },
+      {
+        path: 'reports',
+        title: 'Reports | Clinic',
+        data: { breadcrumb: 'nav.reports' },
+        canActivate: [permissionGuard('reports.view')],
+        loadComponent: () =>
+          import('./features/reports/reports.component').then((m) => m.ReportsComponent),
+      },
+
+      // ------------------------------------------------------ administration --
       {
         path: 'users',
-        canActivate: [roleGuard(['Admin'])],
-        data: { breadcrumb: 'Users' },
-        loadChildren: () => import('./features/users/users.routes').then((m) => m.USERS_ROUTES)
+        data: { breadcrumb: 'nav.users' },
+        loadChildren: () => import('./features/users/users.routes').then((m) => m.USERS_ROUTES),
       },
       {
-        path: 'unauthorized',
-        title: 'Access denied | Clinic Booking',
-        data: { breadcrumb: 'Access denied' },
+        path: 'roles',
+        data: { breadcrumb: 'nav.roles' },
+        loadChildren: () => import('./features/roles/roles.routes').then((m) => m.ROLES_ROUTES),
+      },
+      {
+        path: 'settings',
+        title: 'Settings | Clinic',
+        data: { breadcrumb: 'nav.settings' },
+        canActivate: [permissionGuard('settings.view')],
         loadComponent: () =>
-          import('./features/errors/unauthorized.component').then((m) => m.UnauthorizedComponent)
+          import('./features/settings/settings.component').then((m) => m.SettingsComponent),
+      },
+
+      // ------------------------------------------------------------ personal --
+      {
+        path: 'profile',
+        title: 'Profile | Clinic',
+        data: { breadcrumb: 'nav.profile' },
+        loadComponent: () =>
+          import('./features/profile/profile.component').then((m) => m.ProfileComponent),
+      },
+      {
+        path: 'notifications',
+        title: 'Notifications | Clinic',
+        data: { breadcrumb: 'nav.notifications' },
+        loadComponent: () =>
+          import('./features/notifications/notifications.component').then(
+            (m) => m.NotificationsComponent
+          ),
+      },
+
+      // -------------------------------------------------------------- errors --
+      {
+        path: 'unauthorized',
+        title: 'Access denied | Clinic',
+        data: { breadcrumb: 'errors.forbiddenTitle' },
+        loadComponent: () =>
+          import('./features/errors/unauthorized.component').then((m) => m.UnauthorizedComponent),
       },
       {
         path: '**',
-        title: 'Not found | Clinic Booking',
-        data: { breadcrumb: 'Not found' },
+        title: 'Not found | Clinic',
+        data: { breadcrumb: 'errors.notFoundTitle' },
         loadComponent: () =>
-          import('./features/errors/not-found.component').then((m) => m.NotFoundComponent)
-      }
-    ]
+          import('./features/errors/not-found.component').then((m) => m.NotFoundComponent),
+      },
+    ],
   },
-  { path: '**', redirectTo: '' }
+  { path: '**', redirectTo: '' },
 ];

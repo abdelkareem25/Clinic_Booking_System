@@ -1,0 +1,116 @@
+:host {
+  display: block;
+}
+
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+// A local segmented control — the same shape as the tab treatment, but this is
+// a filter over one list rather than a change of view.
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--r-md);
+  background: var(--c-surface-2);
+}
+
+.segmented button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding-inline: 12px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--c-text-muted);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-micro) var(--ease-standard),
+    color var(--dur-micro) var(--ease-standard);
+}
+
+.segment-active {
+  background: var(--c-surface);
+  color: var(--c-text);
+  font-weight: var(--fw-semibold);
+  box-shadow: var(--sh-card);
+}
+
+.feed {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entry {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5);
+  border-block-end: 1px solid var(--c-border);
+  transition: background-color var(--dur-micro) var(--ease-standard);
+}
+
+.entry:last-child {
+  border-block-end: 0;
+}
+
+.entry-clickable {
+  cursor: pointer;
+}
+
+.entry-clickable:hover {
+  background: var(--c-surface-2);
+}
+
+.entry:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: -2px;
+}
+
+// An unread item is marked by a leading rule rather than a coloured background:
+// a tinted row competes with the semantic tone of the icon tile beside it.
+.entry-unread {
+  border-inline-start: 3px solid var(--c-primary);
+  padding-inline-start: calc(var(--sp-5) - 3px);
+}
+
+.entry-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.entry-body strong {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+
+.entry-body p {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  line-height: var(--lh-snug);
+}
+
+.entry-body time {
+  font-size: var(--fs-xs);
+  color: var(--c-text-subtle);
+}
+
+.entry-actions {
+  display: flex;
+  gap: 2px;
+  flex: 0 0 auto;
+  color: var(--c-text-subtle);
+}

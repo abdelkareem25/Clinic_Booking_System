@@ -2,32 +2,96 @@
   display: block;
 }
 
-.notice {
+.columns {
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  align-items: start;
+}
+
+.identity {
   display: flex;
-  gap: 12px;
+  align-items: center;
+  gap: var(--sp-4);
+  padding-block-end: var(--sp-4);
+  border-block-end: 1px solid var(--c-border);
+}
+
+.identity-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.identity-text strong {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+}
+
+.roles {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-block-start: 4px;
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin: var(--sp-4) 0 0;
+}
+
+.facts div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.facts dt {
+  font-size: var(--fs-xs);
+  color: var(--c-text-subtle);
+}
+
+.facts dd {
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+}
+
+.card-foot {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.role-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.role-row {
+  display: flex;
   align-items: flex-start;
-  padding: 14px 16px;
-  margin-bottom: 16px;
-  border-radius: 14px;
-  border: 1px solid var(--mat-sys-outline-variant);
-  background: var(--mat-sys-surface-container-high);
+  gap: var(--sp-3);
+}
 
-  mat-icon {
-    color: var(--mat-sys-primary);
-    flex: 0 0 auto;
-  }
+.role-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
 
-  p {
-    margin: 0;
-    color: var(--mat-sys-on-surface-variant);
-    line-height: 1.55;
-    font-size: 0.9rem;
-  }
+.role-text strong {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
 
-  code {
-    padding: 1px 6px;
-    border-radius: 6px;
-    background: var(--mat-sys-surface-container-highest);
-    font-size: 0.85em;
-  }
+.role-text small {
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+  line-height: var(--lh-snug);
 }

@@ -1,0 +1,198 @@
+:host {
+  display: block;
+}
+
+.chart-wrap {
+  position: relative;
+}
+
+.table-toggle {
+  position: absolute;
+  inset-block-start: calc(var(--sp-2) * -1);
+  inset-inline-end: 0;
+  z-index: 1;
+  color: var(--c-text-subtle);
+}
+
+.figure {
+  margin: 0;
+  position: relative;
+}
+
+.chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+// -----------------------------------------------------------------------------
+// Chrome — recessive by construction.
+// -----------------------------------------------------------------------------
+.grid line {
+  stroke: var(--c-border);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.tick {
+  fill: var(--c-text-subtle);
+  font-size: 10px;
+  text-anchor: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.axis text {
+  fill: var(--c-text-subtle);
+  font-size: 10px;
+  text-anchor: middle;
+}
+
+.crosshair {
+  stroke: var(--c-border-strong);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.hits rect {
+  fill: transparent;
+  cursor: pointer;
+}
+
+// -----------------------------------------------------------------------------
+// Marks
+// -----------------------------------------------------------------------------
+.bar {
+  transition: opacity var(--dur-micro) var(--ease-standard);
+}
+
+// Hover emphasises by de-emphasising the rest, which keeps the hue constant.
+.bar-dim {
+  opacity: 0.38;
+}
+
+.fill-solid-primary {
+  fill: var(--c-primary);
+}
+
+.fill-solid-accent {
+  fill: var(--c-accent);
+}
+
+.line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.stroke-primary {
+  stroke: var(--c-primary);
+}
+
+.stroke-accent {
+  stroke: var(--c-accent);
+}
+
+// Area fill is a wash, never a saturated block.
+.area {
+  stroke: none;
+  opacity: 0.1;
+}
+
+.fill-primary {
+  fill: var(--c-primary);
+}
+
+.fill-accent {
+  fill: var(--c-accent);
+}
+
+// The 2px surface ring keeps the marker legible where it crosses the line.
+.end-dot {
+  stroke: var(--c-surface);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.dot-primary {
+  fill: var(--c-primary);
+}
+
+.dot-accent {
+  fill: var(--c-accent);
+}
+
+// -----------------------------------------------------------------------------
+// Tooltip
+// -----------------------------------------------------------------------------
+.tooltip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 10px));
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  background: var(--c-surface-inverse);
+  color: var(--c-text-inverse);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: var(--sh-overlay);
+  z-index: 2;
+}
+
+:host-context(html[dir='rtl']) .tooltip {
+  transform: translate(50%, calc(-100% - 10px));
+}
+
+.tooltip strong {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+
+.tooltip span {
+  opacity: 0.7;
+}
+
+// -----------------------------------------------------------------------------
+// Table view
+// -----------------------------------------------------------------------------
+.table-view {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.table-view table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.table-view th,
+.table-view td {
+  padding: 6px var(--sp-2);
+  text-align: start;
+  border-block-end: 1px solid var(--c-border);
+}
+
+.table-view thead th {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.table-view tbody th {
+  font-weight: var(--fw-regular);
+  color: var(--c-text-muted);
+}
+
+.numeric {
+  text-align: end;
+  font-weight: var(--fw-medium);
+}

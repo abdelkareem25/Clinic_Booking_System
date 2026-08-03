@@ -1,12 +1,66 @@
-<main class="auth-page">
-  <section class="auth-brand">
-    <div class="brand-mark">CB</div>
-    <h1>Clinic Booking</h1>
-    <p>Connected scheduling for doctors, patients, and clinic teams.</p>
+<div class="auth">
+  <section class="brand-panel">
+    <div class="brand">
+      <span class="brand-mark">
+        <ui-icon name="vitals" size="lg" />
+      </span>
+      <span class="brand-text">
+        <strong>{{ 'app.name' | translate }}</strong>
+        <small>{{ 'app.tagline' | translate }}</small>
+      </span>
+    </div>
+
+    <div class="pitch">
+      <h2 class="headline">{{ 'auth.brandHeadline' | translate }}</h2>
+      <p class="body">{{ 'auth.brandBody' | translate }}</p>
+
+      <ul class="features">
+        @for (feature of features; track feature.label) {
+          <li>
+            <span class="feature-icon"><ui-icon [name]="feature.icon" size="md" /></span>
+            {{ feature.label | translate }}
+          </li>
+        }
+      </ul>
+    </div>
+
+    <p class="legal">© {{ year }} {{ 'app.name' | translate }}</p>
   </section>
 
-  <section class="auth-panel">
-    <router-outlet />
-  </section>
-</main>
+  <section class="form-panel">
+    <header class="form-tools">
+      <button
+        mat-icon-button
+        type="button"
+        [matMenuTriggerFor]="langMenu"
+        [matTooltip]="'nav.language' | translate"
+        [attr.aria-label]="'nav.language' | translate"
+      >
+        <ui-icon name="language" size="md" />
+      </button>
+      <mat-menu #langMenu="matMenu">
+        @for (language of locale.available; track language.code) {
+          <button mat-menu-item type="button" (click)="setLanguage(language.code)">
+            {{ language.nativeName }}
+          </button>
+        }
+      </mat-menu>
 
+      <button
+        mat-icon-button
+        type="button"
+        [matTooltip]="(theme.isDark() ? 'nav.lightMode' : 'nav.darkMode') | translate"
+        [attr.aria-label]="(theme.isDark() ? 'nav.lightMode' : 'nav.darkMode') | translate"
+        (click)="theme.toggle()"
+      >
+        <ui-icon [name]="theme.isDark() ? 'light' : 'dark'" size="md" />
+      </button>
+    </header>
+
+    <main class="form-slot">
+      <div class="form-inner animate-rise">
+        <router-outlet />
+      </div>
+    </main>
+  </section>
+</div>

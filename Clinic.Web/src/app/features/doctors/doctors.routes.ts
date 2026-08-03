@@ -1,14 +1,13 @@
 import { Routes } from '@angular/router';
 
-import { DoctorDetailComponent } from './doctor-detail/doctor-detail.component';
-import { DoctorListComponent } from './doctor-list/doctor-list.component';
+import { permissionGuard } from '../../core/guards/permission.guard';
 
 export const DOCTORS_ROUTES: Routes = [
-  { path: '', component: DoctorListComponent, title: 'Doctors | Clinic Booking' },
   {
-    path: ':id',
-    component: DoctorDetailComponent,
-    title: 'Doctor Details | Clinic Booking',
-    data: { breadcrumb: 'Details' }
-  }
+    path: '',
+    canActivate: [permissionGuard('doctors.view')],
+    title: 'Doctors | Clinic',
+    loadComponent: () =>
+      import('./doctor-list/doctor-list.component').then((m) => m.DoctorListComponent),
+  },
 ];

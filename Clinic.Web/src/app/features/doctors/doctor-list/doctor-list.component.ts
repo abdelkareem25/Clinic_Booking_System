@@ -1,128 +1,145 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { Router } from '@angular/router';
-import { switchMap } from 'rxjs';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { Router, RouterLink } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { catchError, forkJoin, of } from 'rxjs';
 
-import { DEFAULT_PAGE_SIZE } from '../../../core/models/pagination.model';
-import { DEFAULT_SPECIALIZATIONS, Doctor } from '../../../core/models/doctor.model';
+import { PermissionService } from '../../../core/authz/permission.service';
+import { Doctor } from '../../../core/models/doctor.model';
+import { DoctorSchedule } from '../../../core/models/schedule.model';
 import { DoctorsService } from '../../../core/services/doctors.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { SchedulesService } from '../../../core/services/schedules.service';
+import { timeToMinutes } from '../../../core/utils/date.util';
+import { confirmDialog } from '../../../shared/ui/confirm-dialog/confirm-dialog.component';
+import { EmptyStateComponent } from '../../../shared/ui/empty-state/empty-state.component';
+import { IconComponent } from '../../../shared/ui/icon/icon.component';
+import { PageHeaderComponent } from '../../../shared/ui/page-header/page-header.component';
 import {
-  ConfirmDialogComponent,
-  ConfirmDialogData
-} from '../../../shared/components/confirm-dialog/confirm-dialog.component';
-import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
+  SearchEvent,
+  SearchFieldComponent,
+} from '../../../shared/ui/search-field/search-field.component';
 import {
-  RowActionEvent,
-  SortState,
-  TableColumn,
-  TableRowAction
-} from '../../../shared/components/data-table/data-table.model';
-import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import {
-  SearchFilterBarComponent,
-  SearchFilterValue,
-  SelectOption
-} from '../../../shared/components/search-filter-bar/search-filter-bar.component';
-import {
+  DoctorDialogData,
   DoctorFormDialogComponent,
-  DoctorFormDialogData
 } from '../dialogs/doctor-form-dialog.component';
 
+interface DoctorCard {
+  doctor: Doctor;
+  workingDays: string;
+  weeklyHours: number;
+  hasSchedule: boolean;
+}
+
+const EMPTY_PAGE = { pageIndex: 1, pageSize: 0, count: 0, data: [] };
+
+/**
+ * Doctors are shown as cards rather than table rows.
+ *
+ * There are rarely more than a couple of dozen, and the thing staff need from
+ * this screen — "who is this, what do they do, when are they in, can I book
+ * them" — is a profile, not a row of columns.
+ */
 @Component({
   selector: 'app-doctor-list',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    MatPaginatorModule,
+    RouterLink,
+    MatButtonModule,
+    MatTooltipModule,
+    TranslatePipe,
+    EmptyStateComponent,
+    IconComponent,
     PageHeaderComponent,
-    SearchFilterBarComponent,
-    DataTableComponent
+    SearchFieldComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './doctor-list.component.html',
-  styleUrl: './doctor-list.component.scss'
+  styleUrl: './doctor-list.component.scss',
 })
 export class DoctorListComponent {
-  private readonly doctorsService = inject(DoctorsService);
-  private readonly notifications = inject(NotificationService);
+  private readonly api = inject(DoctorsService);
   private readonly dialog = inject(MatDialog);
+  private readonly notifications = inject(NotificationService);
   private readonly router = inject(Router);
+  private readonly schedulesApi = inject(SchedulesService);
+  private readonly translate = inject(TranslateService);
 
-  readonly doctors = signal<Doctor[]>([]);
-  readonly total = signal(0);
-  readonly loading = signal(false);
+  protected readonly permissions = inject(PermissionService);
 
-  pageIndex = 0;
-  pageSize = DEFAULT_PAGE_SIZE;
-  private filters: SearchFilterValue = { search: '', filter: null, sort: '' };
-  private sort = '';
+  protected readonly doctors = signal<Doctor[]>([]);
+  protected readonly schedules = signal<DoctorSchedule[]>([]);
+  protected readonly loading = signal(true);
+  protected readonly search = signal('');
 
-  readonly specializationOptions: SelectOption[] = DEFAULT_SPECIALIZATIONS.map((specialization) => ({
-    label: specialization,
-    value: specialization
-  }));
+  protected readonly cards = computed<DoctorCard[]>(() => {
+    const term = this.search().trim().toLowerCase();
 
-  readonly columns: TableColumn<Doctor>[] = [
-    { key: 'id', header: '#', value: (row) => row.id },
-    { key: 'name', header: 'Name', value: (row) => row.name, variant: 'strong', sortKey: 'name' },
-    {
-      key: 'specialization',
-      header: 'Specialization',
-      value: (row) => row.specialization,
-      variant: 'chip',
-      chip: (row) => ({ label: row.specialization, tone: 'info' })
-    }
-  ];
+    return this.doctors()
+      .filter(
+        (doctor) =>
+          !term ||
+          doctor.name.toLowerCase().includes(term) ||
+          doctor.specialization.toLowerCase().includes(term)
+      )
+      .map((doctor) => {
+        const own = this.schedules().filter((schedule) => schedule.doctorId === doctor.id);
+        const days = [...new Set(own.map((schedule) => schedule.weekDay))].sort((a, b) => a - b);
+        const minutes = own.reduce(
+          (sum, schedule) =>
+            sum + Math.max(0, timeToMinutes(schedule.endTime) - timeToMinutes(schedule.startTime)),
+          0
+        );
 
-  readonly actions: TableRowAction<Doctor>[] = [
-    { id: 'view', icon: 'visibility', tooltip: 'View details', color: 'primary' },
-    { id: 'edit', icon: 'edit', tooltip: 'Edit doctor', color: 'accent' },
-    { id: 'delete', icon: 'delete', tooltip: 'Delete doctor', color: 'warn' }
-  ];
+        return {
+          doctor,
+          workingDays: days
+            .map((day) => this.translate.instant(`weekday.short.${day}`))
+            .join(' · '),
+          weeklyHours: Math.round((minutes / 60) * 10) / 10,
+          hasSchedule: own.length > 0,
+        };
+      });
+  });
+
+  protected readonly knownSpecializations = computed(() => [
+    ...new Set(this.doctors().map((doctor) => doctor.specialization).filter(Boolean)),
+  ]);
 
   constructor() {
     this.load();
   }
 
-  onFiltersChanged(filters: SearchFilterValue): void {
-    this.filters = filters;
-    this.pageIndex = 0;
-    this.load();
+  protected load(): void {
+    this.loading.set(true);
+
+    forkJoin({
+      doctors: this.api
+        .getDoctors({ pageIndex: 1, pageSize: 200 })
+        .pipe(catchError(() => of(EMPTY_PAGE))),
+      schedules: this.schedulesApi
+        .getSchedules({ pageIndex: 1, pageSize: 500 })
+        .pipe(catchError(() => of(EMPTY_PAGE))),
+    }).subscribe({
+      next: ({ doctors, schedules }) => {
+        this.doctors.set(doctors.data as Doctor[]);
+        this.schedules.set(schedules.data as DoctorSchedule[]);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
+    });
   }
 
-  onSortChanged(sort: SortState): void {
-    this.sort = sort.direction ? (sort.direction === 'asc' ? 'nameAsc' : 'nameDesc') : '';
-    this.load();
+  protected onSearch(event: SearchEvent): void {
+    this.search.set(event.term);
   }
 
-  onPage(event: PageEvent): void {
-    this.pageIndex = event.pageIndex;
-    this.pageSize = event.pageSize;
-    this.load();
-  }
-
-  openCreate(): void {
-    this.openForm();
-  }
-
-  onRowAction(event: RowActionEvent<Doctor>): void {
-    switch (event.action) {
-      case 'view':
-        void this.router.navigate(['/doctors', event.row.id]);
-        break;
-      case 'edit':
-        this.openForm(event.row);
-        break;
-      case 'delete':
-        this.confirmDelete(event.row);
-        break;
-    }
-  }
-
-  private openForm(doctor?: Doctor): void {
-    const data: DoctorFormDialogData = { doctor };
+  protected openForm(doctor?: Doctor): void {
     this.dialog
-      .open(DoctorFormDialogComponent, { width: '480px', data })
+      .open<DoctorFormDialogComponent, DoctorDialogData, boolean>(DoctorFormDialogComponent, {
+        data: { doctor, knownSpecializations: this.knownSpecializations() },
+      })
       .afterClosed()
       .subscribe((saved) => {
         if (saved) {
@@ -131,54 +148,26 @@ export class DoctorListComponent {
       });
   }
 
-  private confirmDelete(doctor: Doctor): void {
-    const data: ConfirmDialogData = {
-      title: 'Delete doctor',
-      message: `Delete Dr. ${doctor.name}? This cannot be undone.`,
-      confirmText: 'Delete',
-      icon: 'delete'
-    };
+  protected confirmDelete(doctor: Doctor): void {
+    confirmDialog(this.dialog, {
+      title: 'doctors.delete',
+      message: 'doctors.deleteConfirm',
+      messageParams: { name: doctor.name },
+      confirmLabel: 'common.delete',
+      tone: 'danger',
+    }).subscribe((confirmed) => {
+      if (!confirmed) {
+        return;
+      }
 
-    this.dialog
-      .open(ConfirmDialogComponent, { width: '420px', data })
-      .afterClosed()
-      .pipe(switchMap((confirmed) => (confirmed ? this.doctorsService.deleteDoctor(doctor.id) : [])))
-      .subscribe({
-        next: () => {
-          this.notifications.success('Doctor deleted.');
-          this.afterDelete();
-        }
+      this.api.deleteDoctor(doctor.id).subscribe(() => {
+        this.notifications.success(this.translate.instant('doctors.deleted'));
+        this.load();
       });
+    });
   }
 
-  private afterDelete(): void {
-    if (this.doctors().length === 1 && this.pageIndex > 0) {
-      this.pageIndex -= 1;
-    }
-    this.load();
-  }
-
-  private load(): void {
-    this.loading.set(true);
-    this.doctorsService
-      .getDoctors({
-        pageIndex: this.pageIndex + 1,
-        pageSize: this.pageSize,
-        search: this.filters.search,
-        specialty: this.filters.filter ? String(this.filters.filter) : undefined,
-        sort: this.sort
-      })
-      .subscribe({
-        next: (page) => {
-          this.doctors.set(page.data);
-          this.total.set(page.count);
-          this.loading.set(false);
-        },
-        error: () => {
-          this.doctors.set([]);
-          this.total.set(0);
-          this.loading.set(false);
-        }
-      });
+  protected book(doctor: Doctor): void {
+    void this.router.navigate(['/appointments/new'], { queryParams: { doctorId: doctor.id } });
   }
 }

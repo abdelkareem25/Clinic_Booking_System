@@ -2,44 +2,185 @@
   display: block;
 }
 
-.metrics-grid {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  margin-bottom: 28px;
+.head-actions {
+  display: flex;
+  gap: var(--sp-2);
 }
 
-.recent-panel {
+.stats {
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.charts,
+.columns {
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  align-items: start;
+}
+
+// -----------------------------------------------------------------------------
+// Shared list rows
+// -----------------------------------------------------------------------------
+.list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 340px;
+  overflow-y: auto;
 }
 
-.recent-header {
+.list li {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-
-  h2 {
-    margin: 0;
-    font-size: 1.15rem;
-  }
-
-  p {
-    margin: 4px 0 0;
-    color: var(--mat-sys-on-surface-variant);
-    font-size: 0.9rem;
-  }
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+  border-block-end: 1px solid var(--c-border);
 }
 
-.view-all {
-  color: var(--mat-sys-primary);
-  font-weight: 600;
-  text-decoration: none;
-  white-space: nowrap;
+.list li:last-child {
+  border-block-end: 0;
+}
 
-  &:hover {
-    text-decoration: underline;
+.list-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.list-body strong {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list-body small {
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.time {
+  flex: 0 0 auto;
+  min-width: 70px;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--c-primary-soft-fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.date-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-sm);
+  background: var(--c-surface-2);
+  line-height: 1.1;
+}
+
+.date-chip strong {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+
+.date-chip small {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--c-text-subtle);
+}
+
+.availability {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  flex: 0 0 auto;
+  text-align: end;
+}
+
+.availability small {
+  font-size: var(--fs-2xs);
+  color: var(--c-text-subtle);
+}
+
+.amount {
+  flex: 0 0 auto;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--c-success-soft-fg);
+}
+
+.list-link {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-xs);
+  color: var(--c-text-subtle);
+}
+
+.list-link:hover {
+  background: var(--c-surface-2);
+  color: var(--c-text);
+  text-decoration: none;
+}
+
+:host-context(html[dir='rtl']) .list-link ui-icon {
+  transform: scaleX(-1);
+}
+
+// -----------------------------------------------------------------------------
+// Quick actions
+// -----------------------------------------------------------------------------
+.quick {
+  display: grid;
+  gap: var(--sp-3);
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.quick-action {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  transition:
+    border-color var(--dur-micro) var(--ease-standard),
+    background-color var(--dur-micro) var(--ease-standard);
+}
+
+.quick-action:hover {
+  border-color: var(--c-border-strong);
+  background: var(--c-surface-2);
+  text-decoration: none;
+}
+
+@media (max-width: 640px) {
+  .stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .list li {
+    padding-inline: var(--sp-4);
   }
 }

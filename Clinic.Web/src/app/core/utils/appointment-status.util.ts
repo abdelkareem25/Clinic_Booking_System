@@ -1,9 +1,14 @@
+import { BadgeTone } from '../../shared/ui/data-table/data-table.model';
 import { AppointmentTimeStatus } from '../models/appointment.model';
-import { ChipTone } from '../../shared/components/data-table/data-table.model';
 
 /**
  * Derives a time-based status (Upcoming / Today / Past) from an appointment's
- * ISO date string. The backend does not expose a status column.
+ * ISO date string.
+ *
+ * The API has no status column, so status is a function of the clock rather
+ * than stored state. That is honest — it can never disagree with the date —
+ * but it also means "cancelled" cannot be represented, which is why cancelling
+ * deletes the appointment.
  */
 export function deriveAppointmentStatus(
   appointmentDate: string | null | undefined,
@@ -22,7 +27,7 @@ export function deriveAppointmentStatus(
   return timestamp >= now.getTime() ? 'Upcoming' : 'Past';
 }
 
-export function appointmentStatusTone(status: AppointmentTimeStatus): ChipTone {
+export function appointmentStatusTone(status: AppointmentTimeStatus): BadgeTone {
   switch (status) {
     case 'Today':
       return 'warning';
@@ -31,6 +36,18 @@ export function appointmentStatusTone(status: AppointmentTimeStatus): ChipTone {
     case 'Past':
     default:
       return 'neutral';
+  }
+}
+
+export function appointmentStatusLabel(status: AppointmentTimeStatus): string {
+  switch (status) {
+    case 'Today':
+      return 'appointments.statusToday';
+    case 'Upcoming':
+      return 'appointments.statusUpcoming';
+    case 'Past':
+    default:
+      return 'appointments.statusPast';
   }
 }
 

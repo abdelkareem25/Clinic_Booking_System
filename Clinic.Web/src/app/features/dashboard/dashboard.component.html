@@ -1,30 +1,243 @@
-<app-page-header
-  title="Dashboard"
-  subtitle="Clinic activity at a glance."
-  icon="dashboard"
-/>
-
-<section class="metrics-grid">
-  @for (metric of metrics(); track metric.label) {
-    <app-metric-card [metric]="metric" />
-  }
-</section>
-
-<section class="recent-panel">
-  <header class="recent-header">
-    <div>
-      <h2>Recent Appointments</h2>
-      <p>The latest scheduled visits across the clinic.</p>
+<div class="page">
+  <ui-page-header title="dashboard.title" [subtitle]="greeting()">
+    <div actions class="head-actions">
+      <button mat-stroked-button type="button" (click)="refresh()">
+        <ui-icon name="refresh" size="sm" />
+        {{ 'common.refresh' | translate }}
+      </button>
+      <a mat-flat-button routerLink="/appointments/new">
+        <ui-icon name="add" size="sm" />
+        {{ 'dashboard.quickNewAppointment' | translate }}
+      </a>
     </div>
-    <a class="view-all" routerLink="/appointments">View all</a>
-  </header>
+  </ui-page-header>
 
-  <app-data-table
-    [columns]="columns"
-    [rows]="recent()"
-    [loading]="loading()"
-    emptyIcon="event_busy"
-    emptyTitle="No recent appointments"
-    emptyMessage="New appointments will appear here once they are booked."
-  />
-</section>
+  <!-- Headline figures ---------------------------------------------------- -->
+  <section class="stats">
+    <ui-stat-card
+      label="dashboard.todaysPatients"
+      icon="patients"
+      tone="primary"
+      route="/patients"
+      [value]="todaysPatients()"
+      [loading]="loading()"
+      [caption]="'patients.title'"
+    />
+    <ui-stat-card
+      label="dashboard.todaysAppointments"
+      icon="appointments"
+      tone="info"
+      route="/appointments"
+      [value]="todaysAppointments().length"
+      [loading]="loading()"
+    />
+    <ui-stat-card
+      label="dashboard.upcomingAppointments"
+      icon="calendarCheck"
+      tone="success"
+      route="/appointments"
+      [value]="upcomingAppointments().length"
+      [loading]="loading()"
+    />
+    @if (permissions.can('accounts.view')) {
+      <ui-stat-card
+        label="dashboard.revenueToday"
+        icon="money"
+        tone="warning"
+        route="/accounts"
+        [value]="revenueToday()"
+        [unit]="currency()"
+        [loading]="loading()"
+        [caption]="'dashboard.revenueMonth'"
+      />
+    } @else {
+      <ui-stat-card
+        label="patients.title"
+        icon="user"
+        tone="neutral"
+        route="/patients"
+        [value]="totalPatients()"
+        [loading]="loading()"
+      />
+    }
+  </section>
+
+  <!-- Charts --------------------------------------------------------------- -->
+  <section class="charts">
+    <ui-card title="dashboard.appointmentsByDay" subtitle="common.last30Days">
+      <ui-chart
+        type="column"
+        tone="primary"
+        caption="dashboard.appointmentsByDay"
+        [points]="appointmentTrend()"
+      />
+    </ui-card>
+
+    @if (permissions.can('accounts.view')) {
+      <ui-card title="dashboard.revenueTrend" subtitle="common.last30Days">
+        <ui-chart
+          type="line"
+          tone="accent"
+          caption="dashboard.revenueTrend"
+          [unit]="currency()"
+          [points]="revenueTrend()"
+        />
+      </ui-card>
+    }
+  </section>
+
+  <!-- Operational detail --------------------------------------------------- -->
+  <section class="columns">
+    <ui-card title="dashboard.todaysAppointments" icon="appointments" [padded]="false">
+      <a actions mat-button routerLink="/appointments">
+        {{ 'common.viewAll' | translate }}
+      </a>
+
+      @if (todaysAppointments().length) {
+        <ul class="list">
+          @for (appointment of todaysAppointments(); track appointment.id) {
+            <li>
+              <span class="time">{{ appointment.appointmentDate | date: 'h:mm a' }}</span>
+              <span class="list-body">
+                <strong>{{ appointment.patientName }}</strong>
+                <small>{{ appointment.doctorName }}</small>
+              </span>
+              <a
+                class="list-link"
+                [routerLink]="['/appointments', appointment.id]"
+                [attr.aria-label]="'common.view' | translate"
+              >
+                <ui-icon name="chevronRight" size="sm" />
+              </a>
+            </li>
+          }
+        </ul>
+      } @else {
+        <ui-empty-state
+          [compact]="true"
+          icon="calendarCheck"
+          title="dashboard.noAppointmentsToday"
+          message="dashboard.noAppointmentsTodayHint"
+        >
+          <a mat-flat-button routerLink="/appointments/new">
+            {{ 'appointments.new' | translate }}
+          </a>
+        </ui-empty-state>
+      }
+    </ui-card>
+
+    <ui-card title="dashboard.doctorAvailability" icon="doctors" [padded]="false">
+      <a actions mat-button routerLink="/schedules">
+        {{ 'doctors.viewSchedule' | translate }}
+      </a>
+
+      @if (availability().length) {
+        <ul class="list">
+          @for (doctor of availability(); track doctor.id) {
+            <li>
+              <span class="avatar avatar-sm">{{ doctor.name.charAt(0) }}</span>
+              <span class="list-body">
+                <strong>{{ doctor.name }}</strong>
+                <small>{{ doctor.specialization }}</small>
+              </span>
+              <span class="availability">
+                @if (doctor.hours) {
+                  <span class="badge badge-success badge-dot">{{ doctor.hours }}</span>
+                  <small>{{ 'doctors.todaysLoad' | translate }}: {{ doctor.booked }}</small>
+                } @else {
+                  <span class="badge badge-neutral">{{ 'dashboard.offToday' | translate }}</span>
+                }
+              </span>
+            </li>
+          }
+        </ul>
+      } @else {
+        <ui-empty-state [compact]="true" icon="doctors" title="doctors.empty" message="doctors.emptyHint">
+          <a mat-flat-button routerLink="/doctors">{{ 'doctors.new' | translate }}</a>
+        </ui-empty-state>
+      }
+    </ui-card>
+  </section>
+
+  <section class="columns">
+    <ui-card title="dashboard.upcomingAppointments" icon="calendarCheck" [padded]="false">
+      @if (nextFive().length) {
+        <ul class="list">
+          @for (appointment of nextFive(); track appointment.id) {
+            <li>
+              <span class="date-chip">
+                <strong>{{ appointment.appointmentDate | date: 'd' }}</strong>
+                <small>{{ appointment.appointmentDate | date: 'MMM' }}</small>
+              </span>
+              <span class="list-body">
+                <strong>{{ appointment.patientName }}</strong>
+                <small>
+                  {{ appointment.doctorName }} · {{ appointment.appointmentDate | date: 'h:mm a' }}
+                </small>
+              </span>
+            </li>
+          }
+        </ul>
+      } @else {
+        <ui-empty-state
+          [compact]="true"
+          icon="calendarCheck"
+          title="appointments.empty"
+          message="appointments.emptyHint"
+        />
+      }
+    </ui-card>
+
+    @if (permissions.can('accounts.view')) {
+      <ui-card title="dashboard.recentPayments" icon="payment" [padded]="false">
+        <a actions mat-button routerLink="/accounts">{{ 'common.viewAll' | translate }}</a>
+
+        @if (recentPayments().length) {
+          <ul class="list">
+            @for (payment of recentPayments(); track payment.id) {
+              <li>
+                <span class="icon-tile icon-tile-success"><ui-icon name="money" size="sm" /></span>
+                <span class="list-body">
+                  <strong>{{ payment.patientName }}</strong>
+                  <small>{{ payment.invoiceNumber }} · {{ payment.paidAt | date: 'd MMM, h:mm a' }}</small>
+                </span>
+                <span class="amount money">{{ payment.amount }} {{ currency() }}</span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <ui-empty-state
+            [compact]="true"
+            icon="payment"
+            title="accounts.empty"
+            message="accounts.emptyHint"
+          />
+        }
+      </ui-card>
+    }
+  </section>
+
+  <!-- Quick actions -------------------------------------------------------- -->
+  <ui-card title="dashboard.quickActions" icon="sparkles">
+    <div class="quick">
+      <a class="quick-action" routerLink="/appointments/new">
+        <span class="icon-tile icon-tile-primary"><ui-icon name="appointments" size="md" /></span>
+        {{ 'dashboard.quickNewAppointment' | translate }}
+      </a>
+      <a class="quick-action" routerLink="/patients/new">
+        <span class="icon-tile icon-tile-info"><ui-icon name="userAdd" size="md" /></span>
+        {{ 'dashboard.quickNewPatient' | translate }}
+      </a>
+      @if (permissions.can('accounts.create')) {
+        <a class="quick-action" routerLink="/accounts/payments/new">
+          <span class="icon-tile icon-tile-success"><ui-icon name="payment" size="md" /></span>
+          {{ 'dashboard.quickRecordPayment' | translate }}
+        </a>
+        <a class="quick-action" routerLink="/accounts/expenses/new">
+          <span class="icon-tile icon-tile-warning"><ui-icon name="expense" size="md" /></span>
+          {{ 'dashboard.quickAddExpense' | translate }}
+        </a>
+      }
+    </div>
+  </ui-card>
+</div>

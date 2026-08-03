@@ -2,10 +2,91 @@
  * Tailwind CSS v4 entry point.
  *
  * Preflight (Tailwind's global reset) is intentionally NOT imported so it does
- * not fight with Angular Material's component styles. We only pull in the
- * theme tokens and utility classes, which is all we use in templates.
+ * not fight Angular Material's component styles — `styles/_base.scss` owns the
+ * reset instead.
+ *
+ * The `@theme` block below is the bridge between the design tokens and
+ * Tailwind's utility generator: every utility resolves to the same CSS custom
+ * property a hand-written rule would use, so a Tailwind class and a SCSS rule
+ * can never drift apart, and both follow dark mode automatically.
  */
 @layer theme, base, components, utilities;
 
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities);
+
+@source "./app";
+@source "./index.html";
+
+/* Dark mode is driven by the `.dark` class on <html>, set by ThemeService. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* --- colour ------------------------------------------------------------ */
+  --color-canvas: var(--c-canvas);
+  --color-surface: var(--c-surface);
+  --color-surface-2: var(--c-surface-2);
+  --color-surface-3: var(--c-surface-3);
+
+  --color-content: var(--c-text);
+  --color-muted: var(--c-text-muted);
+  --color-subtle: var(--c-text-subtle);
+
+  --color-line: var(--c-border);
+  --color-line-strong: var(--c-border-strong);
+
+  --color-primary: var(--c-primary);
+  --color-primary-fg: var(--c-primary-fg);
+  --color-primary-soft: var(--c-primary-soft);
+  --color-primary-soft-fg: var(--c-primary-soft-fg);
+
+  --color-secondary: var(--c-secondary);
+  --color-secondary-soft: var(--c-secondary-soft);
+
+  --color-accent: var(--c-accent);
+  --color-accent-soft: var(--c-accent-soft);
+  --color-accent-soft-fg: var(--c-accent-soft-fg);
+
+  --color-success: var(--c-success);
+  --color-success-soft: var(--c-success-soft);
+  --color-success-soft-fg: var(--c-success-soft-fg);
+
+  --color-warning: var(--c-warning);
+  --color-warning-soft: var(--c-warning-soft);
+  --color-warning-soft-fg: var(--c-warning-soft-fg);
+
+  --color-danger: var(--c-danger);
+  --color-danger-soft: var(--c-danger-soft);
+  --color-danger-soft-fg: var(--c-danger-soft-fg);
+
+  /* --- radius ------------------------------------------------------------ */
+  --radius-xs: var(--r-xs);
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-xl);
+  --radius-2xl: var(--r-2xl);
+
+  /* --- shadow ------------------------------------------------------------ */
+  --shadow-card: var(--sh-card);
+  --shadow-raised: var(--sh-raised);
+  --shadow-overlay: var(--sh-overlay);
+
+  /* --- typography -------------------------------------------------------- */
+  --font-sans: var(--ff-sans);
+  --font-mono: var(--ff-mono);
+
+  --text-2xs: var(--fs-2xs);
+  --text-xs: var(--fs-xs);
+  --text-sm: var(--fs-sm);
+  --text-base: var(--fs-base);
+  --text-md: var(--fs-md);
+  --text-lg: var(--fs-lg);
+  --text-xl: var(--fs-xl);
+  --text-2xl: var(--fs-2xl);
+  --text-3xl: var(--fs-3xl);
+
+  /* --- motion ------------------------------------------------------------ */
+  --ease-standard: var(--ease-standard);
+  --ease-out-soft: var(--ease-out);
+}

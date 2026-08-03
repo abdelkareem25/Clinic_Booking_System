@@ -1,0 +1,192 @@
+<div class="page">
+  <ui-page-header title="reports.title" subtitle="reports.subtitle" icon="reports">
+    <div actions class="head-actions">
+      <button mat-stroked-button type="button" (click)="print()">
+        <ui-icon name="print" size="sm" />
+        {{ 'common.print' | translate }}
+      </button>
+      @if (permissions.can('reports.export')) {
+        <button mat-flat-button type="button" (click)="exportCsv()">
+          <ui-icon name="download" size="sm" />
+          {{ 'reports.exportCsv' | translate }}
+        </button>
+      }
+    </div>
+  </ui-page-header>
+
+  <!-- One period control scoping every figure below. -->
+  <div class="filters surface">
+    <mat-form-field class="field-compact date">
+      <mat-label>{{ 'common.startDate' | translate }}</mat-label>
+      <input
+        matInput
+        readonly
+        [value]="from()"
+        [matDatepicker]="fromPicker"
+        (dateChange)="setFrom($event.value)"
+        (click)="fromPicker.open()"
+      />
+      <mat-datepicker-toggle matIconSuffix [for]="fromPicker" />
+      <mat-datepicker #fromPicker />
+    </mat-form-field>
+
+    <mat-form-field class="field-compact date">
+      <mat-label>{{ 'common.endDate' | translate }}</mat-label>
+      <input
+        matInput
+        readonly
+        [value]="to()"
+        [matDatepicker]="toPicker"
+        (dateChange)="setTo($event.value)"
+        (click)="toPicker.open()"
+      />
+      <mat-datepicker-toggle matIconSuffix [for]="toPicker" />
+      <mat-datepicker #toPicker />
+    </mat-form-field>
+
+    <div class="quick">
+      <button mat-button type="button" (click)="quickRange(7)">
+        {{ 'common.thisWeek' | translate }}
+      </button>
+      <button mat-button type="button" (click)="thisMonth()">
+        {{ 'common.thisMonth' | translate }}
+      </button>
+      <button mat-button type="button" (click)="quickRange(30)">
+        {{ 'common.last30Days' | translate }}
+      </button>
+    </div>
+  </div>
+
+  @if (!loading() && !hasData()) {
+    <ui-empty-state icon="reports" title="reports.empty" message="reports.emptyHint" />
+  } @else {
+    <section class="stats">
+      <ui-stat-card
+        label="reports.newPatients"
+        icon="userAdd"
+        tone="primary"
+        [value]="newPatients()"
+        [loading]="loading()"
+      />
+      <ui-stat-card
+        label="reports.returningPatients"
+        icon="patients"
+        tone="info"
+        [value]="returningPatients()"
+        [loading]="loading()"
+      />
+      <ui-stat-card
+        label="appointments.title"
+        icon="appointments"
+        tone="neutral"
+        [value]="totalAppointments()"
+        [loading]="loading()"
+      />
+      <ui-stat-card
+        label="reports.completionRate"
+        icon="success"
+        tone="success"
+        unit="%"
+        [value]="completionRate()"
+        [loading]="loading()"
+      />
+    </section>
+
+    @if (permissions.can('accounts.view')) {
+      <section class="stats">
+        <ui-stat-card
+          label="accounts.income"
+          icon="money"
+          tone="success"
+          [value]="totals().income"
+          [unit]="currency()"
+        />
+        <ui-stat-card
+          label="accounts.expenses"
+          icon="expense"
+          tone="warning"
+          [value]="totals().expenses"
+          [unit]="currency()"
+        />
+        <ui-stat-card
+          label="accounts.netProfit"
+          icon="savings"
+          tone="primary"
+          [value]="totals().net"
+          [unit]="currency()"
+        />
+        <ui-stat-card
+          label="reports.averageRevenue"
+          icon="currency"
+          tone="info"
+          [value]="averageRevenue()"
+          [unit]="currency()"
+        />
+      </section>
+    }
+
+    <section class="charts">
+      <ui-card title="reports.appointmentsReport" subtitle="reports.period">
+        <ui-chart
+          type="column"
+          tone="primary"
+          caption="reports.appointmentsReport"
+          [points]="appointmentTrend()"
+        />
+      </ui-card>
+
+      @if (permissions.can('accounts.view')) {
+        <ui-card title="reports.revenueReport" subtitle="reports.period">
+          <ui-chart
+            type="line"
+            tone="accent"
+            caption="reports.revenueReport"
+            [unit]="currency()"
+            [points]="revenueTrend()"
+          />
+        </ui-card>
+      }
+    </section>
+
+    <section class="insight-row">
+      <div class="insight surface">
+        <span class="icon-tile icon-tile-primary"><ui-icon name="appointments" size="md" /></span>
+        <div>
+          <span class="text-label">{{ 'reports.busiestDay' | translate }}</span>
+          <strong>{{ busiestDay() }}</strong>
+        </div>
+      </div>
+      <div class="insight surface">
+        <span class="icon-tile icon-tile-info"><ui-icon name="clock" size="md" /></span>
+        <div>
+          <span class="text-label">{{ 'reports.busiestHour' | translate }}</span>
+          <strong>{{ busiestHour() }}</strong>
+        </div>
+      </div>
+      <div class="insight surface">
+        <span class="icon-tile icon-tile-success"><ui-icon name="records" size="md" /></span>
+        <div>
+          <span class="text-label">{{ 'records.title' | translate }}</span>
+          <strong>{{ recordCount() }}</strong>
+        </div>
+      </div>
+      <div class="insight surface">
+        <span class="icon-tile icon-tile-warning"><ui-icon name="patients" size="md" /></span>
+        <div>
+          <span class="text-label">{{ 'patients.title' | translate }}</span>
+          <strong>{{ totalPatients() }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <ui-card title="reports.doctorPerformance" icon="doctors" [padded]="false">
+      <ui-data-table
+        [columns]="performanceColumns"
+        [rows]="performance()"
+        [loading]="loading()"
+        emptyTitle="reports.empty"
+        emptyMessage="reports.emptyHint"
+      />
+    </ui-card>
+  }
+</div>

@@ -1,0 +1,107 @@
+<div class="page">
+  <ui-page-header title="schedules.title" subtitle="schedules.subtitle" icon="schedules">
+    <div actions class="head-actions">
+      <mat-form-field class="field-compact doctor-filter">
+        <mat-label>{{ 'appointments.doctor' | translate }}</mat-label>
+        <mat-select [value]="doctorFilter()" (valueChange)="doctorFilter.set($event)">
+          <mat-option value="all">{{ 'common.all' | translate }}</mat-option>
+          @for (doctor of doctors(); track doctor.id) {
+            <mat-option [value]="doctor.id">{{ doctor.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @if (permissions.can('schedules.create')) {
+        <button mat-flat-button type="button" (click)="addShift()">
+          <ui-icon name="add" size="sm" />
+          {{ 'schedules.new' | translate }}
+        </button>
+      }
+    </div>
+  </ui-page-header>
+
+  @if (!loading() && !doctors().length) {
+    <ui-empty-state icon="doctors" title="doctors.empty" message="doctors.emptyHint" />
+  } @else {
+    <div class="weeks">
+      @for (week of weeks(); track week.doctor.id) {
+        <ui-card [padded]="false" [hasHeader]="true">
+          <div class="doctor-head" actions>
+            <span class="badge badge-primary">
+              {{ 'schedules.hoursPerWeek' | translate: { count: week.weeklyHours } }}
+            </span>
+          </div>
+
+          <div class="doctor-identity">
+            <span class="avatar">{{ week.doctor.name.charAt(0) }}</span>
+            <span class="doctor-text">
+              <strong>{{ week.doctor.name }}</strong>
+              <small>{{ week.doctor.specialization }}</small>
+            </span>
+          </div>
+
+          <!-- The week grid scrolls horizontally on narrow screens rather than
+               collapsing: a week only makes sense laid out as a week. -->
+          <div class="grid-scroll">
+            <div class="grid">
+              @for (day of week.days; track day.weekDay) {
+                <div class="day" [class.day-off]="!day.shifts.length">
+                  <span class="day-name">{{ 'weekday.short.' + day.weekDay | translate }}</span>
+
+                  @if (day.shifts.length) {
+                    @for (shift of day.shifts; track shift.id) {
+                      <div class="shift">
+                        <button
+                          type="button"
+                          class="shift-time"
+                          [disabled]="!permissions.can('schedules.edit')"
+                          [matTooltip]="'common.edit' | translate"
+                          (click)="editShift(shift)"
+                        >
+                          {{ shift.label }}
+                        </button>
+                        @if (permissions.can('schedules.delete')) {
+                          <button
+                            type="button"
+                            class="shift-remove"
+                            [attr.aria-label]="'common.delete' | translate"
+                            (click)="removeShift(shift, week.doctor.name)"
+                          >
+                            <ui-icon name="close" size="sm" />
+                          </button>
+                        }
+                      </div>
+                    }
+                  } @else {
+                    <span class="off-label">{{ 'schedules.noHours' | translate }}</span>
+                  }
+
+                  @if (permissions.can('schedules.create')) {
+                    <button
+                      type="button"
+                      class="add-cell"
+                      [attr.aria-label]="'schedules.new' | translate"
+                      (click)="addShift(week.doctor.id, day.weekDay)"
+                    >
+                      <ui-icon name="add" size="sm" />
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        </ui-card>
+      }
+    </div>
+
+    @if (!loading() && !hasAnySchedule()) {
+      <ui-empty-state icon="schedules" title="schedules.empty" message="schedules.emptyHint">
+        @if (permissions.can('schedules.create')) {
+          <button mat-flat-button type="button" (click)="addShift()">
+            {{ 'schedules.new' | translate }}
+          </button>
+        }
+      </ui-empty-state>
+    }
+  }
+</div>

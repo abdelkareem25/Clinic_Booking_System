@@ -1,68 +1,101 @@
-<app-page-header
-  title="Appointments"
-  subtitle="Schedule, review, and manage clinic appointments."
-  icon="event_available"
-  actionLabel="Book appointment"
-  actionIcon="add"
-  (action)="openCreate()"
-/>
-
-<form class="filter-bar" [formGroup]="filterForm">
-  <mat-form-field>
-    <mat-label>Doctor</mat-label>
-    <mat-select formControlName="doctorId">
-      <mat-option [value]="null">All doctors</mat-option>
-      @for (option of doctorOptions(); track option.value) {
-        <mat-option [value]="option.value">{{ option.label }}</mat-option>
+<div class="page">
+  <ui-page-header title="appointments.title" subtitle="appointments.subtitle" icon="appointments">
+    <div actions class="head-actions">
+      <button mat-stroked-button type="button" (click)="showToday()">
+        <ui-icon name="clock" size="sm" />
+        {{ 'common.today' | translate }}
+        @if (todayCount()) {
+          <span class="badge badge-warning count">{{ todayCount() }}</span>
+        }
+      </button>
+      @if (permissions.can('appointments.create')) {
+        <a mat-flat-button routerLink="/appointments/new">
+          <ui-icon name="add" size="sm" />
+          {{ 'appointments.new' | translate }}
+        </a>
       }
-    </mat-select>
-  </mat-form-field>
+    </div>
+  </ui-page-header>
 
-  <mat-form-field>
-    <mat-label>Patient</mat-label>
-    <mat-select formControlName="patientId">
-      <mat-option [value]="null">All patients</mat-option>
-      @for (option of patientOptions(); track option.value) {
-        <mat-option [value]="option.value">{{ option.label }}</mat-option>
-      }
-    </mat-select>
-  </mat-form-field>
+  <div class="filters surface">
+    <ui-search-field
+      class="search"
+      placeholder="appointments.searchPlaceholder"
+      (search)="onSearch($event)"
+    />
 
-  <mat-form-field>
-    <mat-label>Status</mat-label>
-    <mat-select formControlName="status">
-      <mat-option [value]="null">All statuses</mat-option>
-      @for (status of statuses; track status) {
-        <mat-option [value]="status">{{ status }}</mat-option>
-      }
-    </mat-select>
-  </mat-form-field>
+    <mat-form-field class="field-compact narrow">
+      <mat-label>{{ 'appointments.doctor' | translate }}</mat-label>
+      <mat-select [value]="doctorId()" (valueChange)="onDoctor($event)">
+        <mat-option value="all">{{ 'common.all' | translate }}</mat-option>
+        @for (doctor of doctors(); track doctor.id) {
+          <mat-option [value]="doctor.id">{{ doctor.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
 
-  <button mat-stroked-button type="button" (click)="resetFilters()">
-    <mat-icon>restart_alt</mat-icon>
-    Reset
-  </button>
-</form>
+    <mat-form-field class="field-compact narrow">
+      <mat-label>{{ 'common.status' | translate }}</mat-label>
+      <mat-select [value]="status()" (valueChange)="onStatus($event)">
+        <mat-option value="all">{{ 'common.all' | translate }}</mat-option>
+        <mat-option value="Today">{{ 'appointments.statusToday' | translate }}</mat-option>
+        <mat-option value="Upcoming">{{ 'appointments.statusUpcoming' | translate }}</mat-option>
+        <mat-option value="Past">{{ 'appointments.statusPast' | translate }}</mat-option>
+      </mat-select>
+    </mat-form-field>
 
-<app-data-table
-  [columns]="columns"
-  [actions]="actions"
-  [rows]="appointments()"
-  [loading]="loading()"
-  emptyIcon="event_busy"
-  emptyTitle="No appointments found"
-  emptyMessage="Book an appointment or adjust the filters."
-  (rowAction)="onRowAction($event)"
-  (sortChange)="onSortChanged($event)"
-/>
+    <mat-form-field class="field-compact narrow">
+      <mat-label>{{ 'appointments.date' | translate }}</mat-label>
+      <input
+        matInput
+        readonly
+        [value]="day()"
+        [matDatepicker]="dayPicker"
+        (dateChange)="onDay($event.value)"
+        (click)="dayPicker.open()"
+      />
+      <mat-datepicker-toggle matIconSuffix [for]="dayPicker" />
+      <mat-datepicker #dayPicker />
+    </mat-form-field>
 
-@if (total() > 0) {
-  <mat-paginator
-    [length]="total()"
-    [pageIndex]="pageIndex"
-    [pageSize]="pageSize"
-    [pageSizeOptions]="[5, 10, 20]"
-    showFirstLastButtons
-    (page)="onPage($event)"
-  />
-}
+    @if (hasFilters()) {
+      <button mat-button type="button" (click)="clearFilters()">
+        <ui-icon name="close" size="sm" />
+        {{ 'common.clear' | translate }}
+      </button>
+    }
+  </div>
+
+  <ui-data-table
+    [columns]="columns"
+    [rows]="rows()"
+    [loading]="loading()"
+    [rowActions]="rowActions"
+    [sort]="sort()"
+    [page]="page()"
+    [total]="total()"
+    [clickableRows]="true"
+    [emptyTitle]="hasFilters() ? 'common.noResults' : 'appointments.empty'"
+    [emptyMessage]="hasFilters() ? 'patients.emptyFilteredHint' : 'appointments.emptyHint'"
+    [emptyIcon]="hasFilters() ? 'noResults' : 'empty'"
+    (sortChange)="onSort($event)"
+    (pageChange)="onPage($event)"
+    (rowClick)="openAppointment($event)"
+    (action)="onRowAction($event)"
+  >
+    <ng-template uiCell="appointmentDate" let-row>
+      <div class="when">
+        <span class="when-date">{{ row.appointmentDate | date: 'EEE, d MMM y' }}</span>
+        <span class="when-time" [class.when-past]="statusOf(row) === 'Past'">
+          {{ row.appointmentDate | date: 'h:mm a' }}
+        </span>
+      </div>
+    </ng-template>
+
+    @if (permissions.can('appointments.create')) {
+      <a emptyAction mat-flat-button routerLink="/appointments/new">
+        {{ 'appointments.new' | translate }}
+      </a>
+    }
+  </ui-data-table>
+</div>

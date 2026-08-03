@@ -1,68 +1,192 @@
-.auth-page {
-  min-height: 100vh;
-  display: grid;
-  grid-template-columns: minmax(320px, 0.9fr) minmax(360px, 1.1fr);
-  background:
-    linear-gradient(135deg, rgba(13, 112, 109, 0.92), rgba(37, 99, 235, 0.82)),
-    url('/assets/clinic-pattern.svg');
-  color: #fff;
+:host {
+  display: block;
 }
 
-.auth-brand {
+.auth {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  min-height: 100vh;
+  background: var(--c-canvas);
+}
+
+// -----------------------------------------------------------------------------
+// Brand panel
+// -----------------------------------------------------------------------------
+.brand-panel {
+  position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 18px;
-  padding: clamp(32px, 7vw, 96px);
+  justify-content: space-between;
+  gap: var(--sp-8);
+  padding: var(--sp-8) var(--sp-9);
+  overflow: hidden;
+  color: #eafffb;
+  background:
+    radial-gradient(90% 70% at 15% 10%, rgb(20 184 166 / 32%), transparent 62%),
+    radial-gradient(70% 60% at 90% 90%, rgb(37 99 235 / 26%), transparent 60%),
+    linear-gradient(155deg, #0b4f49 0%, #073b37 52%, #06292a 100%);
+}
+
+// A faint dot grid keeps the large gradient from reading as a flat wash.
+.brand-panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgb(255 255 255 / 7%) 1px, transparent 1px);
+  background-size: 22px 22px;
+  pointer-events: none;
+}
+
+.brand-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
 }
 
 .brand-mark {
-  width: 64px;
-  height: 64px;
   display: grid;
   place-items: center;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.16);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  font-weight: 800;
-  letter-spacing: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-md);
+  background: rgb(255 255 255 / 14%);
+  border: 1px solid rgb(255 255 255 / 18%);
+  color: #7ff0e0;
 }
 
-h1 {
-  margin: 0;
-  font-size: clamp(2rem, 5vw, 4.2rem);
-  line-height: 1;
-  letter-spacing: 0;
+.brand-text {
+  display: flex;
+  flex-direction: column;
 }
 
-p {
-  margin: 0;
-  max-width: 560px;
-  color: rgba(255, 255, 255, 0.86);
-  font-size: 1.08rem;
-  line-height: 1.6;
+.brand-text strong {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  color: #ffffff;
 }
 
-.auth-panel {
-  display: grid;
+.brand-text small {
+  font-size: var(--fs-xs);
+  color: rgb(234 255 251 / 62%);
+}
+
+.pitch {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  max-width: 30rem;
+}
+
+.headline {
+  font-size: clamp(1.6rem, 2.4vw, 2.15rem);
+  font-weight: var(--fw-semibold);
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  color: #ffffff;
+}
+
+.body {
+  font-size: var(--fs-md);
+  line-height: var(--lh-normal);
+  color: rgb(234 255 251 / 76%);
+}
+
+.features {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin: var(--sp-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.features li {
+  display: flex;
   align-items: center;
-  padding: clamp(24px, 5vw, 72px);
-  background: #f6fafc;
-  color: #172033;
+  gap: var(--sp-3);
+  font-size: var(--fs-base);
+  color: rgb(234 255 251 / 88%);
 }
 
-@media (max-width: 840px) {
-  .auth-page {
-    grid-template-columns: 1fr;
-  }
-
-  .auth-brand {
-    padding-bottom: 16px;
-  }
-
-  .auth-panel {
-    align-items: start;
-    min-height: 56vh;
-  }
+.feature-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  background: rgb(255 255 255 / 10%);
+  color: #7ff0e0;
 }
 
+.legal {
+  font-size: var(--fs-xs);
+  color: rgb(234 255 251 / 45%);
+}
+
+// -----------------------------------------------------------------------------
+// Form panel
+// -----------------------------------------------------------------------------
+.form-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--c-surface);
+}
+
+.form-tools {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+  padding: var(--sp-4);
+  color: var(--c-text-muted);
+}
+
+.form-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  padding: var(--sp-4) var(--sp-6) var(--sp-9);
+}
+
+.form-inner {
+  width: 100%;
+  max-width: 26rem;
+}
+
+// -----------------------------------------------------------------------------
+// Below 1024px the brand panel becomes a header strip: the form must stay
+// reachable without scrolling on a phone.
+// -----------------------------------------------------------------------------
+@media (max-width: 1023px) {
+  .auth {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .brand-panel {
+    padding: var(--sp-5) var(--sp-5) var(--sp-6);
+    gap: var(--sp-4);
+  }
+
+  .pitch .body,
+  .features,
+  .legal {
+    display: none;
+  }
+
+  .headline {
+    font-size: 1.3rem;
+  }
+
+  .form-slot {
+    padding: var(--sp-5) var(--sp-4) var(--sp-8);
+    align-items: flex-start;
+  }
+}

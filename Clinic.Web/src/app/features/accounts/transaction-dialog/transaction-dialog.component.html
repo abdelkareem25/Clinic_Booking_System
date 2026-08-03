@@ -1,0 +1,128 @@
+<h2 mat-dialog-title>{{ title() | translate }}</h2>
+
+<mat-dialog-content>
+  <form class="transaction-form" [formGroup]="form" novalidate>
+    @if (kind !== 'expense') {
+      <div class="field">
+        <mat-form-field>
+          <mat-label>{{ 'accounts.invoice' | translate }}</mat-label>
+          <mat-select formControlName="invoiceId">
+            @for (invoice of selectableInvoices(); track invoice.id) {
+              <mat-option [value]="invoice.id">
+                {{ invoice.number }} — {{ invoice.patientName }}
+                ({{ kind === 'refund' ? invoice.paid : invoice.remaining }} {{ currency }})
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <ui-field-error [control]="form.controls.invoiceId" [submitted]="submitted()" />
+      </div>
+
+      @if (selectedInvoice(); as invoice) {
+        <div class="invoice-summary">
+          <div>
+            <span>{{ 'common.total' | translate }}</span>
+            <strong>{{ invoice.total }} {{ currency }}</strong>
+          </div>
+          <div>
+            <span>{{ 'accounts.paid' | translate }}</span>
+            <strong>{{ invoice.paid }} {{ currency }}</strong>
+          </div>
+          <div>
+            <span>{{ 'accounts.remaining' | translate }}</span>
+            <strong class="remaining">{{ invoice.remaining }} {{ currency }}</strong>
+          </div>
+        </div>
+      }
+    } @else {
+      <div class="field">
+        <mat-form-field>
+          <mat-label>{{ 'accounts.itemDescription' | translate }}</mat-label>
+          <input matInput type="text" formControlName="description" />
+        </mat-form-field>
+        <ui-field-error [control]="form.controls.description" [submitted]="submitted()" />
+      </div>
+
+      <div class="row">
+        <mat-form-field>
+          <mat-label>{{ 'accounts.category' | translate }}</mat-label>
+          <mat-select formControlName="category">
+            @for (entry of categories; track entry[0]) {
+              <mat-option [value]="entry[0]">{{ entry[1] | translate }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>{{ 'accounts.vendor' | translate }}</mat-label>
+          <input matInput type="text" formControlName="vendor" />
+        </mat-form-field>
+      </div>
+    }
+
+    <div class="row">
+      <div class="field">
+        <mat-form-field>
+          <mat-label>{{ 'accounts.amount' | translate }}</mat-label>
+          <input matInput type="number" min="0" step="0.01" formControlName="amount" />
+          <span matTextSuffix>{{ currency }}</span>
+        </mat-form-field>
+        <ui-field-error [control]="form.controls.amount" [submitted]="submitted()" />
+      </div>
+
+      <div class="field">
+        <mat-form-field>
+          <mat-label>{{ 'common.date' | translate }}</mat-label>
+          <input
+            matInput
+            readonly
+            formControlName="occurredAt"
+            [matDatepicker]="datePicker"
+            (click)="datePicker.open()"
+          />
+          <mat-datepicker-toggle matIconSuffix [for]="datePicker" />
+          <mat-datepicker #datePicker />
+        </mat-form-field>
+        <ui-field-error [control]="form.controls.occurredAt" [submitted]="submitted()" />
+      </div>
+    </div>
+
+    @if (kind === 'payment') {
+      <div class="row">
+        <mat-form-field>
+          <mat-label>{{ 'accounts.paymentMethod' | translate }}</mat-label>
+          <mat-select formControlName="method">
+            @for (entry of methods; track entry[0]) {
+              <mat-option [value]="entry[0]">{{ entry[1] | translate }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>{{ 'accounts.reference' | translate }}</mat-label>
+          <input matInput type="text" formControlName="reference" />
+        </mat-form-field>
+      </div>
+    }
+
+    @if (kind === 'refund') {
+      <div class="field">
+        <mat-form-field>
+          <mat-label>{{ 'accounts.refundReason' | translate }}</mat-label>
+          <textarea matInput rows="2" formControlName="reason"></textarea>
+        </mat-form-field>
+        <ui-field-error [control]="form.controls.reason" [submitted]="submitted()" />
+      </div>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="dialogRef.close(false)">
+    {{ 'common.cancel' | translate }}
+  </button>
+  <button mat-flat-button type="button" (click)="submit()">
+    <ui-icon name="check" size="sm" />
+    {{ 'common.save' | translate }}
+  </button>
+</mat-dialog-actions>

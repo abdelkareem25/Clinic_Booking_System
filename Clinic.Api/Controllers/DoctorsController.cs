@@ -29,12 +29,22 @@ namespace Clinic.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<Pagination<GetDoctorDto>>> GetAll([FromQuery] DoctorSpecParams param)
         {
-            var spec = new DoctorSpecification(param);
-            var doctors = await _unitOfWork.Repository<Doctor>().GetAllWithSpecAsync(spec);
-            if (doctors == null || doctors.Count == 0)
-                return NotFound("No doctors found.");
-            var count = new DoctorWithCountSpecification(param);
-            var totalCount = await _unitOfWork.Repository<Doctor>().CountAsync(spec);
+            var repository = _unitOfWork.Repository<Doctor>();
+
+            // DoctorSpecification applies Skip/Take, so it returns one page...
+            var doctors = await repository.GetAllWithSpecAsync(new DoctorSpecification(param));
+
+            // No 404 for an empty page. The collection resource exists; it just has nothing matching
+            // right now. 404 means "this resource does not exist", so answering it here forced the
+            // client to treat "your search found nothing" as an error and threw away the pagination
+            // metadata that tells it how many results there really are.
+
+            // ...and DoctorWithCountSpecification carries the same filters without paging, so it
+            // yields the true total. This line used to pass the PAGINATED specification, which
+            // clamped Count to PageSize: with 500 doctors and PageSize 5 the API reported 5, the
+            // paginator rendered a single page, and 99% of the records were unreachable.
+            var totalCount = await repository.CountAsync(new DoctorWithCountSpecification(param));
+
             var doctorDtos = _mapper.Map<IReadOnlyList<GetDoctorDto>>(doctors);
             return Ok(new Pagination<GetDoctorDto>(param.PageIndex, param.PageSize, totalCount, doctorDtos));
         }

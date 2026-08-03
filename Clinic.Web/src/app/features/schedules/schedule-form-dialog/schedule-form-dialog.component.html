@@ -1,0 +1,77 @@
+<h2 mat-dialog-title>{{ (isEdit ? 'schedules.edit' : 'schedules.new') | translate }}</h2>
+
+<mat-dialog-content>
+  <form class="schedule-form" [formGroup]="form" novalidate>
+    <div class="field">
+      <mat-form-field>
+        <mat-label>{{ 'appointments.doctor' | translate }}</mat-label>
+        <mat-select formControlName="doctorId" [disabled]="isEdit">
+          @for (doctor of data.doctors; track doctor.id) {
+            <mat-option [value]="doctor.id">{{ doctor.name }}</mat-option>
+          }
+        </mat-select>
+        @if (isEdit) {
+          <mat-hint>{{ 'schedules.subtitle' | translate }}</mat-hint>
+        }
+      </mat-form-field>
+      <ui-field-error [control]="form.controls.doctorId" [submitted]="submitted()" />
+    </div>
+
+    <div class="field">
+      <mat-form-field>
+        <mat-label>{{ 'schedules.day' | translate }}</mat-label>
+        <mat-select formControlName="weekDay">
+          @for (day of weekDays; track day.value) {
+            <mat-option [value]="day.value">{{ 'weekday.' + day.value | translate }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <ui-field-error [control]="form.controls.weekDay" [submitted]="submitted()" />
+    </div>
+
+    <div class="times">
+      <div class="field">
+        <!-- Times are picked, never typed, and always shown as 12-hour. -->
+        <mat-form-field>
+          <mat-label>{{ 'common.startTime' | translate }}</mat-label>
+          <input matInput formControlName="startTime" [matTimepicker]="startPicker" />
+          <mat-timepicker-toggle matIconSuffix [for]="startPicker" />
+          <mat-timepicker #startPicker interval="30m" />
+        </mat-form-field>
+        <ui-field-error [control]="form.controls.startTime" [submitted]="submitted()" />
+      </div>
+
+      <div class="field">
+        <mat-form-field>
+          <mat-label>{{ 'common.endTime' | translate }}</mat-label>
+          <input matInput formControlName="endTime" [matTimepicker]="endPicker" />
+          <mat-timepicker-toggle matIconSuffix [for]="endPicker" />
+          <mat-timepicker #endPicker interval="30m" />
+        </mat-form-field>
+        <ui-field-error [control]="form.controls.endTime" [submitted]="submitted()" />
+      </div>
+    </div>
+
+    @if (form.hasError('timeRange') && submitted()) {
+      <p class="form-error">
+        <ui-icon name="warning" size="sm" />
+        {{ 'validation.timeRange' | translate }}
+      </p>
+    }
+    @if (form.hasError('overlap')) {
+      <p class="form-error">
+        <ui-icon name="warning" size="sm" />
+        {{ 'validation.overlap' | translate }}
+      </p>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="dialogRef.close(false)">
+    {{ 'common.cancel' | translate }}
+  </button>
+  <button mat-flat-button type="button" [disabled]="saving()" (click)="submit()">
+    {{ (saving() ? 'common.saving' : 'common.save') | translate }}
+  </button>
+</mat-dialog-actions>

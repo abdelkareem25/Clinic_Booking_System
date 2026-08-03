@@ -1,0 +1,293 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.table-shell {
+  display: flex;
+  flex-direction: column;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-card);
+  overflow: hidden;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+// -----------------------------------------------------------------------------
+// Header — sticky so column meaning survives a long scroll.
+// -----------------------------------------------------------------------------
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  padding: 0 var(--sp-4);
+  height: 40px;
+  background: var(--c-surface-2);
+  border-block-end: 1px solid var(--c-border);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text-muted);
+  text-align: start;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  border-radius: var(--r-xs);
+  transition: color var(--dur-micro) var(--ease-standard);
+}
+
+.sort-btn:hover {
+  color: var(--c-text);
+}
+
+.sort-icon {
+  opacity: 0;
+  transition: opacity var(--dur-micro) var(--ease-standard);
+}
+
+.sort-btn:hover .sort-icon,
+.sort-icon.sort-active {
+  opacity: 1;
+}
+
+.sort-icon.sort-active {
+  color: var(--c-primary);
+}
+
+// -----------------------------------------------------------------------------
+// Body
+// -----------------------------------------------------------------------------
+tbody td {
+  padding: var(--sp-3) var(--sp-4);
+  border-block-end: 1px solid var(--c-border);
+  font-size: var(--fs-sm);
+  color: var(--c-text);
+  vertical-align: middle;
+}
+
+tbody tr:last-child td {
+  border-block-end: 0;
+}
+
+tbody tr {
+  transition: background-color var(--dur-micro) var(--ease-standard);
+}
+
+tbody tr:hover {
+  background: var(--c-surface-2);
+}
+
+.row-clickable {
+  cursor: pointer;
+}
+
+.row-clickable:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: -2px;
+}
+
+.cell-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.cell-strong {
+  font-weight: var(--fw-semibold);
+  color: var(--c-text);
+}
+
+.cell-muted {
+  color: var(--c-text-muted);
+}
+
+.cell-mono {
+  font-family: var(--ff-mono);
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+}
+
+.cell-secondary {
+  font-size: var(--fs-xs);
+  color: var(--c-text-subtle);
+}
+
+.align-start {
+  text-align: start;
+}
+.align-center {
+  text-align: center;
+}
+.align-end {
+  text-align: end;
+}
+
+// -----------------------------------------------------------------------------
+// Row actions — revealed on hover on pointer devices, always shown on touch.
+// -----------------------------------------------------------------------------
+.row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  justify-content: flex-end;
+}
+
+.actions-col {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.action-btn {
+  color: var(--c-text-muted);
+}
+
+.action-btn:hover:not(:disabled) {
+  color: var(--c-text);
+  background: var(--c-surface-3);
+}
+
+.action-danger:hover:not(:disabled) {
+  color: var(--c-danger);
+  background: var(--c-danger-soft);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .row-actions {
+    opacity: 0;
+    transition: opacity var(--dur-micro) var(--ease-standard);
+  }
+
+  tr:hover .row-actions,
+  tr:focus-within .row-actions {
+    opacity: 1;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Loading
+// -----------------------------------------------------------------------------
+.skeleton-cell {
+  display: block;
+  height: 12px;
+  width: 72%;
+  border-radius: var(--r-full);
+}
+
+.skeleton-cell.short {
+  width: 28px;
+  margin-inline-start: auto;
+}
+
+.skeleton-row:hover {
+  background: transparent;
+}
+
+// -----------------------------------------------------------------------------
+// Footer
+// -----------------------------------------------------------------------------
+.table-paginator {
+  border-block-start: 1px solid var(--c-border);
+  background: var(--c-surface-2);
+}
+
+// -----------------------------------------------------------------------------
+// Responsive column dropping
+// -----------------------------------------------------------------------------
+@media (max-width: 640px) {
+  .hide-sm {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .hide-md {
+    display: none;
+  }
+}
+
+@media (max-width: 1200px) {
+  .hide-lg {
+    display: none;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Card layout on phones.
+//
+// A horizontally scrolling table is unusable one-handed at a reception desk, so
+// below 640px each row collapses into a labelled card. The header row is hidden
+// and `data-label` (already emitted for accessibility) becomes the field label.
+// -----------------------------------------------------------------------------
+@media (max-width: 640px) {
+  thead {
+    display: none;
+  }
+
+  .table,
+  tbody,
+  tbody tr,
+  tbody td {
+    display: block;
+    width: 100%;
+  }
+
+  tbody tr {
+    padding: var(--sp-3) var(--sp-4);
+    border-block-end: 1px solid var(--c-border);
+  }
+
+  tbody tr:last-child {
+    border-block-end: 0;
+  }
+
+  tbody td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    padding: 5px 0;
+    border: 0;
+    text-align: start !important;
+  }
+
+  tbody td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-medium);
+    color: var(--c-text-muted);
+  }
+
+  .actions-col {
+    width: auto;
+    justify-content: flex-end;
+    padding-block-start: var(--sp-2);
+  }
+
+  .row-actions {
+    opacity: 1;
+  }
+}

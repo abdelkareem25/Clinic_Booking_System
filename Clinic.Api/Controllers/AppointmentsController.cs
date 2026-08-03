@@ -8,6 +8,8 @@ using Clinic.Domain.Interfaces;
 using Clinic.Domain.Interfaces.Specifications.AppointmentSpec;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
 namespace Clinic.Api.Controllers
 {
@@ -41,13 +43,23 @@ namespace Clinic.Api.Controllers
             var patient = await _unitOfWork.Repository<Patient>().GetByIdAsync(dto.PatientId);
             if (patient == null)
                 return NotFound($"Patient with id {dto.PatientId} not found.");
-            var isDoctorAvailable = await _appointmentRepository.IsDoctorAvailableAsync(dto.DoctorId, dto.AppointmentDate, null);
-            if (!isDoctorAvailable)
-                return BadRequest($"Doctor with id {dto.DoctorId} is not available for the selected date and time.");
+            var slot = Slot.From(dto.AppointmentDate, dto.DurationMinutes);
+
+            var rejection = await CheckSlotAsync(dto.DoctorId, slot, excludeAppointmentId: null);
+            if (rejection is not null) return rejection;
 
             var mappedAppointment = _mapper.Map<Appointment>(dto); // Map the DTO to the Appointment entity
+            slot.ApplyTo(mappedAppointment);
             await _appointmentRepository.AddAsync(mappedAppointment);
-            await _unitOfWork.CompleteAsync(); // commit before mapping so the generated Id is populated
+
+            try
+            {
+                await _unitOfWork.CompleteAsync(); // commit before mapping so the generated Id is populated
+            }
+            catch (DbUpdateException ex) when (IsDuplicateBooking(ex))
+            {
+                return SlotTaken();
+            }
 
             var result = _mapper.Map<AppointmentDto>(mappedAppointment); // Map the saved Appointment entity to the AppointmentDto
             return Ok(result);
@@ -79,15 +91,95 @@ namespace Clinic.Api.Controllers
             var patient = await _unitOfWork.Repository<Patient>().GetByIdAsync(dto.PatientId);
             if (patient == null)
                 return NotFound($"Patient with id {dto.PatientId} not found.");
-            var isDoctorAvailable = await _appointmentRepository.IsDoctorAvailableAsync(dto.DoctorId, dto.AppointmentDate, id);
-            if (!isDoctorAvailable)
-                return BadRequest($"Doctor with id {dto.DoctorId} is not available for the selected date and time.");
+            var slot = Slot.From(dto.AppointmentDate, dto.DurationMinutes);
+
+            // The appointment being moved must not collide with itself.
+            var rejection = await CheckSlotAsync(dto.DoctorId, slot, excludeAppointmentId: id);
+            if (rejection is not null) return rejection;
+
             _mapper.Map(dto, appointment);
+            slot.ApplyTo(appointment);
             await _appointmentRepository.UpdateAsync(appointment);
-            await _unitOfWork.CompleteAsync();
+
+            try
+            {
+                await _unitOfWork.CompleteAsync();
+            }
+            catch (DbUpdateException ex) when (IsDuplicateBooking(ex))
+            {
+                return SlotTaken();
+            }
+
             var result = _mapper.Map<AppointmentDto>(appointment);
             return Ok(result);
         }
+
+        #region Booking rules
+
+        /// <summary>The interval a booking occupies: [StartsAt, EndsAt).</summary>
+        private readonly record struct Slot(DateTime StartsAt, DateTime EndsAt)
+        {
+            public static Slot From(DateTime startsAt, int durationMinutes) =>
+                new(startsAt, startsAt.AddMinutes(durationMinutes));
+
+            /// <summary>
+            /// AppointmentDate is the start instant; StartTime mirrors it and EndTime closes the
+            /// interval. Collapsing these three columns into one time range is TODO #44 - until
+            /// then EndTime must be populated or the overlap query cannot see the appointment.
+            /// </summary>
+            public void ApplyTo(Appointment appointment)
+            {
+                appointment.AppointmentDate = StartsAt;
+                appointment.StartTime = StartsAt;
+                appointment.EndTime = EndsAt;
+            }
+        }
+
+        /// <summary>
+        /// Returns a rejection response, or null when the slot may be booked.
+        ///
+        /// Two rules, both previously absent: the appointment has to sit inside the doctor's
+        /// published working hours, and it must not overlap an existing appointment. The old check
+        /// compared AppointmentDate for exact equality and consulted DoctorSchedule not at all.
+        /// </summary>
+        private async Task<ActionResult?> CheckSlotAsync(int doctorId, Slot slot, int? excludeAppointmentId)
+        {
+            if (!await _appointmentRepository.IsWithinWorkingHoursAsync(doctorId, slot.StartsAt, slot.EndsAt))
+            {
+                return BadRequest(new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "The requested time is outside the doctor's published working hours."
+                });
+            }
+
+            if (await _appointmentRepository.HasOverlappingAppointmentAsync(
+                    doctorId, slot.StartsAt, slot.EndsAt, excludeAppointmentId))
+            {
+                return SlotTaken();
+            }
+
+            return null;
+        }
+
+        private ConflictObjectResult SlotTaken() => Conflict(new ProblemDetails
+        {
+            Status = StatusCodes.Status409Conflict,
+            Title = "That slot has just been taken. Please choose another time."
+        });
+
+        /// <summary>
+        /// A unique-index violation from UX_Appointments_DoctorId_AppointmentDate.
+        ///
+        /// 2601 is "duplicate key row in object with unique index", 2627 is "violation of unique
+        /// constraint". Either means a concurrent request won the race between our overlap check and
+        /// our insert, which is a 409 for the caller and not a server fault.
+        /// </summary>
+        private static bool IsDuplicateBooking(DbUpdateException exception) =>
+            exception.InnerException is SqlException { Number: 2601 or 2627 }
+            || exception.InnerException?.Message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase) == true;
+
+        #endregion
         #region GetTypes
         // Get all appointments
         [HttpGet]
@@ -98,8 +190,9 @@ namespace Clinic.Api.Controllers
         {
             var spec = new AppointmentSpecification(param);
             var appointments = await _appointmentRepository.GetAllWithSpecAsync(spec);
-            if (appointments == null || !appointments.Any())
-                return NotFound("No appointments found.");
+
+            // An empty page is a successful result, not a missing resource - see DoctorsController.
+
             var TotalCounts = new AppointmentWithCountSpecification(param);
             var count = await _appointmentRepository.CountAsync(TotalCounts);
             var result = _mapper.Map<IReadOnlyList<AppointmentDto>>(appointments);
@@ -134,7 +227,12 @@ namespace Clinic.Api.Controllers
         {
             var spec = new AppointmentWithPatientNameSpec(patientName);
             var appointment = await _appointmentRepository.ListAsync(spec);
-            if (!appointment.Any()) return NotFound($"No appointments found for patient '{patientName}'.");
+
+            // No 404 for "this patient has no appointments" - that is a true and useful answer, and
+            // it now matches GetByDoctorName above, which always returned 200. The old 404 also
+            // leaked information: it distinguished "no appointments" from "no such patient" only by
+            // accident, and its message echoed the searched-for name back to the caller.
+
             // ListAsync returns a collection, so the destination must be a collection too. Mapping it
             // to a single AppointmentDto threw AutoMapperMappingException and contradicted the
             // declared IReadOnlyList<AppointmentDto> return type. Same form as GetByDoctorName above.

@@ -32,7 +32,11 @@ namespace Clinic.Api.Controllers
 
             var spec = new PatientSpecification(param);
             var patients = await _unitOfWork.Repository<Patient>().GetAllWithSpecAsync(spec);
-            if (patients == null || patients.Count == 0) return NotFound();
+
+            // An empty page is a successful result, not a missing resource - see DoctorsController.
+            // This one returned a bare 404 with no body at all, so the client could not even tell
+            // whether the search had failed or the endpoint was wrong.
+
             var countSpec = new PatientCountSpecification(param);
             var totalItems = await _unitOfWork.Repository<Patient>().CountAsync(countSpec);
 

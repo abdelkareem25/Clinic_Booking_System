@@ -1,0 +1,129 @@
+<div class="chart-wrap">
+  <button
+    mat-icon-button
+    type="button"
+    class="table-toggle"
+    [matTooltip]="(showTable() ? 'reports.title' : 'common.details') | translate"
+    [attr.aria-pressed]="showTable()"
+    [attr.aria-label]="'common.details' | translate"
+    (click)="toggleTable()"
+  >
+    <ui-icon [name]="showTable() ? 'reports' : 'checklist'" size="md" />
+  </button>
+
+  @if (showTable()) {
+    <!-- The table view is the accessible twin: every value the chart draws is
+         readable here without hovering anything. -->
+    <div class="table-view">
+      <table>
+        <caption class="visually-hidden">{{ caption() | translate }}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{{ 'common.date' | translate }}</th>
+            <th scope="col" class="numeric">{{ 'common.total' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (point of points(); track point.label) {
+            <tr>
+              <th scope="row">{{ point.detail ?? point.label }}</th>
+              <td class="numeric">{{ formatValue(point.value) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <figure class="figure">
+      <svg
+        class="chart"
+        [attr.viewBox]="'0 0 ' + viewW + ' ' + viewH"
+        role="img"
+        [attr.aria-label]="caption() | translate"
+        (mouseleave)="hovered.set(null)"
+      >
+        <!-- Grid: solid hairlines, one step off the surface. -->
+        <g class="grid">
+          @for (tick of ticks(); track tick.value) {
+            <line [attr.x1]="44" [attr.y1]="tick.y" [attr.x2]="viewW - 12" [attr.y2]="tick.y" />
+            <text class="tick" [attr.x]="36" [attr.y]="tick.y + 4">{{ tick.label }}</text>
+          }
+        </g>
+
+        @if (type() === 'line') {
+          <path class="area" [class]="'fill-' + tone()" [attr.d]="areaPath()" />
+          <path class="line" [class]="'stroke-' + tone()" [attr.d]="linePath()" />
+
+          @if (endPoint(); as end) {
+            <circle
+              class="end-dot"
+              [class]="'dot-' + tone()"
+              [attr.cx]="end.centre"
+              [attr.cy]="end.y"
+              r="4.5"
+            />
+          }
+        } @else {
+          @for (column of columns(); track column.index) {
+            <path
+              class="bar"
+              [class]="'fill-solid-' + tone()"
+              [class.bar-dim]="hovered() !== null && hovered() !== column.index"
+              [attr.d]="column.path"
+            />
+          }
+        }
+
+        <!-- Hit areas span the whole band so a 4px bar is still easy to hover. -->
+        <g class="hits">
+          @for (column of columns(); track column.index) {
+            <rect
+              [attr.x]="column.hitX"
+              [attr.y]="14"
+              [attr.width]="column.hitWidth"
+              [attr.height]="plotBottom - 14"
+              (mouseenter)="hovered.set(column.index)"
+            />
+          }
+        </g>
+
+        <!-- Crosshair for the line form, where there is no bar to highlight. -->
+        @if (type() === 'line' && hoveredColumn(); as active) {
+          <line
+            class="crosshair"
+            [attr.x1]="active.centre"
+            [attr.y1]="14"
+            [attr.x2]="active.centre"
+            [attr.y2]="plotBottom"
+          />
+          <circle
+            class="end-dot"
+            [class]="'dot-' + tone()"
+            [attr.cx]="active.centre"
+            [attr.cy]="active.y"
+            r="4.5"
+          />
+        }
+
+        <g class="axis">
+          @for (column of columns(); track column.index) {
+            @if (showLabel(column.index)) {
+              <text [attr.x]="column.centre" [attr.y]="plotBottom + 18">{{ column.label }}</text>
+            }
+          }
+        </g>
+      </svg>
+
+      @if (hoveredColumn(); as active) {
+        <div
+          class="tooltip"
+          [style.inset-inline-start.%]="(active.centre / viewW) * 100"
+          [style.top.%]="(active.y / viewH) * 100"
+        >
+          <strong>{{ formatValue(active.value) }}</strong>
+          <span>{{ active.detail ?? active.label }}</span>
+        </div>
+      }
+    </figure>
+  }
+</div>

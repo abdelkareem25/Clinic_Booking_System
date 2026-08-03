@@ -1,0 +1,154 @@
+// =============================================================================
+// Material 3 tonal palettes
+// -----------------------------------------------------------------------------
+// Hand-authored tonal ramps anchored on the clinic brand colours:
+//
+//   primary   #0F766E  (teal 700)   — brand, primary actions, active nav
+//   tertiary  #2563EB  (blue 600)   — accent, links, informational emphasis
+//   error     #EF4444  (red 500)    — destructive + validation
+//
+// Material needs a full 0..100 tonal ramp per role (plus the extra neutral
+// tones 4/6/12/17/22/24/87/92/94/96 that the M3 surface-container roles are
+// derived from). Keeping them in one file means the whole app re-tints from a
+// single place, and `mat.theme()` derives every `--mat-sys-*` token from here.
+// =============================================================================
+@use 'sass:map';
+
+$_palettes: (
+  // ---------------------------------------------------------------- primary --
+  primary: (
+      0: #000000,
+      10: #00201d,
+      20: #003732,
+      25: #00443f,
+      30: #00514b,
+      35: #005f58,
+      40: #0f766e,
+      50: #148a80,
+      60: #2ba79b,
+      70: #4fc3b6,
+      80: #74dfd1,
+      90: #97fbec,
+      95: #c8fff5,
+      98: #e8fffb,
+      99: #f2fffd,
+      100: #ffffff,
+    ),
+  // -------------------------------------------------------------- secondary --
+  secondary: (
+      0: #000000,
+      10: #0a1f1d,
+      20: #1f3532,
+      25: #2a403d,
+      30: #354c49,
+      35: #415854,
+      40: #4d6460,
+      50: #657d79,
+      60: #7e9792,
+      70: #98b1ac,
+      80: #b3ccc7,
+      90: #cfe9e3,
+      95: #ddf7f1,
+      98: #e8fffb,
+      99: #f2fffd,
+      100: #ffffff,
+    ),
+  // --------------------------------------------------------------- tertiary --
+  tertiary: (
+      0: #000000,
+      10: #001849,
+      20: #002b75,
+      25: #00348b,
+      30: #0f3ba0,
+      35: #1c47ad,
+      40: #2563eb,
+      50: #4a7bf0,
+      60: #6c93f5,
+      70: #8fadff,
+      80: #b4c7ff,
+      90: #dae2ff,
+      95: #eef0ff,
+      98: #faf8ff,
+      99: #fefbff,
+      100: #ffffff,
+    ),
+  // ---------------------------------------------------------------- neutral --
+  neutral: (
+      0: #000000,
+      4: #070b0b,
+      6: #0b1010,
+      10: #141a19,
+      12: #181e1e,
+      17: #222827,
+      20: #293130,
+      22: #2d3534,
+      24: #313938,
+      25: #343c3b,
+      30: #3f4746,
+      35: #4b5352,
+      40: #575f5e,
+      50: #6f7877,
+      60: #899290,
+      70: #a3adab,
+      80: #bfc8c6,
+      87: #d4dedb,
+      90: #dbe5e2,
+      92: #e1ebe8,
+      94: #e7f1ee,
+      95: #eaf4f1,
+      96: #edf7f4,
+      98: #f4fefb,
+      99: #f7fffd,
+      100: #ffffff,
+    ),
+  // -------------------------------------------------------- neutral-variant --
+  neutral-variant: (
+      0: #000000,
+      10: #131d1b,
+      20: #283230,
+      25: #333d3b,
+      30: #3e4846,
+      35: #4a5452,
+      40: #56605e,
+      50: #6e7876,
+      60: #889290,
+      70: #a2adaa,
+      80: #bec8c5,
+      90: #dae4e1,
+      95: #e8f2ef,
+      98: #f1fbf8,
+      99: #f4fffb,
+      100: #ffffff,
+    ),
+  // ------------------------------------------------------------------ error --
+  error: (
+      0: #000000,
+      10: #410002,
+      20: #690005,
+      25: #7e0007,
+      30: #93000a,
+      35: #a80710,
+      40: #bc1c1c,
+      50: #ef4444,
+      60: #ff6a5f,
+      70: #ff8a80,
+      80: #ffb4ab,
+      90: #ffdad6,
+      95: #ffedea,
+      98: #fff8f7,
+      99: #fffbff,
+      100: #ffffff,
+    )
+);
+
+// Material expects the secondary/neutral/neutral-variant/error ramps to be
+// merged into whichever palette is handed to `primary:` / `tertiary:`.
+$_shared: (
+  secondary: map.get($_palettes, secondary),
+  neutral: map.get($_palettes, neutral),
+  neutral-variant: map.get($_palettes, neutral-variant),
+  error: map.get($_palettes, error),
+);
+
+$primary-palette: map.merge(map.get($_palettes, primary), $_shared);
+$tertiary-palette: map.merge(map.get($_palettes, tertiary), $_shared);

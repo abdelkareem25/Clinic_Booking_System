@@ -1,0 +1,46 @@
+// =============================================================================
+// Angular Material M3 theme generation
+// -----------------------------------------------------------------------------
+// Emits the full `--mat-sys-*` token set from our hand-authored tonal palettes.
+// `theme-type: color-scheme` renders every token through CSS `light-dark()`, so
+// toggling `color-scheme` on <html> flips the entire Material layer — no second
+// theme block, no duplicated CSS. ThemeService toggles the `.dark` class.
+//
+// `_material.scss` runs after this and re-points the generated tokens at the
+// design tokens, which is what actually gives Material the clinic look.
+// =============================================================================
+@use '@angular/material' as mat;
+@use 'palette';
+
+html {
+  color-scheme: light;
+
+  @include mat.theme(
+    (
+      color: (
+        primary: palette.$primary-palette,
+        tertiary: palette.$tertiary-palette,
+        theme-type: color-scheme,
+      ),
+      typography: (
+        plain-family: (
+          Inter,
+          'IBM Plex Sans Arabic',
+          system-ui,
+          sans-serif,
+        ),
+        brand-family: (
+          Inter,
+          'IBM Plex Sans Arabic',
+          system-ui,
+          sans-serif,
+        ),
+      ),
+      density: -1,
+    )
+  );
+}
+
+html.dark {
+  color-scheme: dark;
+}
