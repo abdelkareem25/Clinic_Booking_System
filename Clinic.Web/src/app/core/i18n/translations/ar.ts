@@ -138,7 +138,7 @@ export const AR: Catalogue = {
     appointments: 'المواعيد',
     schedules: 'جداول العمل',
     records: 'السجلات الطبية',
-    accounts: 'الفوترة',
+    accounts: 'الفاتورة',
     reports: 'التقارير',
     users: 'الحسابات',
     roles: 'الأدوار والصلاحيات',
@@ -433,7 +433,7 @@ export const AR: Catalogue = {
   },
 
   accounts: {
-    title: 'الفوترة',
+    title: 'الفاتورة',
     subtitle: 'الإيرادات والمصروفات والتقارير المالية.',
 
     tabOverview: 'نظرة عامة',
