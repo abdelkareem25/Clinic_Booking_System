@@ -2,96 +2,64 @@
   display: block;
 }
 
-.columns {
-  display: grid;
-  gap: var(--sp-4);
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  align-items: start;
-}
-
-.identity {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-4);
-  padding-block-end: var(--sp-4);
-  border-block-end: 1px solid var(--c-border);
-}
-
-.identity-text {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-
-.identity-text strong {
-  font-size: var(--fs-md);
-  font-weight: var(--fw-semibold);
-}
-
-.roles {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-  margin-block-start: 4px;
-}
-
-.facts {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-  margin: var(--sp-4) 0 0;
-}
-
-.facts div {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-3);
-}
-
-.facts dt {
-  font-size: var(--fs-xs);
-  color: var(--c-text-subtle);
-}
-
-.facts dd {
-  margin: 0;
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-medium);
-}
-
-.card-foot {
-  display: flex;
-  gap: var(--sp-2);
-}
-
-.role-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-}
-
-.role-row {
+.filters {
   display: flex;
   align-items: flex-start;
   gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  flex-wrap: wrap;
 }
 
-.role-text {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
+.search {
+  flex: 1 1 320px;
   min-width: 0;
 }
 
-.role-text strong {
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-semibold);
+.field-compact {
+  flex: 0 0 auto;
+  width: 180px;
 }
 
-.role-text small {
+.name-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.name-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+.name-text strong {
+  font-weight: var(--fw-semibold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.name-text small {
   font-size: var(--fs-xs);
-  color: var(--c-text-muted);
-  line-height: var(--lh-snug);
+  color: var(--c-text-subtle);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// The email column is dropped on narrow screens, so it rides under the name.
+.mobile-only {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .mobile-only {
+    display: block;
+  }
+
+  .field-compact {
+    width: 100%;
+  }
 }

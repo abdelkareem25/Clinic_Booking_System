@@ -13,6 +13,7 @@ namespace Clinic.Api.Extensions
             Services.AddScoped<IUnitOfWork, UnitOfWork>();
             Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+            // IAccountRepository lives in AddIdentityServices - see the note there.
             Services.AddAutoMapper(config=>config.AddProfile<MappingProfile>());
 
             // Consumed by ClinicDbContext to stamp the audit columns. Scoped, because "who" is a

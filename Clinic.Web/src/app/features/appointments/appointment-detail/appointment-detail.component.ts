@@ -13,6 +13,8 @@ import {
   appointmentStatusLabel,
   appointmentStatusTone,
   deriveAppointmentStatus,
+  lifecycleStatusLabel,
+  lifecycleStatusTone,
 } from '../../../core/utils/appointment-status.util';
 import { formatTime12, parseDate } from '../../../core/utils/date.util';
 import { CardComponent } from '../../../shared/ui/card/card.component';
@@ -62,6 +64,13 @@ export class AppointmentDetailComponent {
   protected readonly statusTone = computed(() => appointmentStatusTone(this.status()));
   protected readonly isPast = computed(() => this.status() === 'Past');
 
+  // The stored lifecycle status, shown beside the time-derived one. Two badges
+  // rather than one because they answer different questions and can legitimately
+  // disagree — a cancelled appointment is still "Today".
+  protected readonly lifecycle = computed(() => this.appointment()?.status ?? 'Pending');
+  protected readonly lifecycleLabel = computed(() => lifecycleStatusLabel(this.lifecycle()));
+  protected readonly lifecycleTone = computed(() => lifecycleStatusTone(this.lifecycle()));
+
   protected readonly details = computed<DetailItem[]>(() => {
     const appointment = this.appointment();
     if (!appointment) {
@@ -96,6 +105,11 @@ export class AppointmentDetailComponent {
         label: 'appointments.duration',
         value: this.translate.instant('appointments.minutes', { count: slotMinutes }),
       },
+      // Rendered only when there is something to say — an empty "Notes: —" row
+      // is noise on every appointment that has none.
+      ...(appointment.notes
+        ? [{ label: 'common.notes', value: appointment.notes, icon: 'note' as const }]
+        : []),
     ];
   });
 

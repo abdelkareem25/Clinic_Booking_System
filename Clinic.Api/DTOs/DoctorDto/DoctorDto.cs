@@ -1,14 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
-
 namespace Clinic.Api.DTOs.DoctorDto
 {
-    public class DoctorDto
+    /// <summary>Single-doctor response. Members live on <see cref="DoctorResponseBase"/>.</summary>
+    public class DoctorDto : DoctorResponseBase
     {
-        [Required]
-        public int Id { get; set; }
-        [Required]
-        public string Name { get; set; }
-        [Required]
-        public string Specialization { get; set; }
     }
 }

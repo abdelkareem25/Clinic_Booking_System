@@ -113,6 +113,8 @@ export const EN = {
     dateFuture: 'The date cannot be in the future',
     datePast: 'The date cannot be in the past',
     timeRange: 'The end time must be after the start time',
+    duplicateShift: 'The same shift has been added twice',
+    usernamePattern: 'Use letters, digits and @ . _ - + only',
     outsideWorkingDays: 'The doctor does not work on this day',
     outsideWorkingHours: 'This time is outside the doctor’s working hours',
     slotTaken: 'This slot is already booked',
@@ -132,9 +134,9 @@ export const EN = {
     appointments: 'Appointments',
     schedules: 'Schedules',
     records: 'Medical records',
-    accounts: 'Accounts',
+    accounts: 'Billing',
     reports: 'Reports',
-    users: 'Users',
+    users: 'Accounts',
     roles: 'Roles & permissions',
     settings: 'Settings',
     profile: 'Profile',
@@ -290,11 +292,28 @@ export const EN = {
 
     name: 'Full name',
     specialization: 'Speciality',
+    phone: 'Phone',
+    email: 'Email',
+    bio: 'Bio',
     consultationFee: 'Consultation fee',
+    acceptingPatients: 'Accepting patients',
+    inactiveHint: 'Inactive doctors stay on record but cannot be booked.',
     workingDays: 'Working days',
     todaysLoad: 'Today’s load',
     viewSchedule: 'View schedule',
     bookWith: 'Book with {{ name }}',
+    statusInactive: 'Not accepting',
+
+    workingSchedule: 'Working schedule',
+    workingScheduleHint:
+      'Add the shifts this doctor works. A day with no shifts is a day off.',
+    shiftCount: '{{ count }} shifts',
+    addShift: 'Add shift',
+    removeShift: 'Remove shift',
+    dayOff: 'Mark off',
+    markDayOff: 'Remove every shift on this day',
+    off: 'Off',
+    scheduleInvalid: 'Fix the highlighted shifts before saving.',
 
     created: 'Doctor added.',
     updated: 'Doctor updated.',
@@ -336,10 +355,17 @@ export const EN = {
     onlyWorkingDays: 'Only the doctor’s working days can be selected.',
     reviewSummary: 'Please confirm the details before booking.',
 
+    // Time-derived, from the clock.
     statusUpcoming: 'Upcoming',
     statusToday: 'Today',
-    statusPast: 'Completed',
+    statusPast: 'Past',
+
+    // Stored lifecycle, from the API. `statusCancelled` serves both.
+    statusPending: 'Pending',
+    statusConfirmed: 'Confirmed',
+    statusCompleted: 'Completed',
     statusCancelled: 'Cancelled',
+    timing: 'Timing',
 
     created: 'Appointment booked.',
     updated: 'Appointment rescheduled.',
@@ -406,8 +432,11 @@ export const EN = {
     deleted: 'Record deleted.',
   },
 
+  // The FINANCE module. Retitled "Billing" so it no longer collides with the
+  // staff-account screen under `users.*`; the key namespace is unchanged because
+  // it is also the route and permission prefix.
   accounts: {
-    title: 'Accounts',
+    title: 'Billing',
     subtitle: 'Income, expenses and financial reporting.',
 
     tabOverview: 'Overview',
@@ -521,26 +550,58 @@ export const EN = {
     deleted: 'Role deleted.',
   },
 
+  // The staff-account administration module. Labelled "Accounts" in the UI; the
+  // key namespace stays `users` because that is the route and permission prefix,
+  // and `accounts.*` already belongs to the finance module.
   users: {
-    title: 'Users',
-    subtitle: 'Staff accounts and their access.',
-    one: 'User',
-    new: 'Invite user',
-    edit: 'Edit user',
-    delete: 'Remove user',
-    deleteConfirm: 'Remove {{ name }}’s account?',
-    empty: 'No users',
-    emptyHint: 'Invite a colleague to give them access.',
+    title: 'Accounts',
+    subtitle: 'Staff accounts, roles and access.',
+    one: 'Account',
+    new: 'Add account',
+    edit: 'Edit account',
+    delete: 'Delete account',
+    deleteConfirm: 'Delete {{ name }}’s account? They will no longer be able to sign in.',
+    empty: 'No accounts',
+    emptyHint: 'Add an account to give a colleague access.',
+    emptyFilteredHint: 'No account matches these filters. Try widening them.',
+    searchPlaceholder: 'Search by name, username, email or phone…',
 
-    name: 'Name',
+    name: 'Full name',
+    username: 'Username',
     email: 'Email',
+    phone: 'Phone',
     role: 'Role',
     lastActive: 'Last active',
     status: 'Status',
+    created: 'Created',
 
-    created: 'User invited.',
-    updated: 'User updated.',
-    deleted: 'User removed.',
+    password: 'Password',
+    confirmPassword: 'Confirm password',
+    newPassword: 'New password',
+    confirmNewPassword: 'Confirm new password',
+    resetPassword: 'Reset password',
+    resetPasswordHint: 'Leave blank to keep the current password.',
+    usernameHint: 'Leave blank to use the email address.',
+
+    active: 'Active',
+    inactive: 'Inactive',
+    lockedOut: 'Locked out',
+    lockedOutHint: 'Locked automatically after too many failed sign-ins. Clears on its own.',
+    allRoles: 'All roles',
+    allStatuses: 'All statuses',
+    activeOnly: 'Active only',
+    inactiveOnly: 'Inactive only',
+    cannotEditSelf: 'You cannot change your own role or deactivate your own account.',
+    cannotDeleteSelf: 'You cannot delete your own account.',
+
+    roleAdmin: 'Admin',
+    roleDoctor: 'Doctor',
+    roleReceptionist: 'Receptionist',
+    rolePatient: 'Patient',
+
+    createdMessage: 'Account created.',
+    updated: 'Account updated.',
+    deleted: 'Account deleted.',
   },
 
   reports: {

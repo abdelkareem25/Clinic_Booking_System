@@ -2,86 +2,83 @@
   <ui-page-header title="users.title" subtitle="users.subtitle" icon="users">
     <div actions>
       @if (permissions.can('users.create')) {
-        <a mat-flat-button routerLink="/auth/register">
+        <button mat-flat-button type="button" (click)="openForm()">
           <ui-icon name="userAdd" size="sm" />
           {{ 'users.new' | translate }}
-        </a>
+        </button>
       }
     </div>
   </ui-page-header>
 
-  @if (user(); as account) {
-    <div class="columns">
-      <ui-card title="profile.signedInAs" icon="user">
-        <div class="identity">
-          <span class="avatar avatar-lg">{{ initials() }}</span>
-          <div class="identity-text">
-            <strong>{{ account.displayName }}</strong>
-            <span class="text-muted">{{ account.email }}</span>
-            <div class="roles">
-              @for (role of roleNames(); track role) {
-                <span class="badge badge-primary">{{ role }}</span>
-              }
-            </div>
-          </div>
-        </div>
+  <!-- One filter row above everything it scopes. -->
+  <div class="filters surface">
+    <ui-search-field
+      class="search"
+      placeholder="users.searchPlaceholder"
+      (search)="onSearch($event)"
+    />
 
-        <dl class="facts">
-          <div>
-            <dt>{{ 'roles.permissions' | translate }}</dt>
-            <dd>{{ grantedCount() }}</dd>
-          </div>
-          <div>
-            <dt>{{ 'users.status' | translate }}</dt>
-            <dd><span class="badge badge-success badge-dot">{{ 'common.active' | translate }}</span></dd>
-          </div>
-          @if (sessionExpiry(); as expiry) {
-            <div>
-              <dt>{{ 'users.lastActive' | translate }}</dt>
-              <dd>{{ expiry | date: 'd MMM y, h:mm a' }}</dd>
-            </div>
-          }
-        </dl>
+    <mat-form-field class="field-compact">
+      <mat-label>{{ 'users.role' | translate }}</mat-label>
+      <mat-select [value]="role()" (valueChange)="onRole($event)">
+        <mat-option value="all">{{ 'users.allRoles' | translate }}</mat-option>
+        @for (option of roles; track option) {
+          <mat-option [value]="option">{{ 'users.role' + option | translate }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
 
-        <div footer class="card-foot">
-          <a mat-button routerLink="/profile">
-            <ui-icon name="user" size="sm" />
-            {{ 'nav.profile' | translate }}
-          </a>
-          @if (permissions.can('roles.view')) {
-            <a mat-button routerLink="/roles">
-              <ui-icon name="roles" size="sm" />
-              {{ 'nav.roles' | translate }}
-            </a>
-          }
-        </div>
-      </ui-card>
+    <mat-form-field class="field-compact">
+      <mat-label>{{ 'users.status' | translate }}</mat-label>
+      <mat-select [value]="status()" (valueChange)="onStatus($event)">
+        <mat-option value="all">{{ 'users.allStatuses' | translate }}</mat-option>
+        <mat-option value="active">{{ 'users.activeOnly' | translate }}</mat-option>
+        <mat-option value="inactive">{{ 'users.inactiveOnly' | translate }}</mat-option>
+      </mat-select>
+    </mat-form-field>
 
-      <ui-card title="roles.title" icon="roles">
-        <div class="role-list">
-          @for (role of roleNames(); track role) {
-            <div class="role-row">
-              <span class="icon-tile icon-tile-primary"><ui-icon name="shield" size="sm" /></span>
-              <div class="role-text">
-                <strong>{{ role }}</strong>
-                <small>{{ roleDescription(role) }}</small>
-              </div>
-            </div>
-          }
-        </div>
-      </ui-card>
-    </div>
+    @if (hasFilters()) {
+      <button mat-button type="button" (click)="clearFilters()">
+        <ui-icon name="close" size="sm" />
+        {{ 'common.clear' | translate }}
+      </button>
+    }
+  </div>
 
-    <!-- The gap is stated, not hidden. -->
-    <ui-empty-state
-      icon="help"
-      tone="warning"
-      title="users.empty"
-      message="users.emptyHint"
-    >
-      @if (permissions.can('users.create')) {
-        <a mat-stroked-button routerLink="/auth/register">{{ 'users.new' | translate }}</a>
-      }
-    </ui-empty-state>
-  }
+  <ui-data-table
+    [columns]="columns"
+    [rows]="rows()"
+    [loading]="loading()"
+    [rowActions]="rowActions"
+    [sort]="sort()"
+    [page]="page()"
+    [total]="total()"
+    [emptyTitle]="hasFilters() ? 'common.noResults' : 'users.empty'"
+    [emptyMessage]="hasFilters() ? 'users.emptyFilteredHint' : 'users.emptyHint'"
+    [emptyIcon]="hasFilters() ? 'noResults' : 'empty'"
+    (sortChange)="onSort($event)"
+    (pageChange)="onPage($event)"
+    (action)="onRowAction($event)"
+  >
+    <ng-template uiCell="displayName" let-row>
+      <div class="name-cell">
+        <span class="avatar avatar-sm">{{ initialsOf(row) }}</span>
+        <span class="name-text">
+          <strong>{{ row.displayName }}</strong>
+          <!-- The email column is hidden below md, so it rides along here. -->
+          <small class="mobile-only">{{ row.email }}</small>
+        </span>
+      </div>
+    </ng-template>
+
+    <ng-template uiCell="createdAtUtc" let-row>
+      {{ row.createdAtUtc | date: 'd MMM y' }}
+    </ng-template>
+
+    @if (permissions.can('users.create')) {
+      <button emptyAction mat-flat-button type="button" (click)="openForm()">
+        {{ 'users.new' | translate }}
+      </button>
+    }
+  </ui-data-table>
 </div>

@@ -82,6 +82,25 @@ export const strongPasswordValidator: ValidatorFn = (
   return strong ? null : { passwordWeak: true };
 };
 
+/**
+ * Identity's default allowed username set.
+ *
+ * Rejecting here rather than letting the API do it is what gives the message a
+ * field to attach to — Identity's own error arrives with no property name, so
+ * it would surface as a form-level banner pointing at nothing.
+ */
+export const USERNAME_PATTERN = /^[a-zA-Z0-9@._\-+]+$/;
+
+export const usernameValidator: ValidatorFn = (
+  control: AbstractControl
+): ValidationErrors | null => {
+  const raw = String(control.value ?? '').trim();
+  if (!raw) {
+    return null;
+  }
+  return USERNAME_PATTERN.test(raw) ? null : { usernamePattern: true };
+};
+
 /** Cross-field: `confirm` must equal `password`. Attach to the group. */
 export function passwordMatchValidator(
   passwordKey = 'password',

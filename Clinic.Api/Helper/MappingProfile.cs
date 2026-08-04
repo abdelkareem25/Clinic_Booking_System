@@ -63,6 +63,10 @@ namespace Clinic.Api.Helper
                 // precisely the ownership relationship it exists to express.
                 .ForMember(dest => dest.UserId, opt => opt.Ignore())
                 .ForMember(dest => dest.Appointments, opt => opt.Ignore())
+                // The rota is NOT mapped even though CreateDoctorDto now carries one. AutoMapper
+                // would have to construct DoctorSchedule entities, and DoctorsController.Create
+                // builds them explicitly so the TimeOnly -> TimeSpan conversion and the deliberate
+                // absence of DoctorId are visible at the point they matter.
                 .ForMember(dest => dest.DoctorSchedules, opt => opt.Ignore());
 
             CreateMap<UpdateDoctorDto, Doctor>()
@@ -83,6 +87,9 @@ namespace Clinic.Api.Helper
             // Doctor/Patient are flattened to their names. AutoMapper null-checks the source member
             // chain, so an appointment whose navigations were not Included yields null names rather
             // than a NullReferenceException.
+            // DoctorId/PatientId, StartTime, EndTime and Notes match by name. Status is an enum on
+            // the entity and a string on the DTO; AutoMapper converts that automatically, and the
+            // string is what the SPA's status union expects.
             CreateMap<Appointment, AppointmentDto>()
                 .ForMember(dest => dest.DoctorName, opt => opt.MapFrom(src => src.Doctor.Name))
                 .ForMember(dest => dest.PatientName, opt => opt.MapFrom(src => src.Patient.Name));
@@ -96,14 +103,24 @@ namespace Clinic.Api.Helper
                 .ForMember(dest => dest.Doctor, opt => opt.Ignore())
                 .ForMember(dest => dest.Patient, opt => opt.Ignore())
                 .ForMember(dest => dest.StartTime, opt => opt.Ignore())
-                .ForMember(dest => dest.EndTime, opt => opt.Ignore());
+                .ForMember(dest => dest.EndTime, opt => opt.Ignore())
+                // A new booking is always Pending - see CreateAppointmentDto.
+                .ForMember(dest => dest.Status, opt => opt.Ignore());
 
             CreateMap<UpdateAppointmentDto, Appointment>()
                 .IgnoreSystemOwnedMembers()
                 .ForMember(dest => dest.Doctor, opt => opt.Ignore())
                 .ForMember(dest => dest.Patient, opt => opt.Ignore())
                 .ForMember(dest => dest.StartTime, opt => opt.Ignore())
-                .ForMember(dest => dest.EndTime, opt => opt.Ignore());
+                .ForMember(dest => dest.EndTime, opt => opt.Ignore())
+                // Status is optional on the request. Condition() skips the assignment entirely when
+                // it is absent, so the stored value survives; without it AutoMapper would write the
+                // nullable's default and every reschedule would quietly reset the status to Pending.
+                .ForMember(dest => dest.Status, opt =>
+                {
+                    opt.PreCondition(src => src.Status.HasValue);
+                    opt.MapFrom(src => src.Status!.Value);
+                });
             #endregion
 
             #region Schedule

@@ -1,8 +1,10 @@
 ﻿using Clinic.Application;
 using Clinic.Domain.Entites.Identity;
+using Clinic.Domain.Interfaces;
 using Clinic.Domain.Service;
 using Clinic.Infrastructure.Data.Context;
 using Clinic.Infrastructure.Identity;
+using Clinic.Infrastructure.Repositores;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
@@ -14,6 +16,13 @@ namespace Clinic.Api.Extensions
         public static IServiceCollection AddIdentityServices(this IServiceCollection Services, IConfiguration configuration)
         {
             Services.AddScoped<ITokenService, TokenService>();
+
+            // Registered here rather than alongside the clinical repositories in
+            // AddApplicationServices, because AccountsController is part of the identity surface and
+            // this is the registration every host that wires identity already calls. Splitting them
+            // meant a host could stand up authentication and then fail to activate the very
+            // controller that serves it.
+            Services.AddScoped<IAccountRepository, AccountRepository>();
 
             // Bind and validate the JWT settings once, centrally. ValidateOnStart turns a missing or
             // malformed JWT section into a startup failure with a clear message, instead of a

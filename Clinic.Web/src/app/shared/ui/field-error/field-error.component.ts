@@ -19,6 +19,7 @@ const ERROR_PRIORITY: readonly string[] = [
   'nationalId',
   'passwordWeak',
   'passwordMismatch',
+  'usernamePattern',
   'minlength',
   'maxlength',
   'min',

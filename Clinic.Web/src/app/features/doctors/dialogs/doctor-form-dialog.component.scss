@@ -1,13 +1,160 @@
 .doctor-form {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-2);
-  width: min(420px, 84vw);
+  gap: var(--sp-4);
+  width: min(680px, 86vw);
   padding-block-start: var(--sp-1);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-2) var(--sp-3);
 }
 
 .field {
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+
+.span-2 {
+  grid-column: 1 / -1;
+}
+
+.status-field {
+  justify-content: center;
+  gap: var(--sp-1);
+  padding-block-end: var(--sp-4);
+}
+
+.hint {
+  color: var(--c-text-subtle);
+  font-size: var(--fs-xs);
+  margin: 0;
+}
+
+/* -------------------------------------------------------- working schedule -- */
+
+.schedule {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  background: var(--c-surface-2);
+}
+
+.schedule-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+
+  h3 {
+    margin: 0;
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-semibold);
+  }
+}
+
+.days {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.day {
+  padding: var(--sp-3);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
+}
+
+/* A day with no shifts recedes, so the working week reads at a glance. */
+.day-off {
+  background: transparent;
+  border-style: dashed;
+}
+
+.day-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.day-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.shifts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  margin: var(--sp-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shift {
+  display: grid;
+  /* The remove button is a fixed track so the two pickers stay the same width
+     on every row — a ragged column of time fields is hard to scan. */
+  grid-template-columns: 1fr 1fr auto;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.remove {
+  align-self: center;
+  /* Lifts the button out of the mat-form-field's subscript reservation so it
+     sits level with the inputs rather than with their hint row. */
+  margin-block-end: var(--sp-5);
+}
+
+.off-label {
+  margin: var(--sp-2) 0 0;
+  color: var(--c-text-subtle);
+  font-size: var(--fs-xs);
+}
+
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: var(--sp-1) 0 0;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-sm);
+  background: var(--c-danger-soft);
+  color: var(--c-danger-soft-fg);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+}
+
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .shift {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* On one row the delete button would push the pickers to unusable widths, so
+     it drops to its own line spanning both. */
+  .remove {
+    grid-column: 1 / -1;
+    justify-self: end;
+    margin-block-end: 0;
+  }
+
+  .day-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }

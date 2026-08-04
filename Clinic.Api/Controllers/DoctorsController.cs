@@ -60,14 +60,37 @@ namespace Clinic.Api.Controllers
             return Ok(doctorDto);
         }
         // POST: api/Doctors
+        //
+        // Creates the doctor AND their published working hours in one atomic write.
+        //
+        // The alternative the client would otherwise be forced into - POST the doctor, then POST
+        // each shift to /api/Schedule - is not atomic: any shift that fails leaves a doctor whose
+        // rota is silently half-written, and there is nothing the client can do to roll the earlier
+        // calls back. Attaching the shifts to the doctor's navigation collection means EF inserts
+        // the parent and the children in a single SaveChanges, which is a single transaction, so the
+        // whole rota either lands or none of it does.
         [HttpPost]
         [ProducesResponseType(typeof(GetDoctorDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<GetDoctorDto>> Create(CreateDoctorDto createDoctorDto)
         {
             var doctor = _mapper.Map<CreateDoctorDto, Doctor>(createDoctorDto);
+
+            // DoctorId is left unset on purpose: the parent's key does not exist yet, and EF fills
+            // in the foreign key from the relationship once it has been generated.
+            foreach (var shift in createDoctorDto.Schedules)
+            {
+                doctor.DoctorSchedules.Add(new DoctorSchedule
+                {
+                    DayOfWeek = shift.WeekDay,
+                    StartTime = shift.StartTime.ToTimeSpan(),
+                    EndTime = shift.EndTime.ToTimeSpan()
+                });
+            }
+
             await _unitOfWork.Repository<Doctor>().AddAsync(doctor);
             await _unitOfWork.CompleteAsync(); // commit before mapping so the generated Id is populated
+
             var doctorDto = _mapper.Map<Doctor, GetDoctorDto>(doctor);
             return CreatedAtAction(nameof(GetById), new { id = doctor.Id }, doctorDto);
         }

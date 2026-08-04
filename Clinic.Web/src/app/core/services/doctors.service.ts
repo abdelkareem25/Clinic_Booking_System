@@ -23,6 +23,13 @@ export class DoctorsService {
     return this.api.get<Doctor>(`Doctors/${id}`);
   }
 
+  /**
+   * Creates the doctor and their whole working week in one request.
+   *
+   * The API writes both in a single transaction, so this must NOT be split into
+   * a create followed by one call per shift: a shift that failed halfway would
+   * leave a doctor with a partial rota and nothing to roll back with.
+   */
   createDoctor(payload: CreateDoctorRequest): Observable<Doctor> {
     return this.api.post<Doctor>('Doctors', payload);
   }

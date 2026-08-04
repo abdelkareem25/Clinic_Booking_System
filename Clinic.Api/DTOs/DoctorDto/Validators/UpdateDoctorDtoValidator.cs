@@ -1,17 +1,10 @@
-﻿using FluentValidation;
-
 namespace Clinic.Api.DTOs.DoctorDto.Validators
 {
-    public class UpdateDoctorDtoValidator : AbstractValidator<UpdateDoctorDto>
+    /// <summary>
+    /// Update carries exactly the shared profile rules and nothing else - the rota is not editable
+    /// through this endpoint. See <see cref="DoctorProfileValidator{T}"/>.
+    /// </summary>
+    public class UpdateDoctorDtoValidator : DoctorProfileValidator<UpdateDoctorDto>
     {
-        public UpdateDoctorDtoValidator()
-        {
-            RuleFor(X=>X.Name)
-                .NotEmpty().WithMessage("Name is required.")
-                .MaximumLength(100).WithMessage("Name must not exceed 100 characters.");
-            RuleFor(X => X.Specialization)
-                .NotEmpty().WithMessage("Specialization is required.")
-                .MaximumLength(100).WithMessage("Specialization must not exceed 100 characters.");
-        }
     }
 }

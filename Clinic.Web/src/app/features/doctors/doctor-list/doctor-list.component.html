@@ -36,7 +36,14 @@
             <span class="avatar avatar-lg">{{ card.doctor.name.charAt(0) }}</span>
             <div class="head-text">
               <strong>{{ card.doctor.name }}</strong>
-              <span class="badge badge-secondary">{{ card.doctor.specialization }}</span>
+              <div class="head-badges">
+                <span class="badge badge-secondary">{{ card.doctor.specialization }}</span>
+                <!-- Shown only when false: "accepting patients" is the norm and
+                     a badge on every card would carry no information. -->
+                @if (card.doctor.isActive === false) {
+                  <span class="badge badge-neutral">{{ 'doctors.statusInactive' | translate }}</span>
+                }
+              </div>
             </div>
 
             @if (permissions.canAny(['doctors.edit', 'doctors.delete'])) {
@@ -81,6 +88,18 @@
               <dt>{{ 'common.total' | translate }}</dt>
               <dd>{{ 'schedules.hoursPerWeek' | translate: { count: card.weeklyHours } }}</dd>
             </div>
+            @if (card.doctor.consultationFee != null) {
+              <div>
+                <dt>{{ 'doctors.consultationFee' | translate }}</dt>
+                <dd>{{ card.doctor.consultationFee }}</dd>
+              </div>
+            }
+            @if (card.doctor.phone) {
+              <div>
+                <dt>{{ 'doctors.phone' | translate }}</dt>
+                <dd>{{ card.doctor.phone }}</dd>
+              </div>
+            }
           </dl>
 
           <footer class="card-foot">

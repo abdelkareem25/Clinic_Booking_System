@@ -2,28 +2,165 @@
 
 <mat-dialog-content>
   <form class="doctor-form" [formGroup]="form" novalidate>
-    <div class="field">
-      <mat-form-field>
-        <mat-label>{{ 'doctors.name' | translate }}</mat-label>
-        <input matInput type="text" formControlName="name" autocomplete="name" />
-      </mat-form-field>
-      <ui-field-error [control]="form.controls.name" [submitted]="submitted()" />
+    <div class="grid">
+      <div class="field span-2">
+        <mat-form-field>
+          <mat-label>{{ 'doctors.name' | translate }}</mat-label>
+          <input matInput type="text" formControlName="name" autocomplete="name" />
+        </mat-form-field>
+        <ui-field-error [control]="form.controls.name" [submitted]="submitted()" />
+      </div>
+
+      <div class="field span-2">
+        <!-- Autocomplete rather than a select: specialities in use are suggested,
+             but a clinic must still be able to enter one we did not predict. -->
+        <mat-form-field>
+          <mat-label>{{ 'doctors.specialization' | translate }}</mat-label>
+          <input matInput type="text" formControlName="specialization" [matAutocomplete]="specAuto" />
+          <mat-autocomplete #specAuto>
+            @for (specialization of specializations; track specialization) {
+              <mat-option [value]="specialization">{{ specialization }}</mat-option>
+            }
+          </mat-autocomplete>
+        </mat-form-field>
+        <ui-field-error [control]="form.controls.specialization" [submitted]="submitted()" />
+      </div>
+
+      <div class="field">
+        <mat-form-field>
+          <mat-label>{{ 'doctors.phone' | translate }}</mat-label>
+          <input matInput type="tel" formControlName="phone" autocomplete="tel" inputmode="tel" />
+          <mat-hint>{{ 'common.optional' | translate }}</mat-hint>
+        </mat-form-field>
+        <ui-field-error [control]="form.controls.phone" [submitted]="submitted()" />
+      </div>
+
+      <div class="field">
+        <mat-form-field>
+          <mat-label>{{ 'doctors.email' | translate }}</mat-label>
+          <input matInput type="email" formControlName="email" autocomplete="email" />
+          <mat-hint>{{ 'common.optional' | translate }}</mat-hint>
+        </mat-form-field>
+        <ui-field-error [control]="form.controls.email" [submitted]="submitted()" />
+      </div>
+
+      <div class="field">
+        <mat-form-field>
+          <mat-label>{{ 'doctors.consultationFee' | translate }}</mat-label>
+          <input matInput type="number" formControlName="consultationFee" min="0" step="1" />
+        </mat-form-field>
+        <ui-field-error [control]="form.controls.consultationFee" [submitted]="submitted()" />
+      </div>
+
+      <div class="field status-field">
+        <!-- A checkbox, not a select: the state is binary and the label says
+             which way round it is, so a dropdown would be two clicks for no
+             extra information. -->
+        <mat-checkbox formControlName="isActive">{{ 'doctors.acceptingPatients' | translate }}</mat-checkbox>
+        <span class="hint">{{ 'doctors.inactiveHint' | translate }}</span>
+      </div>
+
+      <div class="field span-2">
+        <mat-form-field>
+          <mat-label>{{ 'doctors.bio' | translate }}</mat-label>
+          <textarea matInput formControlName="bio" rows="3"></textarea>
+          <mat-hint>{{ 'common.optional' | translate }}</mat-hint>
+        </mat-form-field>
+        <ui-field-error [control]="form.controls.bio" [submitted]="submitted()" />
+      </div>
     </div>
 
-    <div class="field">
-      <!-- Autocomplete rather than a select: specialities in use are suggested,
-           but a clinic must still be able to enter one we did not predict. -->
-      <mat-form-field>
-        <mat-label>{{ 'doctors.specialization' | translate }}</mat-label>
-        <input matInput type="text" formControlName="specialization" [matAutocomplete]="specAuto" />
-        <mat-autocomplete #specAuto>
-          @for (specialization of specializations; track specialization) {
-            <mat-option [value]="specialization">{{ specialization }}</mat-option>
+    @if (!isEdit) {
+      <!-- Working schedule ------------------------------------------------ -->
+      <!-- Only on create. Editing the rota afterwards means deleting shifts
+           appointments may already be booked against, which belongs on the
+           Schedules screen where that consequence is visible. -->
+      <section class="schedule" aria-labelledby="schedule-heading">
+        <header class="schedule-head">
+          <div>
+            <h3 id="schedule-heading">{{ 'doctors.workingSchedule' | translate }}</h3>
+            <p class="hint">{{ 'doctors.workingScheduleHint' | translate }}</p>
+          </div>
+          <span class="badge badge-neutral">
+            {{ 'doctors.shiftCount' | translate: { count: shiftCount() } }}
+          </span>
+        </header>
+
+        <div class="days">
+          @for (row of days(); track row.day) {
+            <article class="day" [class.day-off]="!row.shifts.length">
+              <header class="day-head">
+                <strong>{{ 'weekday.' + row.day | translate }}</strong>
+
+                <div class="day-actions">
+                  @if (row.shifts.length) {
+                    <button
+                      mat-button
+                      type="button"
+                      class="danger"
+                      [matTooltip]="'doctors.markDayOff' | translate"
+                      (click)="clearDay(row.day)"
+                    >
+                      {{ 'doctors.dayOff' | translate }}
+                    </button>
+                  }
+                  <button mat-stroked-button type="button" (click)="addShift(row.day)">
+                    <ui-icon name="add" size="sm" />
+                    {{ 'doctors.addShift' | translate }}
+                  </button>
+                </div>
+              </header>
+
+              @if (row.shifts.length) {
+                <ul class="shifts">
+                  @for (shift of row.shifts; track $index) {
+                    <li class="shift" [formGroup]="shift">
+                      <mat-form-field>
+                        <mat-label>{{ 'common.startTime' | translate }}</mat-label>
+                        <input matInput formControlName="start" [matTimepicker]="startPicker" />
+                        <mat-timepicker-toggle matIconSuffix [for]="startPicker" />
+                        <mat-timepicker #startPicker interval="30m" (selected)="onTimeChanged()" />
+                      </mat-form-field>
+
+                      <mat-form-field>
+                        <mat-label>{{ 'common.endTime' | translate }}</mat-label>
+                        <input matInput formControlName="end" [matTimepicker]="endPicker" />
+                        <mat-timepicker-toggle matIconSuffix [for]="endPicker" />
+                        <mat-timepicker #endPicker interval="30m" (selected)="onTimeChanged()" />
+                      </mat-form-field>
+
+                      <button
+                        mat-icon-button
+                        type="button"
+                        class="danger remove"
+                        [attr.aria-label]="'doctors.removeShift' | translate"
+                        [matTooltip]="'doctors.removeShift' | translate"
+                        (click)="removeShift(row.day, $index)"
+                      >
+                        <ui-icon name="delete" size="md" />
+                      </button>
+                    </li>
+                  }
+                </ul>
+
+                @if (problemFor(row.day); as problem) {
+                  <p class="form-error">
+                    <ui-icon name="warning" size="sm" />
+                    @switch (problem) {
+                      @case ('order') { {{ 'validation.timeRange' | translate }} }
+                      @case ('overlap') { {{ 'validation.overlap' | translate }} }
+                      @case ('duplicate') { {{ 'validation.duplicateShift' | translate }} }
+                    }
+                  </p>
+                }
+              } @else {
+                <p class="off-label">{{ 'doctors.off' | translate }}</p>
+              }
+            </article>
           }
-        </mat-autocomplete>
-      </mat-form-field>
-      <ui-field-error [control]="form.controls.specialization" [submitted]="submitted()" />
-    </div>
+        </div>
+      </section>
+    }
   </form>
 </mat-dialog-content>
 

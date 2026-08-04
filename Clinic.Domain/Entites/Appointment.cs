@@ -1,4 +1,4 @@
-﻿namespace Clinic.Domain.Entites
+namespace Clinic.Domain.Entites
 {
     public class Appointment : BaseEntity
     {
@@ -9,5 +9,11 @@
         public DateTime AppointmentDate { get; set; }
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; } = DateTime.MinValue;
+
+        /// <summary>Where the booking is in its lifecycle. New bookings start Pending.</summary>
+        public AppointmentStatus Status { get; set; } = AppointmentStatus.Pending;
+
+        /// <summary>Reason for the visit or a handover note. Optional.</summary>
+        public string? Notes { get; set; }
     }
 }

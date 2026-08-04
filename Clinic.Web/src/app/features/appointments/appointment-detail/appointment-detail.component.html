@@ -11,6 +11,11 @@
       ]"
     >
       <div actions class="head-actions">
+        <!-- Stored status first: it is the decision someone made. The timing
+             badge beside it is derived from the clock. -->
+        <span class="badge" [class]="'badge-' + lifecycleTone()">
+          {{ lifecycleLabel() | translate }}
+        </span>
         <span class="badge" [class]="'badge-' + statusTone()">
           {{ statusLabel() | translate }}
         </span>

@@ -20,6 +20,8 @@ import {
   appointmentStatusLabel,
   appointmentStatusTone,
   deriveAppointmentStatus,
+  lifecycleStatusLabel,
+  lifecycleStatusTone,
 } from '../../../core/utils/appointment-status.util';
 import { isSameDay, parseDate } from '../../../core/utils/date.util';
 import { confirmDialog } from '../../../shared/ui/confirm-dialog/confirm-dialog.component';
@@ -103,15 +105,14 @@ export class AppointmentListComponent {
     const doctorId = this.doctorId();
     const status = this.status();
     const day = this.day();
-    const doctorName = this.doctors().find((doctor) => doctor.id === doctorId)?.name;
 
     return this.all().filter((appointment) => {
-      if (doctorId !== 'all') {
-        const matchesDoctor =
-          appointment.doctorId === doctorId || appointment.doctorName === doctorName;
-        if (!matchesDoctor) {
-          return false;
-        }
+      // Compared by id alone. The old code also matched on doctor name, because
+      // the list endpoint returned a null doctorId for every row; now that the
+      // specification eager-loads the navigation the id is always present, and
+      // matching by name would have quietly conflated two doctors sharing one.
+      if (doctorId !== 'all' && appointment.doctorId !== doctorId) {
+        return false;
       }
 
       if (status !== 'all' && deriveAppointmentStatus(appointment.appointmentDate) !== status) {
@@ -185,16 +186,32 @@ export class AppointmentListComponent {
       hideBelow: 'sm',
     },
     {
+      // The stored lifecycle status, not the derived one. Before the API had a
+      // status column this showed Upcoming/Today/Past, which could never say
+      // "Cancelled" — the one thing a status column most needs to say.
       key: 'status',
       header: 'common.status',
       variant: 'badge',
       width: '130px',
+      badge: (row) => ({
+        label: lifecycleStatusLabel(row.status),
+        tone: lifecycleStatusTone(row.status),
+      }),
+    },
+    {
+      // The time dimension, kept as its own column so the filter above it still
+      // has something to point at.
+      key: 'timing',
+      header: 'appointments.timing',
+      variant: 'badge',
+      width: '120px',
+      hideBelow: 'md',
       badge: (row) => {
-        const status = deriveAppointmentStatus(row.appointmentDate);
+        const timing = deriveAppointmentStatus(row.appointmentDate);
         return {
-          label: appointmentStatusLabel(status),
-          tone: appointmentStatusTone(status),
-          dot: status === 'Today',
+          label: appointmentStatusLabel(timing),
+          tone: appointmentStatusTone(timing),
+          dot: timing === 'Today',
         };
       },
     },

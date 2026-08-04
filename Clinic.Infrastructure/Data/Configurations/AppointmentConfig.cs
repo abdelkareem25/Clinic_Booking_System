@@ -19,6 +19,15 @@ namespace Clinic.Infrastructure.Data.Configurations
                 .HasForeignKey(d => d.DoctorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Stored as an int, matching DoctorSchedule.DayOfWeek. Storing the name instead would
+            // make renaming an enum member a silent data migration.
+            builder.Property(a => a.Status)
+                .HasConversion<int>()
+                .HasDefaultValue(AppointmentStatus.Pending);
+
+            builder.Property(a => a.Notes)
+                .HasMaxLength(1000);
+
             // The application checks for an overlap and then inserts. Those are two round trips, so
             // two concurrent requests can both pass the check before either writes - the classic
             // time-of-check/time-of-use race, and the one a double-clicked Book button reproduces

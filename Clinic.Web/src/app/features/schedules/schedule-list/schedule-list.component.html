@@ -45,18 +45,34 @@
           <div class="grid-scroll">
             <div class="grid">
               @for (day of week.days; track day.weekDay) {
-                <div class="day" [class.day-off]="!day.shifts.length">
+                <!-- The cell itself is the button that fills it: clicking anywhere in a day
+                     opens the form already primed with this doctor and this day. -->
+                <div
+                  class="day"
+                  [class.day-off]="!day.shifts.length"
+                  [class.day-clickable]="permissions.can('schedules.create')"
+                  [attr.role]="permissions.can('schedules.create') ? 'button' : null"
+                  [attr.tabindex]="permissions.can('schedules.create') ? 0 : null"
+                  [attr.aria-label]="
+                    permissions.can('schedules.create') ? ('schedules.new' | translate) : null
+                  "
+                  (click)="addShift(week.doctor.id, day.weekDay)"
+                  (keydown.enter)="addShift(week.doctor.id, day.weekDay)"
+                  (keydown.space)="$event.preventDefault(); addShift(week.doctor.id, day.weekDay)"
+                >
                   <span class="day-name">{{ 'weekday.short.' + day.weekDay | translate }}</span>
 
                   @if (day.shifts.length) {
                     @for (shift of day.shifts; track shift.id) {
+                      <!-- Shift controls sit inside the cell, so they must not also trigger
+                           the cell's "add" action. -->
                       <div class="shift">
                         <button
                           type="button"
                           class="shift-time"
                           [disabled]="!permissions.can('schedules.edit')"
                           [matTooltip]="'common.edit' | translate"
-                          (click)="editShift(shift)"
+                          (click)="$event.stopPropagation(); editShift(shift)"
                         >
                           {{ shift.label }}
                         </button>
@@ -65,7 +81,7 @@
                             type="button"
                             class="shift-remove"
                             [attr.aria-label]="'common.delete' | translate"
-                            (click)="removeShift(shift, week.doctor.name)"
+                            (click)="$event.stopPropagation(); removeShift(shift, week.doctor.name)"
                           >
                             <ui-icon name="close" size="sm" />
                           </button>
@@ -77,14 +93,9 @@
                   }
 
                   @if (permissions.can('schedules.create')) {
-                    <button
-                      type="button"
-                      class="add-cell"
-                      [attr.aria-label]="'schedules.new' | translate"
-                      (click)="addShift(week.doctor.id, day.weekDay)"
-                    >
+                    <span class="add-cell" aria-hidden="true">
                       <ui-icon name="add" size="sm" />
-                    </button>
+                    </span>
                   }
                 </div>
               }

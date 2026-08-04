@@ -225,7 +225,7 @@ export class AppointmentFormComponent {
       return;
     }
 
-    const { doctorId, patientId, date, startMinutes } = this.form.getRawValue();
+    const { doctorId, patientId, date, startMinutes, reason } = this.form.getRawValue();
 
     // Re-check at submit time: another workstation may have taken this slot
     // while the form was open, and the API has no uniqueness constraint to
@@ -247,7 +247,14 @@ export class AppointmentFormComponent {
 
     this.saving.set(true);
     const appointmentDate = toLocalIso(minutesToDate(startMinutes!, date!));
-    const payload = { patientId: patientId!, doctorId: doctorId!, appointmentDate };
+    // The reason for the visit is now persisted. It was collected and silently
+    // discarded before, because the API had nowhere to put it.
+    const payload = {
+      patientId: patientId!,
+      doctorId: doctorId!,
+      appointmentDate,
+      notes: reason.trim() || null,
+    };
     const id = this.appointmentId();
 
     const request = id ? this.api.updateAppointment(id, payload) : this.api.createAppointment(payload);
@@ -317,12 +324,14 @@ export class AppointmentFormComponent {
       const existing = this.appointments().find((appointment) => appointment.id === id);
       if (existing) {
         const when = parseDate(existing.appointmentDate);
-        const doctor = this.doctors().find((entry) => entry.name === existing.doctorName);
-        const patient = this.patients().find((entry) => entry.name === existing.patientName);
 
+        // The ids are used directly. They used to be missing from the list
+        // response, so this fell back to matching doctors and patients by name
+        // — which silently picked the wrong person whenever two shared one.
         this.form.patchValue({
-          doctorId: existing.doctorId ?? doctor?.id ?? null,
-          patientId: existing.patientId ?? patient?.id ?? null,
+          doctorId: existing.doctorId,
+          patientId: existing.patientId,
+          reason: existing.notes ?? '',
         });
 
         if (when) {

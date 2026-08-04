@@ -23,6 +23,13 @@ namespace Clinic.Api.DTOs.AppointmentDto
         /// </summary>
         [Range(AppointmentDurations.MinimumMinutes, AppointmentDurations.MaximumMinutes)]
         public int DurationMinutes { get; set; } = AppointmentDurations.DefaultMinutes;
+
+        /// <summary>Reason for the visit. Optional.</summary>
+        [MaxLength(AppointmentDurations.NotesMaxLength)]
+        public string? Notes { get; set; }
+
+        // Status is deliberately absent. A new booking is always Pending; letting the caller choose
+        // would allow a client to create an appointment that is already "Completed".
     }
 
     /// <summary>Shared so the create and update contracts cannot drift apart.</summary>
@@ -31,5 +38,6 @@ namespace Clinic.Api.DTOs.AppointmentDto
         public const int MinimumMinutes = 5;
         public const int MaximumMinutes = 240;
         public const int DefaultMinutes = 30;
+        public const int NotesMaxLength = 1000;
     }
 }

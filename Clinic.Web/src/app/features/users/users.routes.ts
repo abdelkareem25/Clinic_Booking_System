@@ -6,7 +6,7 @@ export const USERS_ROUTES: Routes = [
   {
     path: '',
     canActivate: [permissionGuard('users.view')],
-    title: 'Users | Clinic',
+    title: 'Accounts | Clinic',
     loadComponent: () =>
       import('./user-list/user-list.component').then((m) => m.UserListComponent),
   },

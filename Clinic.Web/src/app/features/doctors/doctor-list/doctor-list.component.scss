@@ -54,6 +54,12 @@
   overflow-wrap: anywhere;
 }
 
+.head-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
 .card-actions {
   display: flex;
   gap: 2px;

@@ -106,6 +106,7 @@ namespace Clinic.Tests.Integration
                         services.AddSingleton<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
                         services.AddSingleton(signInManager.Object);
                         services.AddSingleton(tokenService.Object);
+                        services.AddSingleton(new Mock<IAccountRepository>().Object);
 
                         services.AddAuthentication(TestAuthHandler.SchemeName)
                                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(

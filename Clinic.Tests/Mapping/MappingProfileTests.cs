@@ -241,9 +241,10 @@ namespace Clinic.Tests.Mapping
         [Fact]
         public void CreateDoctorDto_Does_Not_Set_The_Key_Or_Collections()
         {
-            // The DTO exposes an Id (a separate cleanup, TODO #35). Mapping it into a new entity
-            // would make EF attempt an explicit identity insert and fail.
-            var dto = new CreateDoctorDto { Id = 999, Name = "Dr. Omar", Specialization = "Neurology" };
+            // The DTO no longer exposes an Id - that was TODO #35, now done. The map still ignores
+            // the key explicitly, because a mapped key would make EF attempt an explicit identity
+            // insert and fail.
+            var dto = new CreateDoctorDto { Name = "Dr. Omar", Specialization = "Neurology" };
 
             var doctor = Mapper.Map<Doctor>(dto);
 

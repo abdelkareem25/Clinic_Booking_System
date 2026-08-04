@@ -44,8 +44,10 @@ namespace Clinic.Tests.Mapping
         [Fact]
         public void A_New_Entity_From_A_Request_Has_No_Audit_Values_Of_Its_Own()
         {
-            // They are stamped by the context on save, not carried in from the wire.
-            var doctor = Mapper.Map<Doctor>(new CreateDoctorDto { Id = 5, Name = "Dr. X", Specialization = "Y" });
+            // They are stamped by the context on save, not carried in from the wire. CreateDoctorDto
+            // no longer exposes an Id at all, so the key cannot even be offered - the map ignoring
+            // it is now belt-and-braces rather than the only line of defence.
+            var doctor = Mapper.Map<Doctor>(new CreateDoctorDto { Name = "Dr. X", Specialization = "Y" });
 
             Assert.Equal(0, doctor.Id);
             Assert.Equal(Guid.Empty, doctor.RowVersion);
