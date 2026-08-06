@@ -3,92 +3,94 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Clinic.Tests.Security
 {
     /// <summary>
-    /// Tests for TODO #15 (finding H17) covering the migration.
+    /// Tests for TODO #15 (finding H17) covering the migrations.
     ///
-    /// Removing the entity only changes the model. An existing database still has the table - and
-    /// the plaintext column - until a migration drops it, so the migration is the part that
-    /// actually closes the finding on a deployed system.
+    /// The legacy Clinic.Domain.Entites.User entity defined a plaintext 'Password' column. Deleting
+    /// the entity only changes the model, so these tests guard the schema itself.
+    ///
+    /// This class previously asserted that a migration named RemoveLegacyUserTable existed and
+    /// dropped the table. The PostgreSQL port squashed the SQL Server migration history into a
+    /// single InitialPostgres, so that migration no longer exists and those assertions failed - not
+    /// because the finding regressed, but because the thing they named was gone. What is actually
+    /// worth guaranteeing is the OUTCOME: no migration in the assembly produces the table, and
+    /// neither the snapshot nor the live model describes it. That holds however the history is
+    /// later squashed or rewritten.
+    ///
+    /// One consequence of the squash is worth recording: a database migrated under the old SQL
+    /// Server history still physically has the Users table, and there is no longer a migration that
+    /// drops it. That is a data-migration concern for any such database, not something these tests
+    /// can assert about this codebase.
     /// </summary>
     public sealed class LegacyUserTableMigrationTests
     {
-        private const string MigrationName = "RemoveLegacyUserTable";
+        private const string LegacyTableName = "Users";
 
-        private static IReadOnlyList<string> ClinicMigrations()
+        /// <summary>
+        /// A context that is never connected - only the migrations assembly and the model are read,
+        /// and building either requires no database.
+        /// </summary>
+        private static ClinicDbContext CreateContext()
         {
             var options = new DbContextOptionsBuilder<ClinicDbContext>()
-                .UseSqlServer("Server=none;Database=none;Trusted_Connection=True")   // never opened
+                .UseNpgsql("Host=none;Database=none")
                 .Options;
 
-            using var context = new ClinicDbContext(options);
-
-            return context.GetService<IMigrationsAssembly>().Migrations.Keys.ToList();
+            return new ClinicDbContext(options);
         }
 
         [Fact]
-        public void A_Migration_Exists_To_Drop_The_Table()
+        public void No_Migration_Creates_The_Legacy_Users_Table()
         {
-            Assert.Contains(ClinicMigrations(), name => name.EndsWith(MigrationName, StringComparison.Ordinal));
-        }
+            using var context = CreateContext();
 
-        [Fact]
-        public void No_Later_Migration_Recreates_The_Users_Table()
-        {
-            // The drop is not necessarily the newest migration - later work adds more - so what
-            // matters is that nothing after it brings the table back.
-            var options = new DbContextOptionsBuilder<ClinicDbContext>()
-                .UseSqlServer("Server=none;Database=none;Trusted_Connection=True").Options;
-            using var context = new ClinicDbContext(options);
             var assembly = context.GetService<IMigrationsAssembly>();
 
-            var ordered = assembly.Migrations.Keys.ToList();
-            var dropIndex = ordered.FindIndex(name => name.EndsWith(MigrationName, StringComparison.Ordinal));
+            // Read from the context rather than hardcoded. The previous version passed the literal
+            // "SqlServer" here and kept doing so after the port to Npgsql, which nothing caught
+            // because the assertion it fed was already failing for an unrelated reason.
+            var activeProvider = context.GetService<IDatabaseProvider>().Name;
 
-            Assert.True(dropIndex >= 0, "The RemoveLegacyUserTable migration is missing.");
+            // Guards against this passing vacuously if the migrations assembly ever resolves empty.
+            Assert.NotEmpty(assembly.Migrations);
 
-            foreach (var later in ordered.Skip(dropIndex + 1))
+            foreach (var key in assembly.Migrations.Keys)
             {
-                var migration = assembly.CreateMigration(assembly.Migrations[later], "SqlServer");
+                var migration = assembly.CreateMigration(assembly.Migrations[key], activeProvider);
 
                 Assert.DoesNotContain(migration.UpOperations.OfType<CreateTableOperation>(),
-                    operation => operation.Name == "Users");
+                    operation => operation.Name == LegacyTableName);
             }
-        }
-
-        [Fact]
-        public void The_Migration_Drops_The_Users_Table()
-        {
-            var options = new DbContextOptionsBuilder<ClinicDbContext>()
-                .UseSqlServer("Server=none;Database=none;Trusted_Connection=True").Options;
-            using var context = new ClinicDbContext(options);
-
-            var assembly = context.GetService<IMigrationsAssembly>();
-            var key = assembly.Migrations.Keys
-                .Single(name => name.EndsWith(MigrationName, StringComparison.Ordinal));
-
-            var migration = assembly.CreateMigration(assembly.Migrations[key], "SqlServer");
-
-            var droppedTables = migration.UpOperations.OfType<DropTableOperation>().Select(o => o.Name);
-
-            Assert.Contains("Users", droppedTables);
         }
 
         [Fact]
         public void The_Model_Snapshot_No_Longer_Describes_The_Legacy_Entity()
         {
-            // A stale snapshot would make the NEXT migration try to drop the table a second time.
-            var options = new DbContextOptionsBuilder<ClinicDbContext>()
-                .UseSqlServer("Server=none;Database=none;Trusted_Connection=True").Options;
-            using var context = new ClinicDbContext(options);
+            // A stale snapshot would make the NEXT migration try to recreate or re-drop the table.
+            using var context = CreateContext();
 
             var snapshot = context.GetService<IMigrationsAssembly>().ModelSnapshot;
 
             Assert.NotNull(snapshot);
-            Assert.DoesNotContain(snapshot!.Model.GetEntityTypes(), e => e.Name.EndsWith(".User", StringComparison.Ordinal));
+            Assert.DoesNotContain(snapshot!.Model.GetEntityTypes(),
+                e => e.Name.EndsWith(".User", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public void The_Live_Model_Maps_No_Table_Named_Users()
+        {
+            // The snapshot and the live model are separate artefacts, and the snapshot is only
+            // regenerated when someone adds a migration. Checking the live model catches an entity
+            // reintroduced in code before any migration exists for it - and catches it under any
+            // entity name, since what matters is the table it lands on.
+            using var context = CreateContext();
+
+            Assert.DoesNotContain(context.Model.GetEntityTypes(),
+                e => string.Equals(e.GetTableName(), LegacyTableName, StringComparison.Ordinal));
         }
     }
 }

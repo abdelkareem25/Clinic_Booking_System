@@ -102,6 +102,45 @@ namespace Clinic.Tests.Security
             Assert.True(offenders.Count == 0, string.Join(Environment.NewLine, offenders));
         }
 
+        /// <summary>
+        /// The database password was committed in appsettings.json long after JWT:Key and
+        /// Seed:AdminPassword had been moved out, because the checks above enumerate specific keys
+        /// and ConnectionStrings was not one of them. A connection string is credential-bearing by
+        /// nature, so this inspects the section itself rather than naming another key to forget.
+        /// </summary>
+        [Fact]
+        public void No_AppSettings_File_Declares_A_Connection_String_Containing_A_Password()
+        {
+            string[] credentialKeywords = ["password=", "pwd=", "user id=", "username="];
+
+            var offenders = new List<string>();
+
+            foreach (var file in AppSettingsFiles())
+            {
+                var configuration = new ConfigurationBuilder()
+                    .AddJsonFile(file.FullName, optional: false)
+                    .Build();
+
+                foreach (var entry in configuration.GetSection("ConnectionStrings").GetChildren())
+                {
+                    var value = entry.Value;
+
+                    if (string.IsNullOrWhiteSpace(value)) continue;
+
+                    foreach (var keyword in credentialKeywords)
+                    {
+                        if (value.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+                            offenders.Add($"{Path.GetRelativePath(SolutionRoot().FullName, file.FullName)} " +
+                                          $"defines connection string '{entry.Key}' containing '{keyword}'. " +
+                                          "Connection strings with credentials belong in user-secrets or " +
+                                          "an environment variable, never in a tracked file.");
+                    }
+                }
+            }
+
+            Assert.True(offenders.Count == 0, string.Join(Environment.NewLine, offenders));
+        }
+
         [Fact]
         public void The_Api_AppSettings_Still_Provides_The_Non_Secret_Jwt_Settings()
         {

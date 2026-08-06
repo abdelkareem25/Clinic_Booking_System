@@ -5,7 +5,13 @@ namespace Clinic.Domain.Entites.Identity
     public class AppUser : IdentityUser
     {
         public string DisplayName { get; set; }
-        public Address Address { get; set; }
+
+        // There is deliberately no Address navigation. The Address entity it pointed at was reached
+        // by no query, mapped by no profile, exposed by no DTO and written by no controller, yet it
+        // produced a real table whose every column was unbounded text NOT NULL and which cascaded
+        // deletes from AspNetUsers. The patient address shown in the SPA is unrelated - a single
+        // string held in browser-local storage, covering detail the API's Patient entity does not
+        // carry. Dropped in DropAddressTable; add it back as a configured entity if the need is real.
 
         /// <summary>
         /// Whether the account may sign in.

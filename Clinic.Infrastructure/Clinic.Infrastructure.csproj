@@ -7,15 +7,29 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- 8.0.11 is the newest 8.0.x Npgsql provider. It declares Microsoft.EntityFrameworkCore.
+         Relational >= 8.0.11, which the 8.0.27 packages below satisfy. Every Microsoft EF and
+         Identity package across the solution is held at the SAME 8.0.27 so the provider is never
+         resolved against a Relational assembly it has not declared support for. -->
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
     <ProjectReference Include="..\Clinic.Domain\Clinic.Domain.csproj" />
-	  <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.26" />
-	  <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.26" />
-	  <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.26">
+	  <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.27" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.27">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 	  </PackageReference>
-	  <PackageReference Include="StackExchange.Redis" Version="2.12.14" />
-	  <PackageReference Include="System.Collections.NonGeneric" Version="4.3.0" />
+	  <!-- Consumed by ClinicDbContextFactory so the EF tools can read the same configuration the
+	       API does. Configuration.Abstractions already arrives transitively; these are the
+	       providers. -->
+	  <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+	  <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="8.0.0" />
+	  <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="8.0.0" />
+
+	  <!-- Deliberately absent:
+	       StackExchange.Redis        - referenced but used by no code in the solution.
+	       System.Collections.NonGeneric - a .NET Framework/netstandard1.x-era compatibility shim.
+	           UnitOfWork does use Hashtable, but on net8.0 that type is supplied by the shared
+	           framework, so the package added nothing except an old 4.3.0 dependency closure. -->
 
   </ItemGroup>
 

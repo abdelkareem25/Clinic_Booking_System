@@ -4,6 +4,7 @@ using Clinic.Domain.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Clinic.Infrastructure.Data.Context
 {
@@ -66,6 +67,60 @@ namespace Clinic.Infrastructure.Data.Context
             }
 
             ConfigureIdentityLinks(modelBuilder);
+
+            // Last, so it also covers anything the configuration classes above introduced.
+            ForceUtcOnDateTimeProperties(modelBuilder);
+        }
+
+        /// <summary>
+        /// Guarantees every DateTime handed to Npgsql carries Kind = Utc.
+        ///
+        /// Npgsql maps DateTime to 'timestamp with time zone' and flatly REFUSES a value whose Kind
+        /// is Unspecified or Local - it throws rather than guessing an offset. Model binding a JSON
+        /// payload such as "2026-08-10T09:00:00" produces Kind = Unspecified every time, so without
+        /// this every appointment write would fail. SQL Server's datetime2 ignored Kind entirely,
+        /// which is why this only appeared after the PostgreSQL port and why nothing caught it.
+        ///
+        /// Applied over the whole model rather than to the three known Appointment properties, so a
+        /// DateTime added later cannot reintroduce the bug.
+        ///
+        /// Store type is unchanged - DateTime in, DateTime out - so this alters no column and needs
+        /// no migration.
+        /// </summary>
+        private static void ForceUtcOnDateTimeProperties(ModelBuilder modelBuilder)
+        {
+            // Unspecified is RELABELLED, not converted: the value is already the intended UTC
+            // instant, and calling ToUniversalTime() on it would have .NET treat it as server-local
+            // and shift it by the host's offset - silently moving appointments by hours depending on
+            // where the process happens to run. A genuinely Local value is converted properly.
+            var utc = new ValueConverter<DateTime, DateTime>(
+                toDb => toDb.Kind == DateTimeKind.Utc
+                    ? toDb
+                    : toDb.Kind == DateTimeKind.Local
+                        ? toDb.ToUniversalTime()
+                        : DateTime.SpecifyKind(toDb, DateTimeKind.Utc),
+                fromDb => DateTime.SpecifyKind(fromDb, DateTimeKind.Utc));
+
+            var nullableUtc = new ValueConverter<DateTime?, DateTime?>(
+                toDb => !toDb.HasValue
+                    ? toDb
+                    : toDb.Value.Kind == DateTimeKind.Utc
+                        ? toDb
+                        : toDb.Value.Kind == DateTimeKind.Local
+                            ? toDb.Value.ToUniversalTime()
+                            : DateTime.SpecifyKind(toDb.Value, DateTimeKind.Utc),
+                fromDb => fromDb.HasValue
+                    ? DateTime.SpecifyKind(fromDb.Value, DateTimeKind.Utc)
+                    : fromDb);
+
+            foreach (var property in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetProperties()))
+            {
+                // DateTimeOffset carries its own offset and is already unambiguous - leave it alone.
+                if (property.ClrType == typeof(DateTime))
+                    property.SetValueConverter(utc);
+                else if (property.ClrType == typeof(DateTime?))
+                    property.SetValueConverter(nullableUtc);
+            }
         }
 
         /// <summary>

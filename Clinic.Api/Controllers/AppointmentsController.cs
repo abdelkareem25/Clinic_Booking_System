@@ -8,7 +8,7 @@ using Clinic.Domain.Interfaces;
 using Clinic.Domain.Interfaces.Specifications.AppointmentSpec;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Microsoft.EntityFrameworkCore;
 
 namespace Clinic.Api.Controllers
@@ -176,8 +176,7 @@ namespace Clinic.Api.Controllers
         /// our insert, which is a 409 for the caller and not a server fault.
         /// </summary>
         private static bool IsDuplicateBooking(DbUpdateException exception) =>
-            exception.InnerException is SqlException { Number: 2601 or 2627 }
-            || exception.InnerException?.Message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase) == true;
+            exception.InnerException is PostgresException { SqlState: "23505" };
 
         #endregion
         #region GetTypes

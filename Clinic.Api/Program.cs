@@ -60,9 +60,21 @@ namespace Clinic.Api
             // One context, one database. Identity and clinical records were split across two,
             // which made any operation spanning both impossible to commit atomically and made a
             // foreign key from a Patient to their login impossible to express. See TODO #23.
+            // Read once and checked here rather than left to Npgsql. The connection string carries a
+            // password, so it is supplied by user-secrets or the environment and is absent from
+            // every tracked file - which means "not configured" is a realistic mistake and deserves
+            // an error that says what to do. Passing null through to UseNpgsql instead produces an
+            // ArgumentNullException naming a parameter, which tells nobody anything.
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException(
+                    "ConnectionStrings:DefaultConnection is not configured. Set it with " +
+                    "`dotnet user-secrets set \"ConnectionStrings:DefaultConnection\" \"Host=...;Database=...;Username=...;Password=...\"` " +
+                    "for local development, or supply ConnectionStrings__DefaultConnection as an " +
+                    "environment variable.");
+
             builder.Services.AddDbContext<ClinicDbContext>(options =>
             {
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+                options.UseNpgsql(connectionString);
             });
             builder.Services.AddIdentityServices(builder.Configuration);
             builder.Services.AddClinicAuthorization();
@@ -101,9 +113,39 @@ namespace Clinic.Api
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
-                var userManager = services.GetRequiredService<UserManager<AppUser>>();
-                var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-                await ClinicIdentityDbContextSeed.SeedAsync(userManager, roleManager, builder.Configuration);
+                var logger = services.GetRequiredService<ILogger<Program>>();
+
+                try
+                {
+                    // Schema before data. Seeding is the first thing that touches AspNetRoles, so
+                    // without this the very first query fails with 42P01 (relation does not exist)
+                    // against any database that has not been migrated by hand. Applying migrations
+                    // here means a clean database is a working database.
+                    //
+                    // Opt-out rather than opt-in: a deployment that moves migration into a release
+                    // step sets Database:MigrateOnStartup=false, which is a deliberate act. The
+                    // reverse default would let a misconfigured environment start against an empty
+                    // schema and fail later with a much less obvious error.
+                    if (builder.Configuration.GetValue("Database:MigrateOnStartup", true))
+                    {
+                        var context = services.GetRequiredService<ClinicDbContext>();
+                        await context.Database.MigrateAsync();
+                    }
+
+                    var userManager = services.GetRequiredService<UserManager<AppUser>>();
+                    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+                    var configuration = services.GetRequiredService<IConfiguration>();
+
+                    await ClinicIdentityDbContextSeed.SeedAsync(userManager, roleManager, configuration);
+                }
+                catch (Exception ex)
+                {
+                    // Without this the failure surfaces as an unhandled exception from Main, which
+                    // bypasses the configured logging sinks entirely - so the one startup failure
+                    // that matters is the one nothing records.
+                    logger.LogCritical(ex, "Database migration or identity seeding failed. The application cannot start.");
+                    throw;
+                }
             }
             // Configure the HTTP request pipeline.
 
