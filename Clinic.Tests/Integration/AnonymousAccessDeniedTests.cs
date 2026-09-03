@@ -107,6 +107,7 @@ namespace Clinic.Tests.Integration
                         services.AddSingleton(signInManager.Object);
                         services.AddSingleton(tokenService.Object);
                         services.AddSingleton(new Mock<IAccountRepository>().Object);
+                        services.AddSingleton<ICurrentTenant>(new StubCurrentTenant());
 
                         services.AddAuthentication(TestAuthHandler.SchemeName)
                                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(

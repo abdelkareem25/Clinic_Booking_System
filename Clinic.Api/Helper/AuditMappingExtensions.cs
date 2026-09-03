@@ -21,6 +21,23 @@ namespace Clinic.Api.Helper
             this IMappingExpression<TSource, TDestination> map)
             where TDestination : BaseEntity
         {
+            // MULTI-TENANT: TenantId is system-owned in exactly the same sense as the audit
+            // columns, and more sharply so. A request payload able to set it would be a
+            // cross-tenant WRITE - a caller planting a record inside someone else's clinic, or
+            // moving one of ours into theirs - which no amount of read filtering would catch.
+            // Ignored here so the guarantee is one edit covering every request map, present and
+            // future, rather than a ForMember someone has to remember on the next DTO.
+            //
+            // Matched by name rather than by a typed lambda so the constraint can stay at
+            // BaseEntity: Tenant is itself a BaseEntity but NOT an ITenantEntity, and tightening
+            // the constraint to ITenantEntity would lock the tenant-creation map out of this
+            // helper. MappingProfileTests.Configuration_Is_Valid fails loudly if the name is ever
+            // wrong, so the lost compile-time check is covered.
+            if (typeof(ITenantEntity).IsAssignableFrom(typeof(TDestination)))
+            {
+                map.ForMember(nameof(ITenantEntity.TenantId), options => options.Ignore());
+            }
+
             return map
                 .ForMember(destination => destination.Id, options => options.Ignore())
                 .ForMember(destination => destination.RowVersion, options => options.Ignore())

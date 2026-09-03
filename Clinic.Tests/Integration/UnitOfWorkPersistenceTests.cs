@@ -1,5 +1,6 @@
 using Clinic.Domain.Entites;
 using Clinic.Infrastructure.Data.Context;
+using Clinic.Tests.TestSupport;
 using Clinic.Infrastructure.Repositores;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -29,11 +30,11 @@ namespace Clinic.Tests.Integration
                 .UseSqlite(_connection)
                 .Options;
 
-            using var schema = new ClinicDbContext(_options);
+            using var schema = new ClinicDbContext(_options, currentTenant: new StubCurrentTenant());
             schema.Database.EnsureCreated();
         }
 
-        private ClinicDbContext NewContext() => new(_options);
+        private ClinicDbContext NewContext() => new(_options, currentTenant: new StubCurrentTenant());
 
         [Fact]
         public async Task Add_Without_Complete_Does_Not_Persist()
@@ -42,7 +43,7 @@ namespace Clinic.Tests.Integration
             await using (var context = NewContext())
             {
                 var repository = new GenericRepository<Doctor>(context);
-                await repository.AddAsync(new Doctor { Name = "Dr. Ghost", Specialization = "Radiology" });
+                await repository.AddAsync(new Doctor { TenantId = Tenant.DefaultTenantId, Name = "Dr. Ghost", Specialization = "Radiology" });
                 // No CompleteAsync() -> the change tracker is discarded with the context.
             }
 
@@ -58,7 +59,7 @@ namespace Clinic.Tests.Integration
             await using (var context = NewContext())
             {
                 var unitOfWork = new UnitOfWork(context);
-                var doctor = new Doctor { Name = "Dr. Aya", Specialization = "Cardiology" };
+                var doctor = new Doctor { TenantId = Tenant.DefaultTenantId, Name = "Dr. Aya", Specialization = "Cardiology" };
 
                 await unitOfWork.Repository<Doctor>().AddAsync(doctor);
                 Assert.Equal(0, doctor.Id); // no key before the commit
@@ -82,7 +83,7 @@ namespace Clinic.Tests.Integration
         {
             await using (var seed = NewContext())
             {
-                seed.Doctors.Add(new Doctor { Name = "Dr. Aya", Specialization = "Cardiology" });
+                seed.Doctors.Add(new Doctor { TenantId = Tenant.DefaultTenantId, Name = "Dr. Aya", Specialization = "Cardiology" });
                 await seed.SaveChangesAsync();
             }
 
@@ -107,7 +108,7 @@ namespace Clinic.Tests.Integration
         {
             await using (var seed = NewContext())
             {
-                seed.Doctors.Add(new Doctor { Name = "Dr. Aya", Specialization = "Cardiology" });
+                seed.Doctors.Add(new Doctor { TenantId = Tenant.DefaultTenantId, Name = "Dr. Aya", Specialization = "Cardiology" });
                 await seed.SaveChangesAsync();
             }
 
@@ -133,10 +134,10 @@ namespace Clinic.Tests.Integration
             {
                 var unitOfWork = new UnitOfWork(context);
 
-                var doctor = new Doctor { Name = "Dr. Aya", Specialization = "Cardiology" };
+                var doctor = new Doctor { TenantId = Tenant.DefaultTenantId, Name = "Dr. Aya", Specialization = "Cardiology" };
                 var patient = new Patient
                 {
-                    Name = "Sara",
+                    TenantId = Tenant.DefaultTenantId, Name = "Sara",
                     Phone = "01000000000",
                     Gender = "Female",
                     DateOfBirth = new DateTime(1995, 4, 12)
@@ -164,10 +165,10 @@ namespace Clinic.Tests.Integration
                 var unitOfWork = new UnitOfWork(context);
                 var appointments = new AppointmentRepository(context);
 
-                var doctor = new Doctor { Name = "Dr. Aya", Specialization = "Cardiology" };
+                var doctor = new Doctor { TenantId = Tenant.DefaultTenantId, Name = "Dr. Aya", Specialization = "Cardiology" };
                 var patient = new Patient
                 {
-                    Name = "Sara",
+                    TenantId = Tenant.DefaultTenantId, Name = "Sara",
                     Phone = "01000000000",
                     Gender = "Female",
                     DateOfBirth = new DateTime(1995, 4, 12)
@@ -178,7 +179,7 @@ namespace Clinic.Tests.Integration
 
                 await appointments.AddAsync(new Appointment
                 {
-                    DoctorId = doctor.Id,
+                    TenantId = Tenant.DefaultTenantId, DoctorId = doctor.Id,
                     PatientId = patient.Id,
                     AppointmentDate = new DateTime(2026, 8, 3, 10, 0, 0)
                 });

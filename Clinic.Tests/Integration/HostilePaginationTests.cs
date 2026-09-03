@@ -7,6 +7,7 @@ using Clinic.Domain.Interfaces.Specifications.DoctorSpec;
 using Clinic.Domain.Interfaces.Specifications.PatientSpec;
 using Clinic.Domain.Interfaces.Specifications.SpecParams;
 using Clinic.Infrastructure.Data.Context;
+using Clinic.Tests.TestSupport;
 using Clinic.Infrastructure.Repositores;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
@@ -42,12 +43,12 @@ namespace Clinic.Tests.Integration
             await context.Database.EnsureCreatedAsync();
 
             for (var i = 0; i < SeededDoctors; i++)
-                context.Doctors.Add(new Doctor { Name = $"Dr. {i:00}", Specialization = "Cardiology" });
+                context.Doctors.Add(new Doctor { TenantId = Tenant.DefaultTenantId, Name = $"Dr. {i:00}", Specialization = "Cardiology" });
 
             await context.SaveChangesAsync();
         }
 
-        private ClinicDbContext NewContext() => new(_options);
+        private ClinicDbContext NewContext() => new(_options, currentTenant: new StubCurrentTenant());
 
         private static Pagination<GetDoctorDto> Unwrap(ActionResult<Pagination<GetDoctorDto>> result)
         {
@@ -168,7 +169,7 @@ namespace Clinic.Tests.Integration
             await using var context = NewContext();
             context.Patients.Add(new Patient
             {
-                Name = "Sara", Phone = "0100", Gender = "Female", DateOfBirth = new DateTime(1990, 1, 1)
+                TenantId = Tenant.DefaultTenantId, Name = "Sara", Phone = "0100", Gender = "Female", DateOfBirth = new DateTime(1990, 1, 1)
             });
             await context.SaveChangesAsync();
 

@@ -1,6 +1,7 @@
 using Clinic.Api.Middleware;
 using Clinic.Domain.Entites;
 using Clinic.Infrastructure.Data.Context;
+using Clinic.Tests.TestSupport;
 using Clinic.Infrastructure.Repositores;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -41,10 +42,10 @@ namespace Clinic.Tests.Integration
             _connection.Open();
             _options = new DbContextOptionsBuilder<ClinicDbContext>().UseSqlite(_connection).Options;
 
-            await using (var context = new ClinicDbContext(_options))
+            await using (var context = new ClinicDbContext(_options, currentTenant: new StubCurrentTenant()))
             {
                 await context.Database.EnsureCreatedAsync();
-                context.Doctors.Add(new Doctor { Name = "Dr. Aya", Specialization = "Cardiology" });
+                context.Doctors.Add(new Doctor { TenantId = Tenant.DefaultTenantId, Name = "Dr. Aya", Specialization = "Cardiology" });
                 await context.SaveChangesAsync();
             }
 
@@ -76,8 +77,8 @@ namespace Clinic.Tests.Integration
                             // UnitOfWork, exactly as the controllers do.
                             endpoints.MapPost("/conflict", async () =>
                             {
-                                await using var firstUser = new ClinicDbContext(_options);
-                                await using var secondUser = new ClinicDbContext(_options);
+                                await using var firstUser = new ClinicDbContext(_options, currentTenant: new StubCurrentTenant());
+                                await using var secondUser = new ClinicDbContext(_options, currentTenant: new StubCurrentTenant());
 
                                 var firstCopy = await new GenericRepository<Doctor>(firstUser).GetByIdAsync(1);
                                 var secondCopy = await new GenericRepository<Doctor>(secondUser).GetByIdAsync(1);
@@ -93,7 +94,7 @@ namespace Clinic.Tests.Integration
 
                             endpoints.MapPost("/no-conflict", async () =>
                             {
-                                await using var context = new ClinicDbContext(_options);
+                                await using var context = new ClinicDbContext(_options, currentTenant: new StubCurrentTenant());
                                 var doctor = await new GenericRepository<Doctor>(context).GetByIdAsync(1);
                                 doctor.Specialization = "Oncology";
                                 await new UnitOfWork(context).CompleteAsync();
@@ -147,7 +148,7 @@ namespace Clinic.Tests.Integration
         {
             await _client.PostAsync("/conflict", null);
 
-            await using var verification = new ClinicDbContext(_options);
+            await using var verification = new ClinicDbContext(_options, currentTenant: new StubCurrentTenant());
             var doctor = await verification.Doctors.SingleAsync();
 
             Assert.Equal("Neurology", doctor.Specialization);        // the first writer's value
@@ -162,7 +163,7 @@ namespace Clinic.Tests.Integration
 
             Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
-            await using var verification = new ClinicDbContext(_options);
+            await using var verification = new ClinicDbContext(_options, currentTenant: new StubCurrentTenant());
             Assert.Equal("Oncology", (await verification.Doctors.SingleAsync()).Specialization);
         }
 

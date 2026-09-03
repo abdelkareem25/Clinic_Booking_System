@@ -3,6 +3,7 @@ using Clinic.Domain.Service;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -29,6 +30,27 @@ namespace Clinic.Application
                 new Claim(ClaimTypes.Name, user.UserName!),
                 new Claim(ClaimTypes.NameIdentifier, user.Id)
             };
+            // MULTI-TENANT: which clinic this account belongs to.
+            //
+            // The tenant travels with the identity itself rather than being looked up per request,
+            // because every clinical query the token authorises is filtered by this value - a
+            // database round trip on every single request to learn something that cannot change
+            // mid-token would be pure waste.
+            //
+            // Omitted ENTIRELY when the account belongs to no clinic, rather than emitted as ""
+            // or "0". An absent claim resolves to null, which means "see nothing"; a claim reading
+            // "0" would be a tenant id that no clinic has, and would sit in the token looking like
+            // a real answer to anyone debugging it.
+            //
+            // InvariantCulture so the value is written exactly as HttpContextCurrentTenant parses
+            // it, whatever locale the signing server happens to run under.
+            if (user.TenantId.HasValue)
+            {
+                AuthClaim.Add(new Claim(
+                    ClinicClaimTypes.TenantId,
+                    user.TenantId.Value.ToString(CultureInfo.InvariantCulture)));
+            }
+
             // adding role for more encription
             var UserRoles = await userManager.GetRolesAsync(user);
             foreach (var Role in UserRoles)

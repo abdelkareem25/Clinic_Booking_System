@@ -1,4 +1,5 @@
 using Clinic.Infrastructure.Data.Context;
+using Clinic.Tests.TestSupport;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -40,7 +41,7 @@ namespace Clinic.Tests.Security
                 .UseNpgsql("Host=none;Database=none")
                 .Options;
 
-            return new ClinicDbContext(options);
+            return new ClinicDbContext(options, currentTenant: new StubCurrentTenant());
         }
 
         [Fact]

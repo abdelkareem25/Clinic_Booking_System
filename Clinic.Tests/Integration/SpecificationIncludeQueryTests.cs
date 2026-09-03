@@ -3,6 +3,7 @@ using Clinic.Domain.Interfaces.Specifications.AppointmentSpec;
 using Clinic.Domain.Interfaces.Specifications.PatientSpec;
 using Clinic.Domain.Interfaces.Specifications.ScheduleSpec;
 using Clinic.Infrastructure.Data.Context;
+using Clinic.Tests.TestSupport;
 using Clinic.Infrastructure.Repositores;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -33,10 +34,10 @@ namespace Clinic.Tests.Integration
             await using var context = NewContext();
             await context.Database.EnsureCreatedAsync();
 
-            var doctor = new Doctor { Name = "Dr. Aya", Specialization = "Cardiology" };
+            var doctor = new Doctor { TenantId = Tenant.DefaultTenantId, Name = "Dr. Aya", Specialization = "Cardiology" };
             var patient = new Patient
             {
-                Name = "Sara",
+                TenantId = Tenant.DefaultTenantId, Name = "Sara",
                 Phone = "01000000000",
                 Gender = "Female",
                 DateOfBirth = new DateTime(1995, 4, 12)
@@ -47,13 +48,13 @@ namespace Clinic.Tests.Integration
 
             context.Appointments.Add(new Appointment
             {
-                DoctorId = doctor.Id,
+                TenantId = Tenant.DefaultTenantId, DoctorId = doctor.Id,
                 PatientId = patient.Id,
                 AppointmentDate = new DateTime(2026, 8, 3, 10, 0, 0)
             });
             context.DoctorSchedules.Add(new DoctorSchedule
             {
-                DoctorId = doctor.Id,
+                TenantId = Tenant.DefaultTenantId, DoctorId = doctor.Id,
                 DayOfWeek = WeekDay.Wednesday,
                 StartTime = new TimeSpan(9, 0, 0),
                 EndTime = new TimeSpan(17, 0, 0)
@@ -61,7 +62,7 @@ namespace Clinic.Tests.Integration
             await context.SaveChangesAsync();
         }
 
-        private ClinicDbContext NewContext() => new(_options);
+        private ClinicDbContext NewContext() => new(_options, currentTenant: new StubCurrentTenant());
 
         [Fact]
         public async Task AppointmentWithDoctorAndPatientSpec_Executes_And_Loads_Both_Navigations()

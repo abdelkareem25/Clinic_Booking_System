@@ -3,6 +3,7 @@ using Clinic.Api.DTOs.Identity;
 using Clinic.Domain.Entites.Identity;
 using Clinic.Domain.Interfaces;
 using Clinic.Domain.Service;
+using Clinic.Tests.TestSupport;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -50,6 +51,7 @@ namespace Clinic.Tests.Controllers
         private AccountsController CreateSut() =>
             new(_userManager.Object, _tokenService.Object, _signInManager.Object,
                 _passwordHasher.Object, new Mock<IAccountRepository>().Object,
+                new StubCurrentTenant(),
                 NullLogger<AccountsController>.Instance)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }

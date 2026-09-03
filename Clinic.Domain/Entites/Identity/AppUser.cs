@@ -35,5 +35,18 @@ namespace Clinic.Domain.Entites.Identity
 
         /// <summary>When the account was provisioned. IdentityUser records no creation time.</summary>
         public DateTimeOffset CreatedAtUtc { get; set; }
+
+        /// <summary>
+        /// MULTI-TENANT: the clinic this account belongs to, or null for an account that
+        /// belongs to no single clinic (the seeded administrator, or platform-level support).
+        ///
+        /// AppUser deliberately does NOT implement ITenantEntity, so it gets no global query
+        /// filter. Identity looks accounts up BEFORE a tenant is known - FindByEmailAsync in
+        /// Login runs before any token exists - and UserManager queries the same DbSet a filter
+        /// would apply to, so filtering AspNetUsers by tenant would make every sign-in fail.
+        /// This column is read at login and written into the token instead; TokenService turns
+        /// it into the claim that every clinical query is then filtered by.
+        /// </summary>
+        public int? TenantId { get; set; }
     }
 }

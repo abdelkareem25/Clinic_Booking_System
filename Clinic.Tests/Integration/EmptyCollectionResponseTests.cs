@@ -11,6 +11,7 @@ using Clinic.Domain.Interfaces.Specifications.DoctorSpec;
 using Clinic.Domain.Interfaces.Specifications.PatientSpec;
 using Clinic.Domain.Interfaces.Specifications.ScheduleSpec;
 using Clinic.Infrastructure.Data.Context;
+using Clinic.Tests.TestSupport;
 using Clinic.Infrastructure.Repositores;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
@@ -48,7 +49,7 @@ namespace Clinic.Tests.Integration
             await context.Database.EnsureCreatedAsync();
         }
 
-        private ClinicDbContext NewContext() => new(_options);
+        private ClinicDbContext NewContext() => new(_options, currentTenant: new StubCurrentTenant());
 
         private static Pagination<T> UnwrapPage<T>(ActionResult<Pagination<T>> result)
         {
@@ -152,7 +153,7 @@ namespace Clinic.Tests.Integration
             // Searching is the common case: typing three letters that match nothing must not look
             // like a broken endpoint.
             await using var context = NewContext();
-            context.Doctors.Add(new Doctor { Name = "Dr. Aya", Specialization = "Cardiology" });
+            context.Doctors.Add(new Doctor { TenantId = Tenant.DefaultTenantId, Name = "Dr. Aya", Specialization = "Cardiology" });
             await context.SaveChangesAsync();
 
             var sut = new DoctorsController(new UnitOfWork(context), _mapper);
@@ -168,7 +169,7 @@ namespace Clinic.Tests.Integration
         {
             // The fix must not make everything empty.
             await using var context = NewContext();
-            context.Doctors.Add(new Doctor { Name = "Dr. Aya", Specialization = "Cardiology" });
+            context.Doctors.Add(new Doctor { TenantId = Tenant.DefaultTenantId, Name = "Dr. Aya", Specialization = "Cardiology" });
             await context.SaveChangesAsync();
 
             var sut = new DoctorsController(new UnitOfWork(context), _mapper);

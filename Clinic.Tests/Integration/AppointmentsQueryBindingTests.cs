@@ -33,10 +33,10 @@ namespace Clinic.Tests.Integration
 
         public async Task InitializeAsync()
         {
-            var doctor = new Doctor { Id = 1, Name = "Dr. Aya", Specialization = "Cardiology" };
+            var doctor = new Doctor { TenantId = Tenant.DefaultTenantId, Id = 1, Name = "Dr. Aya", Specialization = "Cardiology" };
             var patient = new Patient
             {
-                Id = 2, Name = "Sara", Phone = "01000000000", Gender = "Female",
+                TenantId = Tenant.DefaultTenantId, Id = 2, Name = "Sara", Phone = "01000000000", Gender = "Female",
                 DateOfBirth = new DateTime(1995, 4, 12)
             };
 

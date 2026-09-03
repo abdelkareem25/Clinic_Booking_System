@@ -32,11 +32,22 @@ namespace Clinic.Api.Controllers
         private readonly IAccountRepository _accountRepository;
         private readonly ILogger<AccountsController> _logger;
 
+        /// <summary>
+        /// MULTI-TENANT: read ONLY to decide which clinic a newly provisioned account joins.
+        ///
+        /// This is not tenant filtering leaking into a controller - filtering happens in the
+        /// DbContext and no action here does any. AppUser is deliberately not an ITenantEntity, so
+        /// it is not stamped automatically, and provisioning is the one decision that genuinely has
+        /// to be made here: an account's clinic is a fact about the account, not about the row.
+        /// </summary>
+        private readonly ICurrentTenant _currentTenant;
+
         public AccountsController(UserManager<AppUser> userManager ,
             ITokenService tokenService ,
              SignInManager<AppUser> signInManager,
              IPasswordHasher<AppUser> passwordHasher,
              IAccountRepository accountRepository,
+             ICurrentTenant currentTenant,
              ILogger<AccountsController> logger)
         {
             _userManager = userManager;
@@ -44,6 +55,7 @@ namespace Clinic.Api.Controllers
             _signInManager = signInManager;
             _passwordHasher = passwordHasher;
             _accountRepository = accountRepository;
+            _currentTenant = currentTenant;
             _logger = logger;
         }
 
@@ -99,7 +111,16 @@ namespace Clinic.Api.Controllers
                 EmailConfirmed = true,
 
                 IsActive = true,
-                CreatedAtUtc = DateTimeOffset.UtcNow
+                CreatedAtUtc = DateTimeOffset.UtcNow,
+
+                // MULTI-TENANT: the new account joins the clinic of the administrator provisioning
+                // it. There is no other defensible answer - an administrator can only see and
+                // administer their own clinic, so that is necessarily the one they are staffing.
+                //
+                // Inherited rather than accepted from the request body on purpose: a TenantId
+                // field on RegisterDto would let an administrator of one clinic create accounts
+                // inside another, which is precisely the boundary this whole change exists to draw.
+                TenantId = _currentTenant.TenantId
             };
 
             var result = await _userManager.CreateAsync(user , model.Password);
@@ -302,7 +323,10 @@ namespace Clinic.Api.Controllers
                 // An administrator vouched for this address - see Register.
                 EmailConfirmed = true,
                 IsActive = model.IsActive,
-                CreatedAtUtc = DateTimeOffset.UtcNow
+                CreatedAtUtc = DateTimeOffset.UtcNow,
+
+                // MULTI-TENANT: inherited from the administrator creating it - see Register.
+                TenantId = _currentTenant.TenantId
             };
 
             var created = await _userManager.CreateAsync(user, model.Password);

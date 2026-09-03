@@ -3,6 +3,7 @@ using Clinic.Api.DTOs.Identity;
 using Clinic.Domain.Entites.Identity;
 using Clinic.Domain.Interfaces;
 using Clinic.Domain.Service;
+using Clinic.Tests.TestSupport;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -52,6 +53,7 @@ namespace Clinic.Tests.Controllers
                     null!, null!, null!, null!).Object,
                 new Mock<IPasswordHasher<AppUser>>().Object,
                 new Mock<IAccountRepository>().Object,
+                new StubCurrentTenant(),
                 NullLogger<AccountsController>.Instance)
             {
                 ControllerContext = new ControllerContext

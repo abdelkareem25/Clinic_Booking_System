@@ -28,7 +28,12 @@ namespace Clinic.Tests.Logging
         [
             typeof(DoctorsController),
             typeof(ScheduleController),
-            typeof(AccountsController)
+            typeof(AccountsController),
+
+            // A tenant is a clinic's name and status - an administrative record. It identifies no
+            // person at all, let alone one receiving care, and the endpoint exposes no counts or
+            // rosters that would let it stand in for one.
+            typeof(TenantsController)
         ];
 
         private static IEnumerable<Type> ControllerTypes() =>

@@ -1,5 +1,6 @@
 using Clinic.Domain.Entites;
 using Clinic.Infrastructure.Data.Context;
+using Clinic.Tests.TestSupport;
 using Clinic.Infrastructure.Repositores;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -33,11 +34,11 @@ namespace Clinic.Tests.Integration
             await using var context = NewContext();
             await context.Database.EnsureCreatedAsync();
 
-            var doctor = new Doctor { Name = "Dr. Aya", Specialization = "Cardiology" };
-            var otherDoctor = new Doctor { Name = "Dr. Omar", Specialization = "Neurology" };
+            var doctor = new Doctor { TenantId = Tenant.DefaultTenantId, Name = "Dr. Aya", Specialization = "Cardiology" };
+            var otherDoctor = new Doctor { TenantId = Tenant.DefaultTenantId, Name = "Dr. Omar", Specialization = "Neurology" };
             var patient = new Patient
             {
-                Name = "Sara", Phone = "01000000000", Gender = "Female",
+                TenantId = Tenant.DefaultTenantId, Name = "Sara", Phone = "01000000000", Gender = "Female",
                 DateOfBirth = new DateTime(1995, 4, 12)
             };
             context.Doctors.AddRange(doctor, otherDoctor);
@@ -52,25 +53,25 @@ namespace Clinic.Tests.Integration
             context.DoctorSchedules.AddRange(
                 new DoctorSchedule
                 {
-                    DoctorId = _doctorId, DayOfWeek = WeekDay.Monday,
+                    TenantId = Tenant.DefaultTenantId, DoctorId = _doctorId, DayOfWeek = WeekDay.Monday,
                     StartTime = new TimeSpan(9, 0, 0), EndTime = new TimeSpan(17, 0, 0)
                 },
                 new DoctorSchedule
                 {
-                    DoctorId = _otherDoctorId, DayOfWeek = WeekDay.Monday,
+                    TenantId = Tenant.DefaultTenantId, DoctorId = _otherDoctorId, DayOfWeek = WeekDay.Monday,
                     StartTime = new TimeSpan(9, 0, 0), EndTime = new TimeSpan(17, 0, 0)
                 });
             await context.SaveChangesAsync();
         }
 
-        private ClinicDbContext NewContext() => new(_options);
+        private ClinicDbContext NewContext() => new(_options, currentTenant: new StubCurrentTenant());
 
         private async Task BookAsync(int doctorId, DateTime startsAt, int minutes = 30)
         {
             await using var context = NewContext();
             context.Appointments.Add(new Appointment
             {
-                DoctorId = doctorId,
+                TenantId = Tenant.DefaultTenantId, DoctorId = doctorId,
                 PatientId = _patientId,
                 AppointmentDate = startsAt,
                 StartTime = startsAt,
@@ -228,7 +229,7 @@ namespace Clinic.Tests.Integration
             // permissive alternative silently disables the check for every doctor whose schedule
             // someone forgot to enter.
             await using var context = NewContext();
-            var unscheduled = new Doctor { Name = "Dr. New", Specialization = "Locum" };
+            var unscheduled = new Doctor { TenantId = Tenant.DefaultTenantId, Name = "Dr. New", Specialization = "Locum" };
             context.Doctors.Add(unscheduled);
             await context.SaveChangesAsync();
 

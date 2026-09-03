@@ -1,4 +1,5 @@
-﻿using Clinic.Application;
+﻿using Clinic.Api.Services;
+using Clinic.Application;
 using Clinic.Domain.Entites.Identity;
 using Clinic.Domain.Interfaces;
 using Clinic.Domain.Service;
@@ -7,6 +8,7 @@ using Clinic.Infrastructure.Identity;
 using Clinic.Infrastructure.Repositores;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace Clinic.Api.Extensions
@@ -23,6 +25,20 @@ namespace Clinic.Api.Extensions
             // meant a host could stand up authentication and then fail to activate the very
             // controller that serves it.
             Services.AddScoped<IAccountRepository, AccountRepository>();
+
+            // MULTI-TENANT: AccountsController also needs the current tenant, to decide which
+            // clinic a newly provisioned account joins. Registered here for precisely the reason
+            // IAccountRepository is, immediately above - a host that wires identity must be able to
+            // ACTIVATE the controller that serves it, and several test hosts call this extension
+            // without AddApplicationServices.
+            //
+            // AddHttpContextAccessor because HttpContextCurrentTenant reads a claim off the current
+            // request; it is itself a TryAdd internally, so calling it twice is free.
+            //
+            // TryAddScoped, not AddScoped, so this and AddApplicationServices can both run - as
+            // they do in Program.cs - without leaving two registrations of the same service.
+            Services.AddHttpContextAccessor();
+            Services.TryAddScoped<ICurrentTenant, HttpContextCurrentTenant>();
 
             // Bind and validate the JWT settings once, centrally. ValidateOnStart turns a missing or
             // malformed JWT section into a startup failure with a clear message, instead of a

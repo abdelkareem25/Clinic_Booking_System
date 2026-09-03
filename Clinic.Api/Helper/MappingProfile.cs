@@ -3,6 +3,7 @@ using Clinic.Api.DTOs.AppointmentDto;
 using Clinic.Api.DTOs.DoctorDto;
 using Clinic.Api.DTOs.PatientDto;
 using Clinic.Api.DTOs.ScheduleDto;
+using Clinic.Api.DTOs.TenantDto;
 using Clinic.Domain.Entites;
 
 namespace Clinic.Api.Helper
@@ -26,6 +27,19 @@ namespace Clinic.Api.Helper
             // concern - see TODO #44.
             CreateMap<TimeSpan, TimeOnly>().ConvertUsing(source => TimeOnly.FromTimeSpan(source));
             CreateMap<TimeOnly, TimeSpan>().ConvertUsing(source => source.ToTimeSpan());
+            #endregion
+
+            #region TenantMapping
+            // Entity -> response DTO.
+            CreateMap<Tenant, DTOs.TenantDto.TenantDto>();
+
+            // Request -> entity. IgnoreSystemOwnedMembers still applies here even though Tenant is
+            // NOT an ITenantEntity - the helper is constrained to BaseEntity precisely so this map
+            // can use it, and it skips the TenantId ignore for exactly this type.
+            CreateMap<CreateTenantDto, Tenant>()
+                .IgnoreSystemOwnedMembers()
+                // Not accepted from the request: a clinic being created is being created active.
+                .ForMember(dest => dest.IsActive, opt => opt.Ignore());
             #endregion
 
             #region PatientMapping

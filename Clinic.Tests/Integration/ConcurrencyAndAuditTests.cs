@@ -37,12 +37,12 @@ namespace Clinic.Tests.Integration
             await context.Database.EnsureCreatedAsync();
         }
 
-        private ClinicDbContext NewContext() => new(_options, _user, _clock);
+        private ClinicDbContext NewContext() => new(_options, _user, _clock, currentTenant: new StubCurrentTenant());
 
         private async Task<int> SeedDoctorAsync()
         {
             await using var context = NewContext();
-            var doctor = new Doctor { Name = "Dr. Aya", Specialization = "Cardiology" };
+            var doctor = new Doctor { TenantId = Tenant.DefaultTenantId, Name = "Dr. Aya", Specialization = "Cardiology" };
             context.Doctors.Add(doctor);
             await context.SaveChangesAsync();
             return doctor.Id;
@@ -268,7 +268,7 @@ namespace Clinic.Tests.Integration
             {
                 context.Patients.Add(new Patient
                 {
-                    Name = "Sara", Phone = "0100", Gender = "Female",
+                    TenantId = Tenant.DefaultTenantId, Name = "Sara", Phone = "0100", Gender = "Female",
                     DateOfBirth = new DateTime(1995, 4, 12)
                 });
                 await context.SaveChangesAsync();

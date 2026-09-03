@@ -38,7 +38,16 @@ namespace Clinic.Infrastructure.Data.Configurations
                 .HasSentinel(true);
 
             // The doctor list filters on this whenever booking is involved.
-            builder.HasIndex(d => d.IsActive);
+            //
+            // MULTI-TENANT: TenantId leads, and that ordering is the whole point. Every query now
+            // carries `TenantId = @me` from the global filter, so an index on IsActive alone can
+            // never satisfy a lookup on its own - and IsActive is a two-value column, which makes
+            // it a poor leading key regardless. Leading with the tenant narrows to one clinic
+            // first, which is the selective step.
+            //
+            // This also SUPERSEDES the standalone (TenantId) index: a B-tree serves any prefix of
+            // its key, so ConfigureTenantLinks detects this and does not add a second one.
+            builder.HasIndex(d => new { d.TenantId, d.IsActive });
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Clinic.Domain.Entites;
 using Clinic.Infrastructure.Data.Context;
+using Clinic.Tests.TestSupport;
 using Clinic.Infrastructure.Identity;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -60,7 +61,7 @@ namespace Clinic.Tests.Security
         [Fact]
         public void The_Clinic_Model_Maps_No_Password_Column()
         {
-            using var context = new ClinicDbContext(_clinicOptions);
+            using var context = new ClinicDbContext(_clinicOptions, currentTenant: new StubCurrentTenant());
 
             var offenders = context.Model.GetEntityTypes()
                 .SelectMany(e => e.GetProperties().Select(p => (Entity: e, Property: p)))
@@ -74,7 +75,7 @@ namespace Clinic.Tests.Security
         [Fact]
         public void The_Clinic_Model_Maps_No_Users_Entity()
         {
-            using var context = new ClinicDbContext(_clinicOptions);
+            using var context = new ClinicDbContext(_clinicOptions, currentTenant: new StubCurrentTenant());
 
             Assert.DoesNotContain(context.Model.GetEntityTypes(),
                 e => e.GetTableName() == "Users");
@@ -106,7 +107,7 @@ namespace Clinic.Tests.Security
         {
             // Model-level assertions can miss a table introduced some other way. This builds the
             // real schema and inspects it.
-            using var context = new ClinicDbContext(_clinicOptions);
+            using var context = new ClinicDbContext(_clinicOptions, currentTenant: new StubCurrentTenant());
             context.Database.EnsureCreated();
 
             using var command = _connection.CreateCommand();
@@ -128,7 +129,7 @@ namespace Clinic.Tests.Security
         {
             // The point is not "no credential storage" - it is that the only credential storage is
             // Identity's, and it is a hash.
-            using var context = new ClinicDbContext(_clinicOptions);
+            using var context = new ClinicDbContext(_clinicOptions, currentTenant: new StubCurrentTenant());
 
             var appUser = context.Model.GetEntityTypes()
                 .Single(e => e.ClrType == typeof(Domain.Entites.Identity.AppUser));

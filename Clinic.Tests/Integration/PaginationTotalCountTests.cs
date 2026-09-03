@@ -11,6 +11,7 @@ using Clinic.Domain.Interfaces.Specifications.DoctorSpec;
 using Clinic.Domain.Interfaces.Specifications.PatientSpec;
 using Clinic.Domain.Interfaces.Specifications.ScheduleSpec;
 using Clinic.Infrastructure.Data.Context;
+using Clinic.Tests.TestSupport;
 using Clinic.Infrastructure.Repositores;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
@@ -48,10 +49,10 @@ namespace Clinic.Tests.Integration
             await using var context = NewContext();
             await context.Database.EnsureCreatedAsync();
 
-            var doctor = new Doctor { Name = "Dr. Anchor", Specialization = "General" };
+            var doctor = new Doctor { TenantId = Tenant.DefaultTenantId, Name = "Dr. Anchor", Specialization = "General" };
             var patient = new Patient
             {
-                Name = "Anchor Patient", Phone = "01000000000", Gender = "Female",
+                TenantId = Tenant.DefaultTenantId, Name = "Anchor Patient", Phone = "01000000000", Gender = "Female",
                 DateOfBirth = new DateTime(1990, 1, 1)
             };
             context.Doctors.Add(doctor);
@@ -60,29 +61,29 @@ namespace Clinic.Tests.Integration
 
             for (var i = 0; i < SeededCount; i++)
             {
-                context.Doctors.Add(new Doctor { Name = $"Dr. {i:00}", Specialization = "Cardiology" });
+                context.Doctors.Add(new Doctor { TenantId = Tenant.DefaultTenantId, Name = $"Dr. {i:00}", Specialization = "Cardiology" });
                 context.Patients.Add(new Patient
                 {
-                    Name = $"Patient {i:00}", Phone = $"0100000{i:00}", Gender = "Female",
+                    TenantId = Tenant.DefaultTenantId, Name = $"Patient {i:00}", Phone = $"0100000{i:00}", Gender = "Female",
                     DateOfBirth = new DateTime(1990, 1, 1)
                 });
                 context.DoctorSchedules.Add(new DoctorSchedule
                 {
-                    DoctorId = doctor.Id, DayOfWeek = (WeekDay)(i % 7),
+                    TenantId = Tenant.DefaultTenantId, DoctorId = doctor.Id, DayOfWeek = (WeekDay)(i % 7),
                     StartTime = TimeSpan.FromHours(8 + (i % 5)), EndTime = TimeSpan.FromHours(12 + (i % 5))
                 });
 
                 var startsAt = new DateTime(2026, 8, 3, 9, 0, 0).AddMinutes(i * 30);
                 context.Appointments.Add(new Appointment
                 {
-                    DoctorId = doctor.Id, PatientId = patient.Id,
+                    TenantId = Tenant.DefaultTenantId, DoctorId = doctor.Id, PatientId = patient.Id,
                     AppointmentDate = startsAt, StartTime = startsAt, EndTime = startsAt.AddMinutes(30)
                 });
             }
             await context.SaveChangesAsync();
         }
 
-        private ClinicDbContext NewContext() => new(_options);
+        private ClinicDbContext NewContext() => new(_options, currentTenant: new StubCurrentTenant());
 
         #region Every paginated endpoint reports the true total
 

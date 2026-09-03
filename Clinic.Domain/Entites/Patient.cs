@@ -1,7 +1,12 @@
 ﻿namespace Clinic.Domain.Entites
 {
-    public class Patient :BaseEntity
+    public class Patient :BaseEntity, ITenantEntity
     {
+        // MULTI-TENANT: the clinic that owns this record. Assigned centrally by
+        // ClinicDbContext on insert - never by a controller and never from a request
+        // payload; see AuditMappingExtensions.IgnoreSystemOwnedMembers.
+        public int TenantId { get; set; }
+
         public string Name { get; set; }
         public string Phone { get; set; }
         public DateTime DateOfBirth { get; set; }

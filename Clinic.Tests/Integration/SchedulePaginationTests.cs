@@ -5,6 +5,7 @@ using Clinic.Api.Helper;
 using Clinic.Domain.Entites;
 using Clinic.Domain.Interfaces.Specifications.ScheduleSpec;
 using Clinic.Infrastructure.Data.Context;
+using Clinic.Tests.TestSupport;
 using Clinic.Infrastructure.Repositores;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
@@ -40,8 +41,8 @@ namespace Clinic.Tests.Integration
             await using var context = NewContext();
             await context.Database.EnsureCreatedAsync();
 
-            var doctorA = new Doctor { Name = "Dr. Aya", Specialization = "Cardiology" };
-            var doctorB = new Doctor { Name = "Dr. Omar", Specialization = "Neurology" };
+            var doctorA = new Doctor { TenantId = Tenant.DefaultTenantId, Name = "Dr. Aya", Specialization = "Cardiology" };
+            var doctorB = new Doctor { TenantId = Tenant.DefaultTenantId, Name = "Dr. Omar", Specialization = "Neurology" };
             context.Doctors.AddRange(doctorA, doctorB);
             await context.SaveChangesAsync();
 
@@ -50,7 +51,7 @@ namespace Clinic.Tests.Integration
             {
                 context.DoctorSchedules.Add(new DoctorSchedule
                 {
-                    DoctorId = i < 8 ? doctorA.Id : doctorB.Id,
+                    TenantId = Tenant.DefaultTenantId, DoctorId = i < 8 ? doctorA.Id : doctorB.Id,
                     DayOfWeek = (WeekDay)(i % 7),
                     StartTime = new TimeSpan(8 + (i % 5), 0, 0),
                     EndTime = new TimeSpan(12 + (i % 5), 0, 0)
@@ -59,7 +60,7 @@ namespace Clinic.Tests.Integration
             await context.SaveChangesAsync();
         }
 
-        private ClinicDbContext NewContext() => new(_options);
+        private ClinicDbContext NewContext() => new(_options, currentTenant: new StubCurrentTenant());
 
         private ScheduleController CreateSut(ClinicDbContext context) =>
             new(new UnitOfWork(context), _mapper);

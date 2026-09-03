@@ -3,6 +3,7 @@ using Clinic.Domain.Interfaces.Specifications;
 using Clinic.Domain.Interfaces.Specifications.DoctorSpec;
 using Clinic.Domain.Interfaces.Specifications.ScheduleSpec;
 using Clinic.Infrastructure.Data.Context;
+using Clinic.Tests.TestSupport;
 using Clinic.Infrastructure.Repositores;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -37,12 +38,12 @@ namespace Clinic.Tests.Integration
             // Every doctor shares a name, so the sort column has no discriminating power at all.
             // Without a tie-breaker the database may order these however it likes.
             for (var i = 0; i < SeededDoctors; i++)
-                context.Doctors.Add(new Doctor { Name = "Same Name", Specialization = "Cardiology" });
+                context.Doctors.Add(new Doctor { TenantId = Tenant.DefaultTenantId, Name = "Same Name", Specialization = "Cardiology" });
 
             await context.SaveChangesAsync();
         }
 
-        private ClinicDbContext NewContext() => new(_options);
+        private ClinicDbContext NewContext() => new(_options, currentTenant: new StubCurrentTenant());
 
         private string SqlFor(ISpecification<Doctor> spec)
         {
@@ -179,7 +180,7 @@ namespace Clinic.Tests.Integration
             for (var i = 0; i < 6; i++)
                 context.DoctorSchedules.Add(new DoctorSchedule
                 {
-                    DoctorId = doctor.Id, DayOfWeek = (WeekDay)(i % 7),
+                    TenantId = Tenant.DefaultTenantId, DoctorId = doctor.Id, DayOfWeek = (WeekDay)(i % 7),
                     StartTime = TimeSpan.FromHours(9), EndTime = TimeSpan.FromHours(17)
                 });
             await context.SaveChangesAsync();
@@ -195,7 +196,7 @@ namespace Clinic.Tests.Integration
         public async Task A_Page_Of_A_Filtered_Set_Contains_Only_Matching_Rows()
         {
             await using var context = NewContext();
-            context.Doctors.Add(new Doctor { Name = "Other", Specialization = "Neurology" });
+            context.Doctors.Add(new Doctor { TenantId = Tenant.DefaultTenantId, Name = "Other", Specialization = "Neurology" });
             await context.SaveChangesAsync();
 
             var page = await new GenericRepository<Doctor>(context).ListAsync(

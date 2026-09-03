@@ -93,6 +93,54 @@ namespace Clinic.Tests.Application
             Assert.Equal("user-1", principal.FindFirstValue(ClaimTypes.NameIdentifier));
         }
 
+        /// <summary>
+        /// MULTI-TENANT: the tenant claim is what every clinical query is filtered by, and it is
+        /// written in Clinic.Application but read in Clinic.Api. If the two ever disagree about the
+        /// claim's name or format nothing throws and nothing logs - the tenant simply resolves to
+        /// null, which means "see nothing", and the symptom is a user who signs in successfully to
+        /// an empty application. This is the test that turns that silence into a failure.
+        ///
+        /// Asserted through ValidateToken rather than by reading the raw payload, so it proves the
+        /// claim survives the same round trip a real request puts it through.
+        /// </summary>
+        [Fact]
+        public async Task Token_Carries_The_Tenant_Claim()
+        {
+            var tenantUser = new AppUser
+            {
+                Id = "user-1",
+                UserName = "aya",
+                Email = "aya@clinic.test",
+                DisplayName = "Dr. Aya",
+                TenantId = 42
+            };
+
+            var token = await SutWith(OptionsWith()).CreateTokenAsync(tenantUser, UserManagerWithRoles());
+
+            var principal = new JwtSecurityTokenHandler()
+                .ValidateToken(token, ApiValidationParameters(), out _);
+
+            Assert.Equal("42", principal.FindFirstValue(ClinicClaimTypes.TenantId));
+        }
+
+        /// <summary>
+        /// An account belonging to no clinic must produce NO tenant claim at all - not "" and not
+        /// "0". HttpContextCurrentTenant maps an absent or unparseable claim to null, and null
+        /// means the query filter matches nothing; a literal "0" would instead be a tenant id that
+        /// no clinic has, sitting in the token looking like a real answer.
+        /// </summary>
+        [Fact]
+        public async Task A_User_With_No_Tenant_Gets_No_Tenant_Claim()
+        {
+            // The shared User fixture deliberately leaves TenantId null.
+            var token = await SutWith(OptionsWith()).CreateTokenAsync(User, UserManagerWithRoles());
+
+            var principal = new JwtSecurityTokenHandler()
+                .ValidateToken(token, ApiValidationParameters(), out _);
+
+            Assert.Null(principal.FindFirstValue(ClinicClaimTypes.TenantId));
+        }
+
         [Fact]
         public async Task Token_Carries_Role_Claims()
         {

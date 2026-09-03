@@ -1,6 +1,7 @@
 using Clinic.Domain.Entites;
 using Clinic.Domain.Entites.Identity;
 using Clinic.Infrastructure.Data.Context;
+using Clinic.Tests.TestSupport;
 using Clinic.Infrastructure.Repositores;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.Sqlite;
@@ -31,7 +32,7 @@ namespace Clinic.Tests.Integration
             await context.Database.EnsureCreatedAsync();
         }
 
-        private ClinicDbContext NewContext() => new(_options);
+        private ClinicDbContext NewContext() => new(_options, currentTenant: new StubCurrentTenant());
 
         private IReadOnlyList<string> TableNames()
         {
@@ -100,7 +101,7 @@ namespace Clinic.Tests.Integration
                 Id = "u-rollback", UserName = "rollback@clinic.local",
                 Email = "rollback@clinic.local", DisplayName = "Rollback"
             });
-            context.Doctors.Add(new Doctor { Name = "Dr. Rollback", Specialization = "Cardiology" });
+            context.Doctors.Add(new Doctor { TenantId = Tenant.DefaultTenantId, Name = "Dr. Rollback", Specialization = "Cardiology" });
             await context.SaveChangesAsync();
 
             await transaction.RollbackAsync();
@@ -123,7 +124,7 @@ namespace Clinic.Tests.Integration
                 });
                 context.Doctors.Add(new Doctor
                 {
-                    Name = "Dr. Commit", Specialization = "Cardiology", UserId = "u-commit"
+                    TenantId = Tenant.DefaultTenantId, Name = "Dr. Commit", Specialization = "Cardiology", UserId = "u-commit"
                 });
                 await context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -149,7 +150,7 @@ namespace Clinic.Tests.Integration
             });
             context.Patients.Add(new Patient
             {
-                Name = "Sara", Phone = "0100", Gender = "Female",
+                TenantId = Tenant.DefaultTenantId, Name = "Sara", Phone = "0100", Gender = "Female",
                 DateOfBirth = new DateTime(1995, 4, 12), UserId = "u-sara"
             });
             await context.SaveChangesAsync();
@@ -168,7 +169,7 @@ namespace Clinic.Tests.Integration
             await using var context = NewContext();
             context.Patients.Add(new Patient
             {
-                Name = "Ghost", Phone = "0100", Gender = "Female",
+                TenantId = Tenant.DefaultTenantId, Name = "Ghost", Phone = "0100", Gender = "Female",
                 DateOfBirth = new DateTime(1990, 1, 1), UserId = "no-such-account"
             });
 
@@ -189,7 +190,7 @@ namespace Clinic.Tests.Integration
                 });
                 context.Patients.Add(new Patient
                 {
-                    Name = "Leaving", Phone = "0100", Gender = "Female",
+                    TenantId = Tenant.DefaultTenantId, Name = "Leaving", Phone = "0100", Gender = "Female",
                     DateOfBirth = new DateTime(1990, 1, 1), UserId = "u-leaving"
                 });
                 await context.SaveChangesAsync();
@@ -215,7 +216,7 @@ namespace Clinic.Tests.Integration
             await using var context = NewContext();
             context.Patients.Add(new Patient
             {
-                Name = "Walk In", Phone = "0100", Gender = "Male",
+                TenantId = Tenant.DefaultTenantId, Name = "Walk In", Phone = "0100", Gender = "Male",
                 DateOfBirth = new DateTime(1980, 6, 1)
             });
             await context.SaveChangesAsync();
@@ -234,8 +235,8 @@ namespace Clinic.Tests.Integration
                 Id = "u-1", UserName = "one@clinic.local", Email = "one@clinic.local", DisplayName = "One"
             });
             context.Patients.AddRange(
-                new Patient { Name = "Mine", Phone = "1", Gender = "F", DateOfBirth = new DateTime(1990, 1, 1), UserId = "u-1" },
-                new Patient { Name = "Theirs", Phone = "2", Gender = "F", DateOfBirth = new DateTime(1990, 1, 1) });
+                new Patient { TenantId = Tenant.DefaultTenantId, Name = "Mine", Phone = "1", Gender = "F", DateOfBirth = new DateTime(1990, 1, 1), UserId = "u-1" },
+                new Patient { TenantId = Tenant.DefaultTenantId, Name = "Theirs", Phone = "2", Gender = "F", DateOfBirth = new DateTime(1990, 1, 1) });
             await context.SaveChangesAsync();
 
             await using var verification = NewContext();
@@ -260,7 +261,7 @@ namespace Clinic.Tests.Integration
                 Id = "u-uow", UserName = "uow@clinic.local", Email = "uow@clinic.local", DisplayName = "UoW"
             });
             unitOfWork.Repository<Doctor>();     // same context underneath
-            context.Doctors.Add(new Doctor { Name = "Dr. UoW", Specialization = "Cardiology" });
+            context.Doctors.Add(new Doctor { TenantId = Tenant.DefaultTenantId, Name = "Dr. UoW", Specialization = "Cardiology" });
 
             Assert.Equal(2, await unitOfWork.CompleteAsync());
         }

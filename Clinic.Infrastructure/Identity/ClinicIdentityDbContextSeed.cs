@@ -1,3 +1,4 @@
+using Clinic.Domain.Entites;
 using Clinic.Domain.Entites.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
@@ -76,7 +77,17 @@ namespace Clinic.Infrastructure.Identity
                     DisplayName = configuration["Seed:AdminDisplayName"] ?? "System Administrator",
                     Email = email,
                     UserName = email,
-                    EmailConfirmed = true
+                    EmailConfirmed = true,
+
+                    // MULTI-TENANT: the default clinic, so a freshly created database is usable
+                    // the moment it starts.
+                    //
+                    // The alternative - leaving this null to mark a "platform" administrator -
+                    // reads well but produces an administrator who signs in perfectly and then
+                    // finds an entirely empty application, because a null tenant matches no row.
+                    // On an EXISTING database the migration backfills every account to this same
+                    // tenant, so both paths arrive at the same place.
+                    TenantId = Tenant.DefaultTenantId
                 };
 
                 var created = await userManager.CreateAsync(admin, password!);
