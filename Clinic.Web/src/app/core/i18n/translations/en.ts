@@ -457,6 +457,8 @@ export const EN = {
 
     type: 'Entry type',
     typeVisit: 'Visit',
+
+    typeCheckup: 'Checkup',
     typeDiagnosis: 'Diagnosis',
     typePrescription: 'Prescription',
     typeLab: 'Lab result',

@@ -449,6 +449,8 @@ export const AR: Catalogue = {
 
     type: 'نوع القيد',
     typeVisit: 'زيارة',
+
+    typeCheckup: 'كشف',
     typeDiagnosis: 'تشخيص',
     typePrescription: 'روشتة',
     typeLab: 'تحليل',
