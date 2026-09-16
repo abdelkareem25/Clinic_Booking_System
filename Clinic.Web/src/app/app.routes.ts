@@ -74,12 +74,10 @@ export const routes: Routes = [
       { path: 'doctor-schedules', redirectTo: 'schedules', pathMatch: 'full' },
 
       // ------------------------------------------------------------- finance --
-      {
-        path: 'accounts',
-        data: { breadcrumb: 'nav.accounts' },
-        loadChildren: () =>
-          import('./features/accounts/accounts.routes').then((m) => m.ACCOUNTS_ROUTES),
-      },
+      // The billing module was removed. Anything still pointing at /accounts -
+      // a bookmark, an old link in the patient page - lands on the dashboard
+      // rather than the not-found screen.
+      { path: 'accounts', redirectTo: 'dashboard', pathMatch: 'prefix' },
       {
         path: 'reports',
         title: 'Reports | Clinic',
