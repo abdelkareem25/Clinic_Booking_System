@@ -28,7 +28,6 @@ import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.com
 const SLOT_OPTIONS = [10, 15, 20, 30, 45, 60] as const;
 const BUFFER_OPTIONS = [0, 5, 10, 15] as const;
 const REMINDER_OPTIONS = [15, 30, 60, 120, 1440] as const;
-const CURRENCIES = ['EGP', 'USD', 'EUR', 'SAR', 'AED'] as const;
 
 @Component({
   selector: 'app-settings',
@@ -66,7 +65,6 @@ export class SettingsComponent {
   protected readonly slotOptions = SLOT_OPTIONS;
   protected readonly bufferOptions = BUFFER_OPTIONS;
   protected readonly reminderOptions = REMINDER_OPTIONS;
-  protected readonly currencies = CURRENCIES;
 
   protected readonly submitted = signal(false);
   protected readonly canManage = computed(() => this.permissions.can('settings.manage'));
@@ -75,6 +73,9 @@ export class SettingsComponent {
 
   protected readonly workingDays = signal<Set<WeekDay>>(new Set(this.current.workingDays));
 
+  // Currency, tax rate and invoice prefix are no longer editable here - the
+  // billing module that owned them was removed. They stay in ClinicSettings at
+  // their defaults because the patient page still reads `currency`.
   protected readonly form = this.formBuilder.nonNullable.group(
     {
       clinicName: [this.current.clinicName, [Validators.required, Validators.maxLength(80)]],
@@ -91,10 +92,6 @@ export class SettingsComponent {
       ]),
       slotMinutes: [this.current.slotMinutes, [Validators.required]],
       bufferMinutes: [this.current.bufferMinutes, [Validators.required]],
-
-      currency: [this.current.currency, [Validators.required]],
-      taxRate: [this.current.taxRate, [Validators.min(0), Validators.max(100)]],
-      invoicePrefix: [this.current.invoicePrefix, [Validators.maxLength(10)]],
 
       appointmentReminders: [this.current.appointmentReminders],
       reminderLeadMinutes: [this.current.reminderLeadMinutes],
@@ -152,9 +149,6 @@ export class SettingsComponent {
       slotMinutes: raw.slotMinutes,
       bufferMinutes: raw.bufferMinutes,
       workingDays: [...this.workingDays()].sort((a, b) => a - b),
-      currency: raw.currency,
-      taxRate: raw.taxRate,
-      invoicePrefix: raw.invoicePrefix.trim(),
       appointmentReminders: raw.appointmentReminders,
       reminderLeadMinutes: raw.reminderLeadMinutes,
     });
@@ -175,9 +169,6 @@ export class SettingsComponent {
       endTime: minutesToDate(defaults.closingMinutes),
       slotMinutes: defaults.slotMinutes,
       bufferMinutes: defaults.bufferMinutes,
-      currency: defaults.currency,
-      taxRate: defaults.taxRate,
-      invoicePrefix: defaults.invoicePrefix,
       appointmentReminders: defaults.appointmentReminders,
       reminderLeadMinutes: defaults.reminderLeadMinutes,
     });
