@@ -1,4 +1,4 @@
-<form class="page" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+<<form class="page" [formGroup]="form" (ngSubmit)="submit()" novalidate>
   <ui-page-header
     [title]="isEdit() ? 'patients.edit' : 'patients.new'"
     subtitle="patients.subtitle"
@@ -71,28 +71,13 @@
             </mat-form-field>
             <ui-field-error [control]="form.controls.gender" [submitted]="submitted()" />
           </div>
-
-          <div class="field span-full">
-            <mat-form-field>
-              <mat-label>{{ 'patients.nationalId' | translate }}</mat-label>
-              <input
-                matInput
-                type="text"
-                formControlName="nationalId"
-                inputmode="numeric"
-                maxlength="14"
-              />
-              <mat-hint>{{ 'common.optional' | translate }}</mat-hint>
-            </mat-form-field>
-            <ui-field-error [control]="form.controls.nationalId" [submitted]="submitted()" />
-          </div>
         </div>
       </ui-card>
 
       <!-- Contact --------------------------------------------------------- -->
       <ui-card title="patients.sectionContact" icon="phone">
         <div class="form-grid cols-2">
-          <div class="field">
+          <div class="field span-full">
             <mat-form-field>
               <mat-label>{{ 'patients.phone' | translate }}</mat-label>
               <input
@@ -107,49 +92,6 @@
             </mat-form-field>
             <ui-field-error [control]="form.controls.phone" [submitted]="submitted()" />
           </div>
-
-          <div class="field">
-            <mat-form-field>
-              <mat-label>{{ 'patients.emergencyContactPhone' | translate }}</mat-label>
-              <input
-                matInput
-                type="tel"
-                formControlName="emergencyContactPhone"
-                inputmode="numeric"
-                maxlength="14"
-              />
-            </mat-form-field>
-            <ui-field-error
-              [control]="form.controls.emergencyContactPhone"
-              [submitted]="submitted()"
-            />
-          </div>
-
-          <div class="field">
-            <mat-form-field>
-              <mat-label>{{ 'patients.emergencyContactName' | translate }}</mat-label>
-              <input matInput type="text" formControlName="emergencyContactName" />
-            </mat-form-field>
-            <ui-field-error
-              [control]="form.controls.emergencyContactName"
-              [submitted]="submitted()"
-            />
-          </div>
-
-          <div class="field">
-            <mat-form-field>
-              <mat-label>{{ 'patients.emergencyRelation' | translate }}</mat-label>
-              <input matInput type="text" formControlName="emergencyRelation" />
-            </mat-form-field>
-          </div>
-
-          <div class="field span-full">
-            <mat-form-field>
-              <mat-label>{{ 'patients.address' | translate }}</mat-label>
-              <textarea matInput rows="2" formControlName="address"></textarea>
-            </mat-form-field>
-            <ui-field-error [control]="form.controls.address" [submitted]="submitted()" />
-          </div>
         </div>
       </ui-card>
     </div>
@@ -158,40 +100,8 @@
       <!-- Clinical -------------------------------------------------------- -->
       <ui-card title="patients.sectionMedical" icon="vitals">
         <div class="stack">
-          <div class="field">
-            <mat-form-field>
-              <mat-label>{{ 'patients.bloodGroup' | translate }}</mat-label>
-              <mat-select formControlName="bloodGroup">
-                <mat-option value="">{{ 'common.notSet' | translate }}</mat-option>
-                @for (group of bloodGroups; track group) {
-                  <mat-option [value]="group">{{ group }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </div>
-
-          <!-- Chip inputs: allergies, conditions and medications are lists, and
-               a comma-separated text field makes them unqueryable. -->
-          <mat-form-field>
-            <mat-label>{{ 'patients.allergies' | translate }}</mat-label>
-            <mat-chip-grid #allergyGrid>
-              @for (item of chipsFor('allergies'); track item) {
-                <mat-chip-row (removed)="removeChip('allergies', item)">
-                  {{ item }}
-                  <button matChipRemove [attr.aria-label]="'common.delete' | translate">
-                    <ui-icon name="close" size="sm" />
-                  </button>
-                </mat-chip-row>
-              }
-            </mat-chip-grid>
-            <input
-              [matChipInputFor]="allergyGrid"
-              [matChipInputAddOnBlur]="true"
-              [placeholder]="'patients.addAllergy' | translate"
-              (matChipInputTokenEnd)="addChip('allergies', $event)"
-            />
-          </mat-form-field>
-
+          <!-- Chip inputs: conditions and medications are lists, and a
+               comma-separated text field makes them unqueryable. -->
           <mat-form-field>
             <mat-label>{{ 'patients.chronicDiseases' | translate }}</mat-label>
             <mat-chip-grid #chronicGrid>

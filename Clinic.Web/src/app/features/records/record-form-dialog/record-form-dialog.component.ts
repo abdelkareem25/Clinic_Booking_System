@@ -24,9 +24,21 @@ import { notFutureValidator } from '../../../core/utils/validators';
 import { FieldErrorComponent } from '../../../shared/ui/field-error/field-error.component';
 import { IconComponent } from '../../../shared/ui/icon/icon.component';
 
+/** The minimum a patient must expose for the picker; avoids importing the full view model. */
+export interface RecordDialogPatient {
+  id: number;
+  name: string;
+}
+
 export interface RecordDialogData {
-  patientId: number;
-  patientName: string;
+  /**
+   * The patient this record belongs to, when the caller already knows - the
+   * patient page does. Absent from the records list, where `patients` is
+   * supplied instead and the dialog asks.
+   */
+  patientId?: number;
+  patientName?: string;
+  patients?: RecordDialogPatient[];
   doctors: Doctor[];
   /** Present when editing. */
   record?: MedicalRecord;
@@ -67,10 +79,20 @@ export class RecordFormDialogComponent {
   protected readonly maxDate = new Date();
   protected readonly isEdit = Boolean(this.data.record);
 
+  /** Editing always keeps the record's own patient; only a fresh entry may choose. */
+  protected readonly fixedPatientId = this.data.record?.patientId ?? this.data.patientId ?? null;
+  protected readonly fixedPatientName = this.data.record?.patientName ?? this.data.patientName ?? '';
+  protected readonly patients = this.data.patients ?? [];
+  protected readonly picksPatient = this.fixedPatientId === null;
+
   protected readonly submitted = signal(false);
   protected readonly tags = signal<string[]>([...(this.data.record?.tags ?? [])]);
 
   protected readonly form = this.formBuilder.nonNullable.group({
+    patientId: this.formBuilder.control<number | null>(
+      this.fixedPatientId,
+      this.fixedPatientId === null ? [Validators.required] : []
+    ),
     type: [this.data.record?.type ?? ('visit' as RecordType), [Validators.required]],
     // Split into date and time so both use a picker; neither is ever typed.
     occurredDate: this.formBuilder.control<Date | null>(
@@ -125,6 +147,12 @@ export class RecordFormDialogComponent {
 
     const raw = this.form.getRawValue();
     const doctor = this.data.doctors.find((entry) => entry.id === raw.doctorId);
+    const patient = this.patients.find((entry) => entry.id === raw.patientId);
+
+    // The name is denormalised onto the record so the table and timeline read
+    // without a second lookup; fall back to whatever the caller already knew.
+    const patientId = raw.patientId ?? this.fixedPatientId!;
+    const patientName = patient?.name || this.fixedPatientName;
 
     const vitals = {
       bloodPressure: raw.bloodPressure.trim() || undefined,
@@ -135,8 +163,8 @@ export class RecordFormDialogComponent {
     const hasVitals = Object.values(vitals).some((value) => value !== undefined);
 
     const payload = {
-      patientId: this.data.patientId,
-      patientName: this.data.patientName,
+      patientId,
+      patientName,
       doctorId: doctor?.id,
       doctorName: doctor?.name,
       type: raw.type,

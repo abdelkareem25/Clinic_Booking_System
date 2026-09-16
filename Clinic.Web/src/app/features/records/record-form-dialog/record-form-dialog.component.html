@@ -2,10 +2,22 @@
 
 <mat-dialog-content>
   <form class="record-form" [formGroup]="form" novalidate>
-    <p class="patient-line">
-      <ui-icon name="user" size="sm" />
-      {{ data.patientName }}
-    </p>
+    @if (picksPatient) {
+      <mat-form-field>
+        <mat-label>{{ 'appointments.patient' | translate }}</mat-label>
+        <mat-select formControlName="patientId">
+          @for (patient of patients; track patient.id) {
+            <mat-option [value]="patient.id">{{ patient.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <ui-field-error [control]="form.controls.patientId" [submitted]="submitted()" />
+    } @else {
+      <p class="patient-line">
+        <ui-icon name="user" size="sm" />
+        {{ fixedPatientName }}
+      </p>
+    }
 
     <div class="form-grid cols-2">
       <div class="field">

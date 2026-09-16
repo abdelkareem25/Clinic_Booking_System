@@ -38,37 +38,21 @@
       </div>
     </ui-page-header>
 
-    <!-- Safety banner: allergies and chronic conditions are the two things that
-         must be visible before anyone treats this patient, so they sit above
-         the tabs rather than inside one. -->
-    @if (person.profile.allergies.length || person.profile.chronicDiseases.length) {
+    <!-- Safety banner: chronic conditions must be visible before anyone treats
+         this patient, so they sit above the tabs rather than inside one. -->
+    @if (person.profile.chronicDiseases.length) {
       <section class="alerts">
-        @if (person.profile.allergies.length) {
-          <div class="alert alert-danger">
-            <ui-icon name="warning" size="md" />
-            <div>
-              <strong>{{ 'patients.allergies' | translate }}</strong>
-              <div class="alert-chips">
-                @for (item of person.profile.allergies; track item) {
-                  <span class="badge badge-danger">{{ item }}</span>
-                }
-              </div>
+        <div class="alert alert-warning">
+          <ui-icon name="vitals" size="md" />
+          <div>
+            <strong>{{ 'patients.chronicDiseases' | translate }}</strong>
+            <div class="alert-chips">
+              @for (item of person.profile.chronicDiseases; track item) {
+                <span class="badge badge-warning">{{ item }}</span>
+              }
             </div>
           </div>
-        }
-        @if (person.profile.chronicDiseases.length) {
-          <div class="alert alert-warning">
-            <ui-icon name="vitals" size="md" />
-            <div>
-              <strong>{{ 'patients.chronicDiseases' | translate }}</strong>
-              <div class="alert-chips">
-                @for (item of person.profile.chronicDiseases; track item) {
-                  <span class="badge badge-warning">{{ item }}</span>
-                }
-              </div>
-            </div>
-          </div>
-        }
+        </div>
       </section>
     }
 

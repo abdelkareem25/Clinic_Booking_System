@@ -115,25 +115,16 @@ export class PatientDetailComponent {
               : 'patients.genderOther'
         ),
       },
-      { label: 'patients.nationalId', value: patient.profile.nationalId },
-      { label: 'patients.bloodGroup', value: patient.profile.bloodGroup, icon: 'bloodGroup', tone: 'strong' },
     ];
   });
 
   protected readonly contactItems = computed<DetailItem[]>(() => {
-    const profile = this.patient()?.profile;
     const patient = this.patient();
-    if (!patient || !profile) {
+    if (!patient) {
       return [];
     }
 
-    return [
-      { label: 'patients.phone', value: patient.phone, icon: 'phone', tone: 'strong' },
-      { label: 'patients.emergencyContactName', value: profile.emergencyContactName },
-      { label: 'patients.emergencyContactPhone', value: profile.emergencyContactPhone },
-      { label: 'patients.emergencyRelation', value: profile.emergencyRelation },
-      { label: 'patients.address', value: profile.address, icon: 'address', wide: true },
-    ];
+    return [{ label: 'patients.phone', value: patient.phone, icon: 'phone', tone: 'strong' }];
   });
 
   // ------------------------------------------------------------- timeline --

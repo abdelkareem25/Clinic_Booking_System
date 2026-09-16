@@ -4,14 +4,7 @@ import { BadgeTone } from '../../shared/ui/data-table/data-table.model';
 import { IconName } from '../../shared/ui/icon/icon.registry';
 import { Identified, LocalCollection, newId } from './local-collection';
 
-export type RecordType =
-  | 'visit'
-  | 'diagnosis'
-  | 'prescription'
-  | 'lab'
-  | 'imaging'
-  | 'procedure'
-  | 'note';
+export type RecordType = 'visit' | 'checkup';
 
 export interface Vitals {
   bloodPressure?: string;
@@ -28,7 +21,7 @@ export interface MedicalRecord extends Identified {
   type: RecordType;
   /** ISO date-time of the clinical event, not of data entry. */
   occurredAt: string;
-  /** Free clinical text — never translated. */
+  /** Free clinical text - never translated. */
   title: string;
   complaint?: string;
   diagnosis?: string;
@@ -46,12 +39,7 @@ export const RECORD_TYPE_META: Record<
   { label: string; icon: IconName; tone: BadgeTone }
 > = {
   visit: { label: 'records.typeVisit', icon: 'visit', tone: 'primary' },
-  diagnosis: { label: 'records.typeDiagnosis', icon: 'vitals', tone: 'danger' },
-  prescription: { label: 'records.typePrescription', icon: 'prescription', tone: 'info' },
-  lab: { label: 'records.typeLab', icon: 'lab', tone: 'secondary' },
-  imaging: { label: 'records.typeImaging', icon: 'imaging', tone: 'warning' },
-  procedure: { label: 'records.typeProcedure', icon: 'procedure', tone: 'success' },
-  note: { label: 'records.typeNote', icon: 'note', tone: 'neutral' },
+  checkup: { label: 'records.typeCheckup', icon: 'records', tone: 'info' },
 };
 
 export const RECORD_TYPES = Object.keys(RECORD_TYPE_META) as RecordType[];
@@ -59,15 +47,18 @@ export const RECORD_TYPES = Object.keys(RECORD_TYPE_META) as RecordType[];
 /**
  * The clinical history.
  *
- * Records are immutable in spirit — an entry describes what was observed at a
- * point in time — so `occurredAt` is separate from `createdAt`: a doctor
+ * Records are immutable in spirit - an entry describes what was observed at a
+ * point in time - so `occurredAt` is separate from `createdAt`: a doctor
  * writing up yesterday's visit this morning must not have it filed under today.
  */
 @Injectable({ providedIn: 'root' })
 export class MedicalRecordsStore {
   private readonly collection = new LocalCollection<MedicalRecord>({
     key: 'medical-records',
-    version: 1,
+    // Bumped: entries saved under the previous version carry types that no
+    // longer exist ('diagnosis', 'lab', ...), and a stored type with no entry in
+    // RECORD_TYPE_META crashes every screen that renders its badge.
+    version: 2,
     seed: () => [],
     searchFields: ['title', 'patientName', 'diagnosis', 'complaint'],
   });

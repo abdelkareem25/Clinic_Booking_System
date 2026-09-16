@@ -1,10 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { catchError, forkJoin, of } from 'rxjs';
 
 import { PermissionService } from '../../../core/authz/permission.service';
 import {
@@ -15,6 +18,8 @@ import {
   RecordType,
 } from '../../../core/data/medical-records.store';
 import { NotificationService } from '../../../core/services/notification.service';
+import { DoctorsService } from '../../../core/services/doctors.service';
+import { PatientsService } from '../../../core/services/patients.service';
 import { confirmDialog } from '../../../shared/ui/confirm-dialog/confirm-dialog.component';
 import { DataTableComponent } from '../../../shared/ui/data-table/data-table.component';
 import {
@@ -31,12 +36,18 @@ import {
   SearchEvent,
   SearchFieldComponent,
 } from '../../../shared/ui/search-field/search-field.component';
+import {
+  RecordDialogData,
+  RecordFormDialogComponent,
+} from '../record-form-dialog/record-form-dialog.component';
 
 @Component({
   selector: 'app-record-list',
   imports: [
     MatButtonModule,
+    MatDatepickerModule,
     MatFormFieldModule,
+    MatInputModule,
     MatSelectModule,
     TranslatePipe,
     CellTemplateDirective,
@@ -51,7 +62,9 @@ import {
 })
 export class RecordListComponent {
   private readonly dialog = inject(MatDialog);
+  private readonly doctorsApi = inject(DoctorsService);
   private readonly notifications = inject(NotificationService);
+  private readonly patientsApi = inject(PatientsService);
   private readonly router = inject(Router);
   private readonly store = inject(MedicalRecordsStore);
   private readonly translate = inject(TranslateService);
@@ -59,14 +72,20 @@ export class RecordListComponent {
   protected readonly permissions = inject(PermissionService);
   protected readonly recordTypes = RECORD_TYPES;
   protected readonly typeMeta = RECORD_TYPE_META;
+  protected readonly maxDate = new Date();
 
   protected readonly search = signal<SearchEvent | null>(null);
   protected readonly type = signal<RecordType | 'all'>('all');
+  protected readonly from = signal<Date | null>(null);
+  protected readonly to = signal<Date | null>(null);
   protected readonly page = signal<PageState>({ pageIndex: 1, pageSize: 25 });
   protected readonly sort = signal<SortState>({ key: 'occurredAt', direction: 'desc' });
 
+  /** Guards the add button while the patient and doctor lists are being fetched. */
+  protected readonly opening = signal(false);
+
   protected readonly hasFilters = computed(
-    () => Boolean(this.search()?.term) || this.type() !== 'all'
+    () => Boolean(this.search()?.term) || this.type() !== 'all' || Boolean(this.from() || this.to())
   );
 
   /**
@@ -82,6 +101,22 @@ export class RecordListComponent {
 
     if (type !== 'all') {
       rows = rows.filter((record) => record.type === type);
+    }
+
+    // Inclusive on both ends: a range of 1 Jan to 1 Jan must return that day's
+    // records, so the bounds are widened to the whole day rather than compared
+    // against whatever time the picker happened to carry.
+    const from = this.startOfDay(this.from());
+    const to = this.endOfDay(this.to());
+
+    if (from !== null || to !== null) {
+      rows = rows.filter((record) => {
+        const occurred = new Date(record.occurredAt).getTime();
+        if (Number.isNaN(occurred)) {
+          return false;
+        }
+        return (from === null || occurred >= from) && (to === null || occurred <= to);
+      });
     }
 
     if (term) {
@@ -159,6 +194,16 @@ export class RecordListComponent {
     this.page.update((page) => ({ ...page, pageIndex: 1 }));
   }
 
+  protected onFrom(value: Date | null): void {
+    this.from.set(value);
+    this.page.update((page) => ({ ...page, pageIndex: 1 }));
+  }
+
+  protected onTo(value: Date | null): void {
+    this.to.set(value);
+    this.page.update((page) => ({ ...page, pageIndex: 1 }));
+  }
+
   protected onSort(sort: SortState): void {
     this.sort.set(sort);
   }
@@ -170,6 +215,52 @@ export class RecordListComponent {
   protected clearFilters(): void {
     this.search.set(null);
     this.type.set('all');
+    this.from.set(null);
+    this.to.set(null);
+    this.page.update((page) => ({ ...page, pageIndex: 1 }));
+  }
+
+  /**
+   * Unlike the patient page, nothing here says which patient the entry belongs
+   * to, so both lists are fetched and the dialog asks.
+   */
+  protected addRecord(): void {
+    if (this.opening()) {
+      return;
+    }
+
+    this.opening.set(true);
+
+    forkJoin({
+      patients: this.patientsApi
+        .getPatients({ pageIndex: 1, pageSize: 200 })
+        .pipe(catchError(() => of({ pageIndex: 1, pageSize: 0, count: 0, data: [] }))),
+      doctors: this.doctorsApi
+        .getDoctors({ pageIndex: 1, pageSize: 200 })
+        .pipe(catchError(() => of({ pageIndex: 1, pageSize: 0, count: 0, data: [] }))),
+    }).subscribe({
+      next: ({ patients, doctors }) => {
+        this.opening.set(false);
+
+        // A record without a patient is not a record, so say so rather than
+        // opening a dialog whose only required field cannot be filled.
+        if (!patients.data.length) {
+          this.notifications.error?.(this.translate.instant('patients.empty'));
+          return;
+        }
+
+        this.dialog.open<RecordFormDialogComponent, RecordDialogData, boolean>(
+          RecordFormDialogComponent,
+          {
+            data: {
+              patients: patients.data,
+              doctors: doctors.data,
+            },
+          }
+        );
+      },
+      error: () => this.opening.set(false),
+    });
   }
 
   protected openPatient(row: MedicalRecord): void {
@@ -194,5 +285,23 @@ export class RecordListComponent {
         this.notifications.success(this.translate.instant('records.deleted'));
       }
     });
+  }
+
+  private startOfDay(value: Date | null): number | null {
+    if (!value) {
+      return null;
+    }
+    const date = new Date(value);
+    date.setHours(0, 0, 0, 0);
+    return date.getTime();
+  }
+
+  private endOfDay(value: Date | null): number | null {
+    if (!value) {
+      return null;
+    }
+    const date = new Date(value);
+    date.setHours(23, 59, 59, 999);
+    return date.getTime();
   }
 }

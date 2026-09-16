@@ -1,5 +1,14 @@
 <div class="page">
-  <ui-page-header title="records.title" subtitle="records.subtitle" icon="records" />
+  <ui-page-header title="records.title" subtitle="records.subtitle" icon="records">
+    <div actions class="head-actions">
+      @if (permissions.can('records.create')) {
+        <button mat-flat-button type="button" [disabled]="opening()" (click)="addRecord()">
+          <ui-icon name="add" size="sm" />
+          {{ 'records.new' | translate }}
+        </button>
+      }
+    </div>
+  </ui-page-header>
 
   <div class="filters surface">
     <ui-search-field
@@ -16,6 +25,39 @@
           <mat-option [value]="option">{{ typeMeta[option].label | translate }}</mat-option>
         }
       </mat-select>
+    </mat-form-field>
+
+    <!-- Date range: both readonly, the picker owns the value - same rule as
+         every other date input in the app. -->
+    <mat-form-field class="field-compact date">
+      <mat-label>{{ 'common.from' | translate }}</mat-label>
+      <input
+        matInput
+        readonly
+        [matDatepicker]="fromPicker"
+        [value]="from()"
+        [max]="to() ?? maxDate"
+        (dateChange)="onFrom($event.value)"
+        (click)="fromPicker.open()"
+      />
+      <mat-datepicker-toggle matIconSuffix [for]="fromPicker" />
+      <mat-datepicker #fromPicker />
+    </mat-form-field>
+
+    <mat-form-field class="field-compact date">
+      <mat-label>{{ 'common.to' | translate }}</mat-label>
+      <input
+        matInput
+        readonly
+        [matDatepicker]="toPicker"
+        [value]="to()"
+        [min]="from()"
+        [max]="maxDate"
+        (dateChange)="onTo($event.value)"
+        (click)="toPicker.open()"
+      />
+      <mat-datepicker-toggle matIconSuffix [for]="toPicker" />
+      <mat-datepicker #toPicker />
     </mat-form-field>
 
     @if (hasFilters()) {
