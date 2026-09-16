@@ -1,3 +1,4 @@
+import { SPECIALTY_STORED_VALUES } from '../i18n/specialty';
 import { PageQuery } from './pagination.model';
 import { WeekDay } from './schedule.model';
 
@@ -54,13 +55,15 @@ export interface DoctorQuery extends PageQuery {
   specialty?: string;
 }
 
-export const DEFAULT_SPECIALIZATIONS = [
-  'Cardiology',
-  'Dermatology',
-  'Family Medicine',
-  'Neurology',
-  'Orthopedics',
-  'Pediatrics',
-  'Psychiatry',
-  'Radiology'
-] as const;
+/**
+ * The specialities offered when adding a doctor.
+ *
+ * Re-exported from the localisation module rather than listed again here: these
+ * are exactly the values `core/i18n/specialty.ts` can translate, and a second
+ * hand-maintained list would eventually offer a speciality that renders as a raw
+ * English string in Arabic.
+ *
+ * The column stays free text — a clinic can still type its own — so nothing here
+ * invalidates existing data.
+ */
+export const DEFAULT_SPECIALIZATIONS = SPECIALTY_STORED_VALUES;

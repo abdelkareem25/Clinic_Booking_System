@@ -7,6 +7,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { PermissionService } from '../../core/authz/permission.service';
+import { SpecialtyService } from '../../core/i18n/specialty.service';
 import { AccountsStore } from '../../core/data/accounts.store';
 import { ClinicSettingsStore } from '../../core/data/clinic-settings.store';
 import { MedicalRecordsStore } from '../../core/data/medical-records.store';
@@ -69,6 +70,7 @@ export class ReportsComponent {
   private readonly appointmentsApi = inject(AppointmentsService);
   private readonly doctorsApi = inject(DoctorsService);
   private readonly notifications = inject(NotificationService);
+  private readonly specialty = inject(SpecialtyService);
   private readonly patientsApi = inject(PatientsService);
   private readonly records = inject(MedicalRecordsStore);
   private readonly translate = inject(TranslateService);
@@ -237,7 +239,9 @@ export class ReportsComponent {
         return {
           id: String(doctor.id),
           name: doctor.name,
-          specialization: doctor.specialization,
+          // Localised once here rather than in the column and again in the CSV
+          // export, so the table and the file a manager sends on always agree.
+          specialization: this.specialty.label()(doctor.specialization),
           appointments: own.length,
           patients: new Set(own.map((appointment) => appointment.patientName)).size,
           share: Math.round((own.length / total) * 1000) / 10,

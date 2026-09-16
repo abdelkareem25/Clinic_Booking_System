@@ -7,9 +7,12 @@ export const APPOINTMENTS_ROUTES: Routes = [
     path: '',
     canActivate: [permissionGuard('appointments.view')],
     title: 'Appointments | Clinic',
+    // The scheduling grid replaced the appointments table at this path rather
+    // than living beside it: two screens answering the same question would drift,
+    // and every link, breadcrumb and redirect in the app already points here.
     loadComponent: () =>
-      import('./appointment-list/appointment-list.component').then(
-        (m) => m.AppointmentListComponent
+      import('./calendar/appointment-calendar.component').then(
+        (m) => m.AppointmentCalendarComponent
       ),
   },
   {

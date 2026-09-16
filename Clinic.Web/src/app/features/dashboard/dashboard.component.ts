@@ -18,6 +18,7 @@ import {
   startOfDay,
   startOfMonth,
 } from '../../core/utils/date.util';
+import { SpecialtyPipe } from '../../shared/pipes/specialty.pipe';
 import { CardComponent } from '../../shared/ui/card/card.component';
 import { ChartComponent, ChartPoint } from '../../shared/ui/chart/chart.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
@@ -44,6 +45,7 @@ const TREND_DAYS = 14;
     RouterLink,
     MatButtonModule,
     TranslatePipe,
+    SpecialtyPipe,
     CardComponent,
     ChartComponent,
     EmptyStateComponent,

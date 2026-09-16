@@ -1,0 +1,473 @@
+// =============================================================================
+// Appointment calendar
+// -----------------------------------------------------------------------------
+// Everything here is written with logical properties (inset-inline, padding-
+// inline, border-inline) rather than left/right. The grid is used in Arabic at
+// least as much as in English, and a calendar is the one layout where a stray
+// `left: 0` is immediately, visibly wrong: the time column lands on the far side
+// of the appointments it labels.
+//
+// Colour comes only from design tokens, so the dark theme needs no rules here.
+// =============================================================================
+
+:host {
+  display: block;
+}
+
+.cal-page {
+  // The grid owns its own scrolling, so the page must not add a second one.
+  min-width: 0;
+}
+
+// -----------------------------------------------------------------------------
+// Toolbar
+// -----------------------------------------------------------------------------
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+}
+
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.toolbar-meta {
+  padding-block-start: var(--sp-3);
+  border-block-start: 1px solid var(--c-border);
+}
+
+.filter {
+  flex: 0 1 200px;
+  min-width: 150px;
+}
+
+.clear-btn {
+  flex: 0 0 auto;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.headline {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.01em;
+  color: var(--c-text);
+}
+
+// Segmented Day / Week control.
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-full);
+  background: var(--c-surface-2);
+}
+
+.segment {
+  padding: 5px var(--sp-4);
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--c-text-muted);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-micro) var(--ease-standard),
+    color var(--dur-micro) var(--ease-standard);
+}
+
+.segment:hover {
+  color: var(--c-text);
+}
+
+.segment.is-active {
+  background: var(--c-surface);
+  color: var(--c-primary);
+  box-shadow: var(--sh-card);
+}
+
+.segment:focus-visible {
+  outline: none;
+  box-shadow: var(--sh-focus);
+}
+
+.datenav {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.nav-btn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  background: var(--c-surface);
+  color: var(--c-text-muted);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-micro) var(--ease-standard),
+    color var(--dur-micro) var(--ease-standard);
+}
+
+.nav-btn:hover {
+  background: var(--c-surface-2);
+  color: var(--c-text);
+}
+
+.nav-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--sh-focus);
+}
+
+.today-btn {
+  min-width: 0;
+}
+
+.datepick {
+  display: inline-flex;
+  align-items: center;
+}
+
+// -----------------------------------------------------------------------------
+// Status legend
+// -----------------------------------------------------------------------------
+.legend {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+  white-space: nowrap;
+}
+
+.legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  border: 1px solid;
+  flex: 0 0 auto;
+}
+
+// -----------------------------------------------------------------------------
+// States
+// -----------------------------------------------------------------------------
+.state-panel {
+  padding: var(--sp-4);
+}
+
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: 66px 1fr;
+  gap: var(--sp-3);
+}
+
+.skeleton-times,
+.skeleton-lanes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.skeleton-time,
+.skeleton-block {
+  height: 44px;
+}
+
+.cal-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  color: var(--c-text-subtle);
+}
+
+// -----------------------------------------------------------------------------
+// The grid
+// -----------------------------------------------------------------------------
+.calendar {
+  position: relative;
+  overflow: hidden; // keeps the sticky header inside the card's rounded corner
+}
+
+.cal-scroll {
+  // Both axes: tablets scroll sideways through resources, every device scrolls
+  // down through the day.
+  overflow: auto;
+  max-block-size: min(72vh, 860px);
+  overscroll-behavior: contain;
+}
+
+.cal-grid {
+  --time-col: 74px;
+  --lane-min: 168px;
+  // Fixed so the "now" overlay can be offset from the top of the grid without
+  // measuring the DOM. Both views put a label over a sublabel, so one height fits.
+  --head-h: 54px;
+
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--time-col) repeat(var(--lane-count), minmax(var(--lane-min), 1fr));
+  grid-template-rows: var(--head-h) auto;
+  // `min-content` for a grid is the sum of its tracks' minimums, so the grid box
+  // grows to fit every column and the container scrolls. `max-content` would
+  // have sized columns to the longest doctor name instead of to `--lane-min`.
+  min-inline-size: min-content;
+}
+
+// ------------------------------------------------------------------ header --
+.cal-corner {
+  position: sticky;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  block-size: var(--head-h);
+  background: var(--c-surface-2);
+  border-block-end: 1px solid var(--c-border);
+  border-inline-end: 1px solid var(--c-border);
+  color: var(--c-text-subtle);
+}
+
+.cal-head {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  justify-content: center;
+  min-width: 0;
+  block-size: var(--head-h);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--c-surface-2);
+  border-block-end: 1px solid var(--c-border);
+  border-inline-end: 1px solid var(--c-border);
+  text-align: center;
+}
+
+.cal-head.is-today {
+  background: var(--c-primary-soft);
+}
+
+.head-label {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cal-head.is-today .head-label {
+  color: var(--c-primary-soft-fg);
+}
+
+.head-sub {
+  font-size: var(--fs-2xs);
+  color: var(--c-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// -------------------------------------------------------------- time column --
+.cal-times {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 15;
+  block-size: var(--grid-h);
+  background: var(--c-surface);
+  border-inline-end: 1px solid var(--c-border);
+}
+
+.time-cell {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  block-size: var(--slot-h);
+  padding-inline-end: var(--sp-2);
+  // Pulled up half a line so the label sits *on* its gridline rather than in
+  // the box beneath it — the way a printed diary reads.
+  padding-block-start: 2px;
+  font-size: var(--fs-2xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text-subtle);
+}
+
+.time-cell.is-hour {
+  color: var(--c-text-muted);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-xs);
+}
+
+// ---------------------------------------------------------------- the lanes --
+.cal-lane {
+  position: relative;
+  // Its own stacking context, so a block's z-index orders it against its
+  // neighbours only and can never rise above the sticky header.
+  z-index: 1;
+  block-size: var(--grid-h);
+  border-inline-end: 1px solid var(--c-border);
+  // Closed by default; working hours are painted over this.
+  background-color: var(--c-surface-2);
+  // Gridlines as a gradient rather than one element per slot: a week of 30-minute
+  // rows is ~200 nodes per lane that would exist only to draw a line.
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      var(--c-border) 0 1px,
+      transparent 1px calc(var(--slot-h) * 2)
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--c-border) 55%, transparent) 0 1px,
+      transparent 1px var(--slot-h)
+    );
+  background-repeat: repeat;
+}
+
+.cal-lane.is-today {
+  background-color: color-mix(in srgb, var(--c-primary-soft) 45%, var(--c-surface-2));
+}
+
+.lane-bands {
+  position: absolute;
+  inset: 0;
+  // Below the blocks, above the lane's own closed tint.
+  z-index: 0;
+  pointer-events: none;
+}
+
+.band {
+  position: absolute;
+  inset-inline: 0;
+}
+
+.band-working {
+  background: var(--c-surface);
+}
+
+// A break is on-site but unbookable: hatched so it reads as different from both
+// "open" and "closed" without relying on hue alone.
+.band-break {
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--c-warning-soft) 70%, transparent) 0 6px,
+    transparent 6px 12px
+  );
+}
+
+// ------------------------------------------------------------- now indicator --
+// Absolutely positioned rather than placed in the grid. A grid item spanning
+// `1 / -1` in row 2 is placed *before* the auto-placed lanes, so it would occupy
+// the row and push the whole calendar down one.
+//
+// z-index 18 puts it over the sticky time column (15) and under the sticky
+// column headers (20), which is where a line marking a time belongs.
+.now {
+  position: absolute;
+  inset-inline: 0;
+  // `top` is bound to the offset within the lane area; the header is added here
+  // so the component never needs to know how tall the header is.
+  margin-block-start: var(--head-h);
+  z-index: 18;
+  block-size: 0;
+  pointer-events: none;
+}
+
+.now-line {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  block-size: 2px;
+  background: var(--c-danger);
+  opacity: 0.85;
+}
+
+.now-badge {
+  position: absolute;
+  inset-inline-start: var(--sp-1);
+  inset-block-start: -9px;
+  z-index: 1;
+  padding: 1px 6px;
+  border-radius: var(--r-full);
+  background: var(--c-danger);
+  color: var(--c-danger-fg);
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+// ------------------------------------------------------------- empty overlay --
+.cal-empty {
+  border-block-start: 1px solid var(--c-border);
+  background: var(--c-surface);
+}
+
+// -----------------------------------------------------------------------------
+// Responsive
+// -----------------------------------------------------------------------------
+@media (max-width: 900px) {
+  .toolbar-meta .legend {
+    // The legend wraps below the date rather than competing with it for the row.
+    inline-size: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .cal-grid {
+    --time-col: 58px;
+    // Narrower, but never so narrow that a name is unreadable — a phone scrolls
+    // sideways through resources instead of shrinking five into 400px.
+    --lane-min: 148px;
+  }
+
+  .cal-scroll {
+    max-block-size: min(64vh, 640px);
+  }
+
+  .toolbar {
+    padding: var(--sp-3);
+  }
+
+  .filter {
+    flex: 1 1 140px;
+  }
+
+  .datenav {
+    inline-size: 100%;
+    justify-content: space-between;
+  }
+
+  .segmented {
+    inline-size: 100%;
+  }
+
+  .segment {
+    flex: 1 1 0;
+  }
+}

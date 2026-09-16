@@ -3,8 +3,10 @@ using Clinic.Api.Controllers;
 using Clinic.Api.DTOs.DoctorDto;
 using Clinic.Api.Helper;
 using Clinic.Domain.Entites;
+using Clinic.Domain.Interfaces.Specifications.AppointmentSpec;
 using Clinic.Domain.Interfaces.Specifications.DoctorSpec;
 using Clinic.Domain.Interfaces.Specifications.PatientSpec;
+using Clinic.Domain.Interfaces.Specifications.ScheduleSpec;
 using Clinic.Domain.Interfaces.Specifications.SpecParams;
 using Clinic.Infrastructure.Data.Context;
 using Clinic.Tests.TestSupport;
@@ -110,12 +112,40 @@ namespace Clinic.Tests.Integration
         public async Task An_Excessive_Page_Size_Cannot_Be_Used_To_Pull_The_Whole_Table()
         {
             // The cap is a resource control as much as a correctness one.
+            //
+            // Asserted against DoctorSpecParams' own ceiling rather than a literal 20: the
+            // invariant being defended is "an arbitrary page size is clamped to a fixed bound",
+            // not the particular number. Doctors raised theirs to 200 because a clinic's whole
+            // roster is a bounded read that several screens need in one request - see
+            // DoctorSpecParams.MaxPageSize.
             await using var context = NewContext();
             var sut = new DoctorsController(new UnitOfWork(context), _mapper);
 
             var page = Unwrap(await sut.GetAll(new DoctorSpecParams { PageSize = int.MaxValue }));
 
-            Assert.True(page.PageSize <= 20);
+            Assert.Equal(new DoctorSpecParams { PageSize = int.MaxValue }.PageSize, page.PageSize);
+            Assert.True(page.PageSize <= 200, $"Doctor paging was not clamped: {page.PageSize}.");
+        }
+
+        public static TheoryData<PaginationParams, int> Ceilings() => new()
+        {
+            // The default, for every params type that does not opt out.
+            { new PatientSpecParams(), 20 },
+            // Raised deliberately; each is a bounded read, not a browsable list.
+            { new DoctorSpecParams(), 200 },
+            { new DoctorScheduleSpecParams(), 500 },
+            { new AppointmentSpecParams(), 500 },
+        };
+
+        [Theory]
+        [MemberData(nameof(Ceilings))]
+        public void Each_Params_Type_Clamps_To_Its_Own_Ceiling(PaginationParams param, int ceiling)
+        {
+            // Pins the ceilings so raising one is a deliberate edit rather than a side effect, and
+            // so the shared default cannot drift upward unnoticed for the types that still use it.
+            param.PageSize = int.MaxValue;
+
+            Assert.Equal(ceiling, param.PageSize);
         }
 
         [Fact]

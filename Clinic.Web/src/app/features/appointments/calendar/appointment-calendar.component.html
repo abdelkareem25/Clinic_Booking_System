@@ -1,0 +1,310 @@
+<div class="page cal-page">
+  <ui-page-header
+    title="appointments.title"
+    subtitle="appointments.calendarSubtitle"
+    icon="appointments"
+  >
+    <div actions class="cluster">
+      <button mat-stroked-button type="button" (click)="openWaitingList()">
+        <ui-icon name="checklist" size="sm" />
+        {{ 'appointments.waitingList' | translate }}
+      </button>
+
+      @if (permissions.can('appointments.create')) {
+        <a mat-flat-button routerLink="/appointments/new" [queryParams]="newAppointmentParams()">
+          <ui-icon name="add" size="sm" />
+          {{ 'appointments.new' | translate }}
+        </a>
+      }
+    </div>
+  </ui-page-header>
+
+  <!-- ------------------------------------------------------------ toolbar -->
+  <section class="toolbar surface">
+    <div class="toolbar-row">
+      <mat-form-field class="filter">
+        <mat-label>{{ 'appointments.doctor' | translate }}</mat-label>
+        <mat-select [value]="doctorId()" (valueChange)="onDoctor($event)">
+          <mat-option value="all">{{ 'appointments.allDoctors' | translate }}</mat-option>
+          @for (doctor of doctorOptions(); track doctor.id) {
+            <mat-option [value]="doctor.id">{{ doctor.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field class="filter">
+        <mat-label>{{ 'doctors.specialization' | translate }}</mat-label>
+        <mat-select [value]="specialtyFilter()" (valueChange)="onSpecialty($event)">
+          <mat-option value="all">{{ 'appointments.allSpecialties' | translate }}</mat-option>
+          @for (option of specialtyOptions(); track option.value) {
+            <mat-option [value]="option.value">{{ option.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @if (hasFilters()) {
+        <button mat-button type="button" class="clear-btn" (click)="clearFilters()">
+          <ui-icon name="close" size="sm" />
+          {{ 'common.clear' | translate }}
+        </button>
+      }
+
+      <span class="spacer"></span>
+
+      <!-- Day / Week. Two buttons with aria-pressed rather than a tab list: the
+           views are alternative renderings of the same page, not separate panels. -->
+      <div class="segmented" role="group" [attr.aria-label]="'appointments.viewMode' | translate">
+        <button
+          type="button"
+          class="segment"
+          [class.is-active]="view() === 'day'"
+          [attr.aria-pressed]="view() === 'day'"
+          (click)="setView('day')"
+        >
+          {{ 'appointments.viewDay' | translate }}
+        </button>
+        <button
+          type="button"
+          class="segment"
+          [class.is-active]="view() === 'week'"
+          [attr.aria-pressed]="view() === 'week'"
+          (click)="setView('week')"
+        >
+          {{ 'appointments.viewWeek' | translate }}
+        </button>
+      </div>
+
+      <div class="datenav">
+        <button
+          type="button"
+          class="nav-btn"
+          [matTooltip]="'common.previous' | translate"
+          [attr.aria-label]="'common.previous' | translate"
+          (click)="step(-1)"
+        >
+          <!-- Chevrons point at the reading direction: "previous" is on the
+               right in Arabic, so the glyph is swapped rather than mirrored. -->
+          <ui-icon [name]="isRtl() ? 'chevronRight' : 'chevronLeft'" size="md" />
+        </button>
+
+        <button
+          type="button"
+          mat-stroked-button
+          class="today-btn"
+          [disabled]="isToday() && view() === 'day'"
+          (click)="today()"
+        >
+          {{ 'common.today' | translate }}
+        </button>
+
+        <button
+          type="button"
+          class="nav-btn"
+          [matTooltip]="'common.next' | translate"
+          [attr.aria-label]="'common.next' | translate"
+          (click)="step(1)"
+        >
+          <ui-icon [name]="isRtl() ? 'chevronLeft' : 'chevronRight'" size="md" />
+        </button>
+
+        <span class="datepick">
+          <input
+            class="visually-hidden"
+            [matDatepicker]="picker"
+            [value]="selectedDate()"
+            [attr.aria-label]="'appointments.pickDate' | translate"
+            (dateChange)="onDatePicked($event.value)"
+          />
+          <mat-datepicker-toggle
+            [for]="picker"
+            [attr.aria-label]="'appointments.pickDate' | translate"
+            [matTooltip]="'appointments.pickDate' | translate"
+          />
+          <mat-datepicker #picker />
+        </span>
+      </div>
+    </div>
+
+    <div class="toolbar-row toolbar-meta">
+      <h2 class="headline">{{ headlineDate() }}</h2>
+
+      <span class="spacer"></span>
+
+      <ul class="legend" [attr.aria-label]="'appointments.statusLegend' | translate">
+        @for (entry of legend; track entry.status) {
+          <li class="legend-item">
+            <span
+              class="legend-swatch"
+              aria-hidden="true"
+              [style.background]="entry.surface"
+              [style.border-color]="entry.accent"
+            ></span>
+            {{ entry.label | translate }}
+          </li>
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- --------------------------------------------------------------- grid -->
+  @if (failed()) {
+    <div class="surface state-panel">
+      <ui-empty-state
+        title="appointments.loadFailed"
+        message="appointments.loadFailedHint"
+        icon="warning"
+        tone="danger"
+      >
+        <button mat-flat-button type="button" (click)="retry()">
+          <ui-icon name="refresh" size="sm" />
+          {{ 'common.retry' | translate }}
+        </button>
+      </ui-empty-state>
+    </div>
+  } @else if (loading()) {
+    <div class="surface state-panel" role="status" [attr.aria-label]="'common.loading' | translate">
+      <div class="skeleton-grid">
+        <div class="skeleton-times">
+          @for (row of skeletonRows; track row) {
+            <span class="skeleton skeleton-time"></span>
+          }
+        </div>
+        <div class="skeleton-lanes">
+          @for (row of skeletonRows; track row) {
+            <span class="skeleton skeleton-block"></span>
+          }
+        </div>
+      </div>
+    </div>
+  } @else if (!lanes().length) {
+    <div class="surface state-panel">
+      <ui-empty-state
+        title="appointments.noResources"
+        message="appointments.noResourcesHint"
+        icon="doctors"
+      >
+        @if (hasFilters()) {
+          <button mat-stroked-button type="button" (click)="clearFilters()">
+            {{ 'common.clear' | translate }}
+          </button>
+        }
+        @if (permissions.can('appointments.create')) {
+          <a mat-flat-button routerLink="/appointments/new" [queryParams]="newAppointmentParams()">
+            {{ 'appointments.new' | translate }}
+          </a>
+        }
+      </ui-empty-state>
+    </div>
+  } @else {
+    <section class="calendar surface" [class.is-week]="view() === 'week'">
+      <div class="cal-scroll" #scroller>
+        <div
+          class="cal-grid"
+          [style.--lane-count]="laneCountCss()"
+          [style.--slot-h]="slotHeightCss"
+          [style.--grid-h]="gridHeightCss()"
+        >
+          <div class="cal-corner">
+            <ui-icon name="clock" size="sm" />
+          </div>
+
+          @for (lane of lanes(); track lane.id) {
+            <div class="cal-head" [class.is-today]="lane.isToday">
+              <span class="head-label" [matTooltip]="lane.label">{{ lane.label }}</span>
+              @if (lane.sublabel) {
+                <span class="head-sub">{{ lane.sublabel }}</span>
+              }
+            </div>
+          }
+
+          <div class="cal-times">
+            @for (slot of slots(); track slot) {
+              <div class="time-cell" [class.is-hour]="isHour(slot)">
+                <span class="time-text">{{ slotLabel(slot) }}</span>
+              </div>
+            }
+          </div>
+
+          @for (lane of lanes(); track lane.id) {
+            <!-- Named so a screen reader announcing a block knows which column
+                 it is in; the visual header is not associated with the cells the
+                 way a table's would be. -->
+            <div
+              class="cal-lane"
+              role="group"
+              [attr.aria-label]="lane.label"
+              [class.is-today]="lane.isToday"
+              [attr.data-lane-id]="lane.id"
+            >
+              <!-- Shading layer: the lane is closed by default and working hours
+                   are painted on top, so a doctor's published rota is what the
+                   grid actually shows rather than a uniform bookable day. -->
+              <div class="lane-bands" aria-hidden="true">
+                @for (band of bandsFor(lane.id).working; track $index) {
+                  <span
+                    class="band band-working"
+                    [style.top.px]="band.topPx"
+                    [style.height.px]="band.heightPx"
+                  ></span>
+                }
+                @for (band of bandsFor(lane.id).breaks; track $index) {
+                  <span
+                    class="band band-break"
+                    [style.top.px]="band.topPx"
+                    [style.height.px]="band.heightPx"
+                  ></span>
+                }
+              </div>
+
+              @for (block of blocksFor(lane.id); track block.appointment.id) {
+                <app-appointment-block
+                  cdkDrag
+                  [item]="block"
+                  [draggable]="canDrag(block.appointment)"
+                  [cdkDragDisabled]="!canDrag(block.appointment)"
+                  (cdkDragEnded)="onDragEnded($event, block)"
+                  (open)="openAppointment(block.appointment)"
+                />
+              }
+            </div>
+          }
+
+          @if (nowOffsetPx() !== null) {
+            <div class="now" [style.top.px]="nowOffsetPx()">
+              <span class="now-badge">{{ nowLabel() }}</span>
+              <span class="now-line" aria-hidden="true"></span>
+            </div>
+          }
+        </div>
+      </div>
+
+      @if (isEmpty()) {
+        <div class="cal-empty">
+          <ui-empty-state
+            title="appointments.emptyDay"
+            [message]="hasFilters() ? 'appointments.emptyDayFiltered' : 'appointments.emptyHint'"
+            [icon]="hasFilters() ? 'noResults' : 'calendarCheck'"
+            [compact]="true"
+          >
+            @if (permissions.can('appointments.create')) {
+              <a
+                mat-flat-button
+                routerLink="/appointments/new"
+                [queryParams]="newAppointmentParams()"
+              >
+                {{ 'appointments.new' | translate }}
+              </a>
+            }
+          </ui-empty-state>
+        </div>
+      }
+    </section>
+
+    @if (canEdit()) {
+      <p class="cal-hint">
+        <ui-icon name="info" size="sm" />
+        {{ 'appointments.dragHint' | translate }}
+      </p>
+    }
+  }
+</div>

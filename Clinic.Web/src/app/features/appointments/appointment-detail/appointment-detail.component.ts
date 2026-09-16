@@ -16,6 +16,7 @@ import {
   lifecycleStatusLabel,
   lifecycleStatusTone,
 } from '../../../core/utils/appointment-status.util';
+import { appointmentDuration } from '../../../core/utils/appointment-time.util';
 import { formatTime12, parseDate } from '../../../core/utils/date.util';
 import { CardComponent } from '../../../shared/ui/card/card.component';
 import { confirmDialog } from '../../../shared/ui/confirm-dialog/confirm-dialog.component';
@@ -78,7 +79,10 @@ export class AppointmentDetailComponent {
     }
 
     const when = parseDate(appointment.appointmentDate);
-    const slotMinutes = this.settings.settings().slotMinutes;
+    // The stored length, not the clinic's current slot size: an appointment
+    // booked when slots were 30 minutes long still runs 30 minutes after someone
+    // changes the setting to 45.
+    const slotMinutes = appointmentDuration(appointment, this.settings.settings().slotMinutes);
 
     return [
       { label: 'appointments.patient', value: appointment.patientName, icon: 'user', tone: 'strong' },

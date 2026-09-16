@@ -11,6 +11,11 @@ namespace Clinic.Domain.Interfaces.Specifications.AppointmentSpec
              || x.PatientId == param.PatientId)
             &&
             (!param.ParsedStatus.HasValue || x.Status == param.ParsedStatus)
+            &&
+            // [From, To) on the start instant. Kept in step with AppointmentWithCountSpecification.
+            (!param.From.HasValue || x.AppointmentDate >= param.From)
+            &&
+            (!param.To.HasValue || x.AppointmentDate < param.To)
             )
         {
             // THE reason the appointments list rendered "null" for every doctor and patient.

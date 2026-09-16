@@ -37,7 +37,7 @@
             <div class="head-text">
               <strong>{{ card.doctor.name }}</strong>
               <div class="head-badges">
-                <span class="badge badge-secondary">{{ card.doctor.specialization }}</span>
+                <span class="badge badge-secondary">{{ card.doctor.specialization | specialty }}</span>
                 <!-- Shown only when false: "accepting patients" is the norm and
                      a badge on every card would carry no information. -->
                 @if (card.doctor.isActive === false) {

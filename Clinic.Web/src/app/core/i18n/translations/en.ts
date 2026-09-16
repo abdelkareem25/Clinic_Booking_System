@@ -323,6 +323,7 @@ export const EN = {
   appointments: {
     title: 'Appointments',
     subtitle: 'Booking, rescheduling and attendance.',
+    calendarSubtitle: 'The clinic diary, by doctor and by hour.',
     one: 'Appointment',
     new: 'Book appointment',
     edit: 'Reschedule appointment',
@@ -367,9 +368,57 @@ export const EN = {
     statusCancelled: 'Cancelled',
     timing: 'Timing',
 
+    // ---------------------------------------------------------- calendar --
+    viewMode: 'Calendar view',
+    viewDay: 'Day',
+    viewWeek: 'Week',
+    pickDate: 'Choose a date',
+    allDoctors: 'All doctors',
+    allSpecialties: 'All specialities',
+    statusLegend: 'Appointment statuses',
+    changeStatus: 'Change status',
+    statusChanged: 'Status updated.',
+    dragHint: 'Drag an appointment to move it. The change is saved only if the clinic’s rules allow it.',
+
+    emptyDay: 'No appointments for this day',
+    emptyDayFiltered: 'No appointments match these filters on this day.',
+    noResources: 'No doctors are working',
+    noResourcesHint: 'Nobody has working hours on this day, and nothing is booked.',
+    loadFailed: 'Failed to load appointments',
+    loadFailedHint: 'The diary could not be loaded. Check the connection and try again.',
+
+    waitingList: 'Waiting list',
+    waitingListHint:
+      'Bookings that are still pending confirmation on this day. The API has no separate waiting queue, so this is the closest record it keeps.',
+    waitingListEmpty: 'Nothing pending',
+    waitingListEmptyHint: 'Every appointment on this day has been confirmed or closed.',
+
     created: 'Appointment booked.',
     updated: 'Appointment rescheduled.',
     deleted: 'Appointment cancelled.',
+  },
+
+  /**
+   * Doctor specialities.
+   *
+   * Keyed by the stable code `core/i18n/specialty.ts` resolves the stored
+   * `Doctor.Specialization` string to, so the same database value reads
+   * correctly in both languages everywhere it appears.
+   */
+  specialty: {
+    cardiology: 'Cardiology',
+    dentistry: 'Dentistry',
+    dermatology: 'Dermatology',
+    ent: 'ENT',
+    familyMedicine: 'Family Medicine',
+    generalSurgery: 'General Surgery',
+    internalMedicine: 'Internal Medicine',
+    neurology: 'Neurology',
+    obstetricsGynecology: 'Obstetrics and Gynecology',
+    orthopedics: 'Orthopedics',
+    pediatrics: 'Pediatrics',
+    psychiatry: 'Psychiatry',
+    radiology: 'Radiology',
   },
 
   schedules: {

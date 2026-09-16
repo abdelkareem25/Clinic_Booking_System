@@ -17,11 +17,19 @@ namespace Clinic.Domain.Interfaces.Specifications.SpecParams
     /// </summary>
     public class PaginationParams
     {
-        private const int MaxPageSize = 20;
+        private const int DefaultMaxPageSize = 20;
         private const int DefaultPageSize = 5;
 
         private int pageIndex = 1;
         private int pageSize = DefaultPageSize;
+
+        /// <summary>
+        /// The largest page this endpoint will serve. Overridable because 20 is the right ceiling
+        /// for a browsable list but not for a bounded range read: a calendar asks for one day or one
+        /// week and needs every row in it, and silently truncating at 20 would hide appointments
+        /// rather than paginate them. Overriding params types are expected to be range-filtered.
+        /// </summary>
+        protected virtual int MaxPageSize => DefaultMaxPageSize;
 
         /// <summary>One-based. Anything below 1 is treated as the first page.</summary>
         public int PageIndex
@@ -33,14 +41,14 @@ namespace Clinic.Domain.Interfaces.Specifications.SpecParams
         public int PageSize
         {
             get => pageSize;
-            set => pageSize = value switch
-            {
+            // Not a switch expression: `> MaxPageSize` needs a constant pattern, and the ceiling is
+            // now a virtual member.
+            set => pageSize =
                 // A request for zero or fewer rows is a mistake, not an instruction to return an
                 // empty page forever.
-                < 1 => DefaultPageSize,
-                > MaxPageSize => MaxPageSize,
-                _ => value
-            };
+                value < 1 ? DefaultPageSize
+                : value > MaxPageSize ? MaxPageSize
+                : value;
         }
 
         /// <summary>

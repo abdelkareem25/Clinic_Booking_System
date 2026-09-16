@@ -27,6 +27,7 @@ import { DoctorsService } from '../../../core/services/doctors.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { dateToMinutes, minutesToDate, minutesToTimeSpan } from '../../../core/utils/date.util';
 import { nameValidators, phoneValidator } from '../../../core/utils/validators';
+import { SpecialtyPipe } from '../../../shared/pipes/specialty.pipe';
 import { FieldErrorComponent } from '../../../shared/ui/field-error/field-error.component';
 import { IconComponent } from '../../../shared/ui/icon/icon.component';
 
@@ -67,6 +68,7 @@ const DEFAULT_SHIFT_END_MINUTES = 13 * 60;
     MatTimepickerModule,
     MatTooltipModule,
     TranslatePipe,
+    SpecialtyPipe,
     FieldErrorComponent,
     IconComponent,
   ],

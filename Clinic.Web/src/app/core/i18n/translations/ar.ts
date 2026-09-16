@@ -140,7 +140,7 @@ export const AR: Catalogue = {
     records: 'السجلات الطبية',
     accounts: 'الفاتورة',
     reports: 'التقارير',
-    users: 'الحسابات',
+    users: 'المستخدمين',
     roles: 'الأدوار والصلاحيات',
     settings: 'الإعدادات',
     profile: 'الملف الشخصي',
@@ -325,6 +325,7 @@ export const AR: Catalogue = {
   appointments: {
     title: 'المواعيد',
     subtitle: 'الحجز وإعادة الجدولة والحضور.',
+    calendarSubtitle: 'جدول العيادة حسب الطبيب والساعة.',
     one: 'موعد',
     new: 'حجز موعد',
     edit: 'إعادة جدولة الموعد',
@@ -367,9 +368,49 @@ export const AR: Catalogue = {
     statusCancelled: 'ملغى',
     timing: 'التوقيت',
 
+    viewMode: 'طريقة عرض التقويم',
+    viewDay: 'يوم',
+    viewWeek: 'أسبوع',
+    pickDate: 'اختر تاريخًا',
+    allDoctors: 'كل الأطباء',
+    allSpecialties: 'كل التخصصات',
+    statusLegend: 'حالات المواعيد',
+    changeStatus: 'تغيير الحالة',
+    statusChanged: 'تم تحديث الحالة.',
+    dragHint: 'اسحب الموعد لنقله. لا يُحفظ التغيير إلا إذا سمحت به قواعد العيادة.',
+
+    emptyDay: 'لا توجد مواعيد في هذا اليوم',
+    emptyDayFiltered: 'لا توجد مواعيد مطابقة لعوامل التصفية في هذا اليوم.',
+    noResources: 'لا يوجد أطباء في العمل',
+    noResourcesHint: 'لا توجد ساعات عمل لأي طبيب في هذا اليوم، ولا توجد حجوزات.',
+    loadFailed: 'حدث خطأ أثناء تحميل المواعيد',
+    loadFailedHint: 'تعذّر تحميل الجدول. تحقق من الاتصال ثم أعد المحاولة.',
+
+    waitingList: 'قائمة الانتظار',
+    waitingListHint:
+      'الحجوزات التي لم تُؤكد بعد في هذا اليوم. لا يوجد في الواجهة البرمجية قائمة انتظار منفصلة، وهذه أقرب بيانات متاحة.',
+    waitingListEmpty: 'لا توجد حجوزات معلّقة',
+    waitingListEmptyHint: 'جميع مواعيد هذا اليوم مؤكدة أو منتهية.',
+
     created: 'تم حجز الموعد.',
     updated: 'تمت إعادة جدولة الموعد.',
     deleted: 'تم إلغاء الموعد.',
+  },
+
+  specialty: {
+    cardiology: 'أمراض القلب',
+    dentistry: 'طب الأسنان',
+    dermatology: 'الجلدية',
+    ent: 'الأنف والأذن والحنجرة',
+    familyMedicine: 'طب الأسرة',
+    generalSurgery: 'الجراحة العامة',
+    internalMedicine: 'الأمراض الباطنة',
+    neurology: 'المخ والأعصاب',
+    obstetricsGynecology: 'النساء والتوليد',
+    orthopedics: 'العظام',
+    pediatrics: 'طب الأطفال',
+    psychiatry: 'الطب النفسي',
+    radiology: 'الأشعة',
   },
 
   schedules: {
@@ -548,7 +589,7 @@ export const AR: Catalogue = {
   },
 
   users: {
-    title: 'الحسابات',
+    title: 'المستخدمين',
     subtitle: 'حسابات الموظفين وأدوارهم وصلاحياتهم.',
     one: 'حساب',
     new: 'إضافة حساب',

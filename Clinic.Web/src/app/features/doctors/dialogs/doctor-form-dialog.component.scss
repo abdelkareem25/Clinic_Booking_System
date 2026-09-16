@@ -158,3 +158,17 @@
     flex-direction: column;
   }
 }
+
+
+/* Speciality options carry the localised name over the value that is stored, so
+   the picker reads in Arabic while the database keeps one stable code. */
+.spec-option {
+  display: flex;
+  flex-direction: column;
+  line-height: var(--lh-tight);
+}
+
+.spec-code {
+  font-size: var(--fs-2xs);
+  color: var(--c-text-subtle);
+}

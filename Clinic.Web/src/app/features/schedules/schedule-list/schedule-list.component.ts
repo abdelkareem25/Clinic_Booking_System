@@ -14,6 +14,7 @@ import { DoctorsService } from '../../../core/services/doctors.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { SchedulesService } from '../../../core/services/schedules.service';
 import { formatTime12, timeToMinutes } from '../../../core/utils/date.util';
+import { SpecialtyPipe } from '../../../shared/pipes/specialty.pipe';
 import { CardComponent } from '../../../shared/ui/card/card.component';
 import { confirmDialog } from '../../../shared/ui/confirm-dialog/confirm-dialog.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state/empty-state.component';
@@ -54,6 +55,7 @@ const EMPTY_PAGE = { pageIndex: 1, pageSize: 0, count: 0, data: [] };
     MatSelectModule,
     MatTooltipModule,
     TranslatePipe,
+    SpecialtyPipe,
     CardComponent,
     EmptyStateComponent,
     IconComponent,

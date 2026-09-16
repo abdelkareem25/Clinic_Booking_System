@@ -16,6 +16,10 @@ namespace Clinic.Domain.Interfaces.Specifications.AppointmentSpec
              || x.PatientId == param.PatientId)
             &&
             (!param.ParsedStatus.HasValue || x.Status == param.ParsedStatus)
+            &&
+            (!param.From.HasValue || x.AppointmentDate >= param.From)
+            &&
+            (!param.To.HasValue || x.AppointmentDate < param.To)
             )
         {
         }

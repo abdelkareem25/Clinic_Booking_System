@@ -11,6 +11,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, forkJoin, of } from 'rxjs';
 
+import { ClinicSettingsStore } from '../../../core/data/clinic-settings.store';
 import { NotificationsStore } from '../../../core/data/notifications.store';
 import { Appointment } from '../../../core/models/appointment.model';
 import { Doctor } from '../../../core/models/doctor.model';
@@ -27,6 +28,7 @@ import {
   parseDate,
   toLocalIso,
 } from '../../../core/utils/date.util';
+import { SpecialtyPipe } from '../../../shared/pipes/specialty.pipe';
 import { CardComponent } from '../../../shared/ui/card/card.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state/empty-state.component';
 import { FieldErrorComponent } from '../../../shared/ui/field-error/field-error.component';
@@ -48,6 +50,7 @@ const EMPTY_PAGE = { pageIndex: 1, pageSize: 0, count: 0, data: [] };
     MatSelectModule,
     MatStepperModule,
     TranslatePipe,
+    SpecialtyPipe,
     CardComponent,
     EmptyStateComponent,
     FieldErrorComponent,
@@ -69,6 +72,7 @@ export class AppointmentFormComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly schedulesApi = inject(SchedulesService);
+  private readonly settings = inject(ClinicSettingsStore);
   private readonly translate = inject(TranslateService);
 
   /** Present when rescheduling. */
@@ -253,6 +257,11 @@ export class AppointmentFormComponent {
       patientId: patientId!,
       doctorId: doctorId!,
       appointmentDate,
+      // The length of the slot the user actually picked. Omitted before, so the
+      // API fell back to its 30-minute default and a clinic booking in 45-minute
+      // slots stored an appointment ending a quarter of an hour early — with the
+      // overlap check then guarding the wrong interval.
+      durationMinutes: this.settings.slotMinutes(),
       notes: reason.trim() || null,
     };
     const id = this.appointmentId();
@@ -342,9 +351,26 @@ export class AppointmentFormComponent {
       return;
     }
 
-    const patientId = Number(this.route.snapshot.queryParamMap.get('patientId'));
+    const params = this.route.snapshot.queryParamMap;
+
+    const patientId = Number(params.get('patientId'));
     if (patientId) {
       this.form.controls.patientId.setValue(patientId);
+    }
+
+    // Seeded from the calendar, so booking from a day already on screen does not
+    // start by re-picking that day. Set before the date: the doctor's
+    // `valueChanges` handler clears the date, which would undo the order.
+    const doctorId = Number(params.get('doctorId'));
+    if (doctorId && this.doctors().some((doctor) => doctor.id === doctorId)) {
+      this.form.controls.doctorId.setValue(doctorId);
+    }
+
+    const date = parseDate(params.get('date'));
+    // Only when it is a day this doctor works — otherwise the slot list would
+    // open empty and look broken rather than unavailable.
+    if (date && doctorId && this.dateFilter()(date)) {
+      this.form.controls.date.setValue(date);
     }
   }
 }

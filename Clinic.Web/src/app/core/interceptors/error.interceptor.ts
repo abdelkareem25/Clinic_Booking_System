@@ -40,6 +40,14 @@ function toUserMessage(error: HttpErrorResponse): string {
     return String(error.error.message);
   }
 
+  // RFC 7807 `ProblemDetails` — what this API returns for a rejected booking.
+  // Its reason lives in `title`, so without this the one message the user most
+  // needs ("That slot has just been taken", "outside the doctor's working
+  // hours") was replaced by the generic 400 text below.
+  if (typeof error.error?.title === 'string' && error.error.title.trim().length > 0) {
+    return error.error.title;
+  }
+
   if (Array.isArray(error.error)) {
     return error.error.map((item) => item.description ?? item.message ?? item).join(', ');
   }

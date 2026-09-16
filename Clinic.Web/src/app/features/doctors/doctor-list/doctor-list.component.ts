@@ -7,12 +7,14 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { PermissionService } from '../../../core/authz/permission.service';
+import { SpecialtyService } from '../../../core/i18n/specialty.service';
 import { Doctor } from '../../../core/models/doctor.model';
 import { DoctorSchedule } from '../../../core/models/schedule.model';
 import { DoctorsService } from '../../../core/services/doctors.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { SchedulesService } from '../../../core/services/schedules.service';
 import { timeToMinutes } from '../../../core/utils/date.util';
+import { SpecialtyPipe } from '../../../shared/pipes/specialty.pipe';
 import { confirmDialog } from '../../../shared/ui/confirm-dialog/confirm-dialog.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state/empty-state.component';
 import { IconComponent } from '../../../shared/ui/icon/icon.component';
@@ -49,6 +51,7 @@ const EMPTY_PAGE = { pageIndex: 1, pageSize: 0, count: 0, data: [] };
     MatButtonModule,
     MatTooltipModule,
     TranslatePipe,
+    SpecialtyPipe,
     EmptyStateComponent,
     IconComponent,
     PageHeaderComponent,
@@ -64,6 +67,7 @@ export class DoctorListComponent {
   private readonly notifications = inject(NotificationService);
   private readonly router = inject(Router);
   private readonly schedulesApi = inject(SchedulesService);
+  private readonly specialty = inject(SpecialtyService);
   private readonly translate = inject(TranslateService);
 
   protected readonly permissions = inject(PermissionService);
@@ -75,13 +79,18 @@ export class DoctorListComponent {
 
   protected readonly cards = computed<DoctorCard[]>(() => {
     const term = this.search().trim().toLowerCase();
+    const specialtyLabel = this.specialty.label();
 
     return this.doctors()
       .filter(
         (doctor) =>
           !term ||
           doctor.name.toLowerCase().includes(term) ||
-          doctor.specialization.toLowerCase().includes(term)
+          doctor.specialization.toLowerCase().includes(term) ||
+          // Also matched on the label the user can actually see: searching
+          // "أطفال" has to find the doctor whose column reads "طب الأطفال",
+          // even though the database says "Pediatrics".
+          specialtyLabel(doctor.specialization).toLowerCase().includes(term)
       )
       .map((doctor) => {
         const own = this.schedules().filter((schedule) => schedule.doctorId === doctor.id);

@@ -13,13 +13,25 @@
 
       <div class="field span-2">
         <!-- Autocomplete rather than a select: specialities in use are suggested,
-             but a clinic must still be able to enter one we did not predict. -->
+             but a clinic must still be able to enter one we did not predict.
+
+             Each option shows the localised name over the value that is stored.
+             The control's value stays the stored code — this is the one screen
+             where that distinction is worth surfacing, because it is the screen
+             that decides which value goes into the database. -->
         <mat-form-field>
           <mat-label>{{ 'doctors.specialization' | translate }}</mat-label>
           <input matInput type="text" formControlName="specialization" [matAutocomplete]="specAuto" />
           <mat-autocomplete #specAuto>
             @for (specialization of specializations; track specialization) {
-              <mat-option [value]="specialization">{{ specialization }}</mat-option>
+              <mat-option [value]="specialization">
+                <span class="spec-option">
+                  <span class="spec-label">{{ specialization | specialty }}</span>
+                  @if ((specialization | specialty) !== specialization) {
+                    <small class="spec-code">{{ specialization }}</small>
+                  }
+                </span>
+              </mat-option>
             }
           </mat-autocomplete>
         </mat-form-field>
