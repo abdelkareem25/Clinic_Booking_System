@@ -19,7 +19,7 @@ export interface NavGroup {
 /**
  * The sidebar.
  *
- * Fourteen flat entries — the reference app's approach — is a wall a new
+ * Fourteen flat entries - the reference app's approach - is a wall a new
  * receptionist has to read top to bottom every time. Grouping by what someone
  * is trying to *do* (see a patient, run the day, handle money, administer the
  * system) turns it into four short scans, and matches how clinic roles divide.
@@ -67,7 +67,6 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'nav.groupFinance',
     items: [
-      { label: 'nav.accounts', icon: 'accounts', route: '/accounts', permissions: ['accounts.view'] },
       { label: 'nav.reports', icon: 'reports', route: '/reports', permissions: ['reports.view'] },
     ],
   },
