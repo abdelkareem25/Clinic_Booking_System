@@ -189,8 +189,6 @@ namespace Clinic.Api
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
-            app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseAuthorization();
 
@@ -200,6 +198,9 @@ namespace Clinic.Api
 
 
             app.MapControllers();
+
+            // Render pings this to decide whether the instance is healthy.
+            app.MapGet("/health", () => Results.Ok("ok"));
 
             app.Run();
         }
