@@ -200,7 +200,7 @@ namespace Clinic.Api
             app.MapControllers();
 
             // Render pings this to decide whether the instance is healthy.
-            app.MapGet("/health", () => Results.Ok("ok"));
+            app.MapGet("/health", () => Results.Ok("ok")).AllowAnonymous();
 
             app.Run();
         }
